@@ -137,22 +137,11 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
  */
 function getDownloadUrl(version: string): string {
   const extension = getArchiveExtension();
-  
-  // Use the OSS endpoint for both OSS and Pro editions until Pro endpoint is fully supported
-  return DOWNLOAD_URLS.OSS_TEMPLATE
+  const url = DOWNLOAD_URLS.OSS_TEMPLATE
     .replace('{version}', version)
     .replace('{extension}', extension);
-  
-  // Comment out Pro-specific logic until Pro endpoint is fully supported
-  // if (edition === 'oss') {
-  //   return DOWNLOAD_URLS.OSS_TEMPLATE
-  //     .replace('{version}', version)
-  //     .replace('{extension}', extension);
-  // } else {
-  //   return DOWNLOAD_URLS.PRO_TEMPLATE
-  //     .replace('{version}', version)
-  //     .replace('{extension}', extension);
-  // }
+  core.info(`Download URL: ${url}`);
+  return url;
 }
 
 /**
