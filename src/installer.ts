@@ -17,7 +17,8 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { HttpClient } from '@actions/http-client';
 import * as semver from 'semver';
-import { API_ENDPOINTS, DOWNLOAD_URLS, ARCHIVE_EXTENSIONS } from './config';
+import { DOWNLOAD_URLS, ARCHIVE_EXTENSIONS } from './config';
+import { VersionResolver } from './version-resolver';
 
 /**
  * Configuration options for setting up Liquibase
@@ -75,8 +76,9 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
     throw new Error('License key is required for Liquibase Pro edition');
   }
   
-  // Resolve the exact version to install (handles 'latest', ranges, etc.)
-  const resolvedVersion = await resolveVersion(version, edition, checkLatest);
+  // Resolve the exact version to install using the version resolver
+  const versionResolver = VersionResolver.getInstance();
+  const resolvedVersion = await versionResolver.resolveVersion(version, edition, checkLatest);
   
   // Create a unique tool name for caching that includes the edition
   const toolName = `liquibase-${edition}`;
@@ -129,98 +131,6 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
 }
 
 /**
- * Resolves a version specification to an exact version number
- * 
- * Handles various version formats:
- * - 'latest': Gets the most recent version
- * - Exact versions: '4.25.0' returns as-is
- * - Version ranges: '^4.20' or '~4.25.0' finds the best matching version
- * 
- * @param version - Version specification from user input
- * @param edition - Liquibase edition ('oss' or 'pro')
- * @param checkLatest - Whether to check for latest version even if not requested
- * @returns Promise resolving to an exact version number
- */
-async function resolveVersion(version: string, edition: string, checkLatest: boolean): Promise<string> {
-  // Handle 'latest' version or forced latest check
-  if (version === 'latest' || checkLatest) {
-    return await getLatestVersion(edition);
-  }
-  
-  // If it's already a valid exact version, return as-is
-  if (semver.valid(version)) {
-    return version;
-  }
-  
-  // For version ranges, find the best matching version from available releases
-  const availableVersions = await getAvailableVersions(edition);
-  const matchedVersion = semver.maxSatisfying(availableVersions, version);
-  
-  if (!matchedVersion) {
-    throw new Error(`No version matching ${version} found for Liquibase ${edition}`);
-  }
-  
-  return matchedVersion;
-}
-
-/**
- * Fetches the latest available version for the specified Liquibase edition
- * 
- * @param edition - Liquibase edition ('oss' or 'pro')
- * @returns Promise resolving to the latest version number
- */
-async function getLatestVersion(edition: string): Promise<string> {
-  const http = new HttpClient('setup-liquibase');
-  
-  if (edition === 'oss') {
-    // For OSS, query GitHub releases API using configured endpoint
-    const response = await http.getJson<{ tag_name: string }>(API_ENDPOINTS.OSS_LATEST);
-    if (response.result?.tag_name) {
-      // Remove 'v' prefix from tag name (e.g., 'v4.25.0' -> '4.25.0')
-      return response.result.tag_name.replace(/^v/, '');
-    }
-  } else {
-    // For Pro, query Liquibase's Pro releases endpoint using configured endpoint
-    const response = await http.getJson<Array<{ version: string }>>(API_ENDPOINTS.PRO_RELEASES);
-    if (response.result && response.result.length > 0) {
-      // Return the first (latest) version from the sorted list
-      return response.result[0].version;
-    }
-  }
-  
-  throw new Error(`Could not determine latest version for Liquibase ${edition}`);
-}
-
-/**
- * Fetches all available versions for the specified Liquibase edition
- * Used for version range resolution
- * 
- * @param edition - Liquibase edition ('oss' or 'pro')
- * @returns Promise resolving to array of available version numbers
- */
-async function getAvailableVersions(edition: string): Promise<string[]> {
-  const http = new HttpClient('setup-liquibase');
-  
-  if (edition === 'oss') {
-    // For OSS, get all GitHub releases using configured endpoint
-    const response = await http.getJson<Array<{ tag_name: string }>>(API_ENDPOINTS.OSS_RELEASES);
-    if (response.result) {
-      // Remove 'v' prefix from all tag names and return as array
-      return response.result.map(release => release.tag_name.replace(/^v/, ''));
-    }
-  } else {
-    // For Pro, get all versions from Liquibase's releases endpoint using configured endpoint
-    const response = await http.getJson<Array<{ version: string }>>(API_ENDPOINTS.PRO_RELEASES);
-    if (response.result) {
-      return response.result.map(release => release.version);
-    }
-  }
-  
-  // Return empty array if no versions found (will cause error in resolution)
-  return [];
-}
-
-/**
  * Constructs the download URL for a specific Liquibase version and edition
  * Uses Scarf proxy URLs for download analytics and tracking
  * 
@@ -243,7 +153,6 @@ function getDownloadUrl(version: string, edition: string): string {
       .replace('{extension}', extension);
   }
 }
-
 
 /**
  * Determines the appropriate archive file extension for the current platform
