@@ -86,7 +86,21 @@ jobs:
         cache: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
-    # Verify that Liquibase was successfully installed and is accessible
-    - name: Verify Liquibase Installation
-      run: liquibase --version
+
+    # Run Liquibase update against H2 database using the example changelog
+    - name: Run Liquibase Update (H2)
+      run: |
+        liquibase update \
+          --changelog-file=changelog.xml \
+          --url=jdbc:h2:mem:test \
+          --username=sa \
+          --password=
+
+    # Verify the update by checking the history
+    - name: Verify Liquibase History (H2)
+      run: |
+        liquibase history \
+          --changelog-file=changelog.xml \
+          --url=jdbc:h2:mem:test \
+          --username=sa \
+          --password=

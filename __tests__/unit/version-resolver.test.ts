@@ -1,4 +1,4 @@
-import { VersionResolver } from '../src/version-resolver';
+import { VersionResolver } from '../../src/version-resolver';
 import { HttpClient } from '@actions/http-client';
 import * as core from '@actions/core';
 import { IncomingHttpHeaders } from 'http';

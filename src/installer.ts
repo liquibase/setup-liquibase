@@ -15,7 +15,7 @@ import * as tc from '@actions/tool-cache';
 import * as exec from '@actions/exec';
 import * as path from 'path';
 import * as fs from 'fs';
-import { DOWNLOAD_URLS, ARCHIVE_EXTENSIONS } from './config';
+import { ARCHIVE_EXTENSIONS } from './config';
 import { VersionResolver } from './version-resolver';
 
 /**
@@ -89,7 +89,7 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
     core.info(`Installing Liquibase ${edition} version ${resolvedVersion}`);
     
     // Get the appropriate download URL for this version and edition
-    const downloadUrl = getDownloadUrl(resolvedVersion, undefined, edition);
+    const downloadUrl = getDownloadUrl(resolvedVersion, edition);
     
     // Download the Liquibase archive
     const downloadPath = await tc.downloadTool(downloadUrl);
@@ -137,14 +137,12 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
  * @param edition - Edition to download ('oss' or 'pro')
  * @returns Download URL for the specified version using Scarf proxy
  */
-export function getDownloadUrl(version: string, extension?: string, edition: 'oss' | 'pro' = 'oss'): string {
-  const ext = extension || getArchiveExtension();
-  const template = edition === 'pro' ? DOWNLOAD_URLS.PRO_TEMPLATE : DOWNLOAD_URLS.OSS_TEMPLATE;
-  const url = template
-    .replace(/{version}/g, version)
-    .replace('{extension}', ext);
-  core.info(`Download URL: ${url}`);
-  return url;
+export function getDownloadUrl(version: string, edition: 'oss' | 'pro' = 'oss'): string {
+  const ext = process.platform === 'win32' ? 'zip' : 'tar.gz';
+  if (edition === 'pro') {
+    return `https://package.liquibase.com/downloads/cli/liquibase-pro/releases/download/v${version}/liquibase-pro-${version}.${ext}`;
+  }
+  return `https://package.liquibase.com/downloads/cli/liquibase/releases/download/v${version}/liquibase-${version}.${ext}`;
 }
 
 /**
