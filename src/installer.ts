@@ -15,8 +15,6 @@ import * as tc from '@actions/tool-cache';
 import * as exec from '@actions/exec';
 import * as path from 'path';
 import * as fs from 'fs';
-import { HttpClient } from '@actions/http-client';
-import * as semver from 'semver';
 import { DOWNLOAD_URLS, ARCHIVE_EXTENSIONS } from './config';
 import { VersionResolver } from './version-resolver';
 

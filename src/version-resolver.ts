@@ -3,14 +3,6 @@ import { HttpClient } from '@actions/http-client';
 import * as semver from 'semver';
 import { API_ENDPOINTS } from './config';
 
-interface GitHubRelease {
-  tag_name: string;
-}
-
-interface ProVersion {
-  version: string;
-}
-
 export class VersionResolver {
   private static instance: VersionResolver;
   private http: HttpClient;
