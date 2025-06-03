@@ -1,34 +1,50 @@
+# GitHub Action metadata for setup-liquibase
+# This action downloads and installs Liquibase (OSS or Pro) for use in GitHub Actions workflows
+
 name: 'Setup Liquibase'
 description: 'Set up your GitHub Actions workflow with a specific version of Liquibase'
 author: 'Liquibase'
+
+# GitHub Marketplace branding
 branding:
-  icon: 'database'
-  color: 'blue'
+  icon: 'database'  # Database icon representing Liquibase's purpose
+  color: 'blue'     # Blue color matching Liquibase brand
+
+# Input parameters that users can configure when using this action
 inputs:
   version:
-    description: 'Version of Liquibase to install. Use "latest" for the most recent version.'
+    description: 'Version of Liquibase to install. Supports specific versions (e.g., "4.25.0"), version ranges (e.g., "^4.20"), or "latest"'
     required: false
     default: 'latest'
+  
   edition:
-    description: 'Edition to install: "oss" or "pro"'
+    description: 'Edition to install: "oss" (Open Source) or "pro" (Professional with additional features)'
     required: false
     default: 'oss'
+  
   liquibase-pro-license-key:
-    description: 'License key for Liquibase Pro. Required when edition is "pro".'
+    description: 'License key for Liquibase Pro edition. Required when edition is "pro". Store this securely in GitHub Secrets.'
     required: false
+  
   cache:
-    description: 'Used to specify whether caching is needed. Set to true, if you want to enable caching'
+    description: 'Enable caching of downloaded Liquibase installations to improve workflow performance on subsequent runs'
     required: false
     default: 'false'
+  
   check-latest:
-    description: 'Set this option if you want the action to check for the latest available version that satisfies the version spec'
+    description: 'Check for the latest available version that satisfies the version specification, even if a cached version exists'
     required: false
     default: 'false'
+
+# Output values that other workflow steps can use
 outputs:
   liquibase-version:
-    description: 'The actual version of Liquibase that was installed'
+    description: 'The actual version of Liquibase that was installed (useful when using "latest" or version ranges)'
+  
   liquibase-path:
-    description: 'The path where Liquibase was installed'
+    description: 'The file system path where Liquibase was installed and added to PATH'
+
+# Action execution configuration
 runs:
-  using: 'node20'
-  main: 'dist/index.js'
+  using: 'node20'        # Use Node.js 20 runtime
+  main: 'dist/index.js'  # Entry point for the compiled action

@@ -1,5 +1,8 @@
-name: Test
+# CI/CD workflow for setup-liquibase GitHub Action
+# Validates code quality, builds the action, and tests it across multiple platforms
+name: Continuous Integration
 
+# Trigger workflow on pushes to main branch and all pull requests
 on:
   push:
     branches: [main]
@@ -7,59 +10,80 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  # Job: Code quality checks and build validation
+  code-quality-and-build:
+    name: Code Quality & Build
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    # Checkout the repository code
+    - name: Checkout Repository
+      uses: actions/checkout@v4
     
-    - name: Setup Node.js
+    # Setup Node.js environment with caching for faster builds
+    - name: Setup Node.js Environment
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'npm'
     
-    - name: Install dependencies
+    # Install all npm dependencies using package-lock.json for reproducible builds
+    - name: Install Dependencies
       run: npm ci
     
-    - name: Run linter
+    # Run ESLint to check code style and catch potential issues
+    - name: Run Code Linting
       run: npm run lint
     
-    - name: Run tests
+    # Execute unit tests to validate core functionality
+    - name: Run Unit Tests
       run: npm test
     
-    - name: Build action
+    # Build the TypeScript action into a distributable JavaScript bundle
+    - name: Build Action Distribution
       run: npm run build
 
-  integration-test:
-    needs: test
+  # Job: Cross-platform integration testing
+  integration-testing:
+    name: Integration Tests (${{ matrix.os }}, Liquibase ${{ matrix.version }})
+    # Only run integration tests if code quality checks pass
+    needs: code-quality-and-build
     runs-on: ${{ matrix.os }}
+    
+    # Test matrix: Multiple operating systems and Liquibase versions
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         version: ['4.25.0', 'latest']
     
     steps:
-    - uses: actions/checkout@v4
+    # Checkout the repository code
+    - name: Checkout Repository
+      uses: actions/checkout@v4
     
-    - name: Setup Node.js
+    # Setup Node.js environment with caching
+    - name: Setup Node.js Environment
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'npm'
     
-    - name: Install dependencies
+    # Install dependencies required for building the action
+    - name: Install Dependencies
       run: npm ci
     
-    - name: Build action
+    # Build the action since integration tests use the local action
+    - name: Build Action for Testing
       run: npm run build
     
-    - name: Test setup-liquibase action
+    # Test the actual setup-liquibase action with different configurations
+    - name: Test Liquibase Setup Action
       uses: ./
       with:
         version: ${{ matrix.version }}
         edition: 'oss'
         cache: true
     
-    - name: Verify Liquibase installation
+    # Verify that Liquibase was successfully installed and is accessible
+    - name: Verify Liquibase Installation
       run: liquibase --version

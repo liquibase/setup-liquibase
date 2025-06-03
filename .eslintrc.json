@@ -1,24 +1,33 @@
 {
+  // ESLint configuration for setup-liquibase GitHub Action
+  // Provides code quality checks and style enforcement for TypeScript
+  
   "env": {
-    "node": true,
-    "es2022": true,
-    "jest": true
+    "node": true,      // Enable Node.js global variables and scoping
+    "es2022": true,    // Enable ES2022 syntax support
+    "jest": true       // Enable Jest testing framework globals
   },
+  
   "extends": [
-    "eslint:recommended"
+    "eslint:recommended"  // Use ESLint's recommended rule set as baseline
   ],
+  
+  // Use TypeScript parser for proper TypeScript syntax understanding
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "ecmaVersion": 2022,
-    "sourceType": "module",
-    "project": "./tsconfig.json"
+    "ecmaVersion": 2022,           // Parse ES2022 syntax
+    "sourceType": "module",        // Use ES modules
+    "project": "./tsconfig.json"   // Use TypeScript project configuration
   },
+  
   "plugins": [
-    "@typescript-eslint",
-    "jest"
+    "@typescript-eslint",  // TypeScript-specific linting rules
+    "jest"                 // Jest testing framework rules
   ],
+  
+  // Custom rules for code quality enforcement
   "rules": {
-    "@typescript-eslint/no-unused-vars": "error",
-    "@typescript-eslint/no-explicit-any": "error"
+    "@typescript-eslint/no-unused-vars": "error",   // Prevent unused variables
+    "@typescript-eslint/no-explicit-any": "error"   // Discourage use of 'any' type
   }
 }

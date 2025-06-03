@@ -1,19 +1,35 @@
 {
+  // TypeScript configuration for setup-liquibase GitHub Action
   "compilerOptions": {
+    // Target ES2019 for Node.js 20 compatibility in GitHub Actions
     "target": "ES2019",
     "lib": ["ES2019"],
+    
+    // Use CommonJS modules for Node.js compatibility
     "module": "commonjs",
+    
+    // Output compiled JavaScript to lib directory
     "outDir": "lib",
     "rootDir": "src",
+    
+    // Enable strict type checking for better code quality
     "strict": true,
     "noImplicitAny": true,
+    
+    // Module resolution and compatibility settings
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    
+    // Generate declaration files and source maps for debugging
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true
   },
+  
+  // Include all TypeScript files in the src directory
   "include": ["src/**/*"],
+  
+  // Exclude unnecessary directories and files from compilation
   "exclude": ["node_modules", "**/*.test.ts", "lib", "dist"]
 }

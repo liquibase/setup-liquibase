@@ -1,7 +1,10 @@
 {
-  "semi": true,
-  "trailingComma": "none",
-  "singleQuote": true,
-  "printWidth": 80,
-  "tabWidth": 2
+  // Prettier configuration for setup-liquibase GitHub Action
+  // Ensures consistent code formatting across the project
+  
+  "semi": true,                // Always include semicolons
+  "trailingComma": "none",     // No trailing commas (simpler diffs)
+  "singleQuote": true,         // Use single quotes for strings
+  "printWidth": 80,            // Wrap lines at 80 characters
+  "tabWidth": 2                // Use 2 spaces for indentation
 }
