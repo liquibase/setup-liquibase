@@ -22,6 +22,10 @@ export interface LiquibaseSetupResult {
 export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<LiquibaseSetupResult> {
   const { version, edition, licenseKey, cache, checkLatest } = options;
   
+  if (edition === 'pro' && !licenseKey) {
+    throw new Error('License key is required for Liquibase Pro edition');
+  }
+  
   const resolvedVersion = await resolveVersion(version, edition, checkLatest);
   const toolName = `liquibase-${edition}`;
   
