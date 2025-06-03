@@ -1,0 +1,21 @@
+name: Basic Usage
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: jnewton03/setup-liquibase@v1
+        with:
+          version: 'latest'
+          cache: true
+      
+      - name: Run Liquibase Update
+        run: |
+          liquibase update \
+            --changelog-file=changelog.xml \
+            --url=jdbc:h2:mem:test \
+            --username=sa \
+            --password= 

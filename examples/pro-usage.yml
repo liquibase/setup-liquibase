@@ -1,0 +1,26 @@
+name: Pro Edition Usage
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: jnewton03/setup-liquibase@v1
+        with:
+          version: 'latest'
+          edition: 'pro'
+          license-key: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
+          cache: true
+      
+      - name: Run Pro Features
+        run: |
+          # Generate diff report
+          liquibase diff-changelog \
+            --reference-url=jdbc:postgresql://localhost/reference_db \
+            --url=jdbc:postgresql://localhost/target_db \
+            --changelog-file=diff.xml
+          
+          # Run quality checks
+          liquibase checks run --changelog-file=changelog.xml 
