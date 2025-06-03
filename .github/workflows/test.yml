@@ -89,6 +89,7 @@ jobs:
 
     # Run Liquibase update against H2 database using the example changelog
     - name: Run Liquibase Update (H2)
+      shell: bash
       run: |
         liquibase update \
           --changelog-file=changelog.xml \
@@ -98,6 +99,7 @@ jobs:
 
     # Verify the update by checking the history
     - name: Verify Liquibase History (H2)
+      shell: bash
       run: |
         liquibase history \
           --url=jdbc:h2:./liquibase-test \
