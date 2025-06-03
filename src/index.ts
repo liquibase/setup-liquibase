@@ -4,10 +4,16 @@ import { setupLiquibase } from './installer';
 async function run(): Promise<void> {
   try {
     const version = core.getInput('version') || 'latest';
-    const edition = core.getInput('edition') || 'oss';
+    const editionInput = core.getInput('edition') || 'oss';
     const licenseKey = core.getInput('liquibase-pro-license-key');
     const cache = core.getBooleanInput('cache');
     const checkLatest = core.getBooleanInput('check-latest');
+
+    if (editionInput !== 'oss' && editionInput !== 'pro') {
+      throw new Error('Edition must be either "oss" or "pro"');
+    }
+
+    const edition = editionInput as 'oss' | 'pro';
 
     core.info(`Setting up Liquibase ${edition} version ${version}`);
 
