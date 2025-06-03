@@ -5,7 +5,7 @@
  * Uses ts-jest preset for seamless TypeScript compilation and execution.
  */
 
-module.exports = {
+export default {
   // Use ts-jest preset for TypeScript support
   preset: 'ts-jest',
   
@@ -22,5 +22,11 @@ module.exports = {
   ],
   
   // Coverage report formats: console output and LCOV for CI integration
-  coverageReporters: ['text', 'lcov']
+  coverageReporters: ['text', 'lcov'],
+
+  moduleFileExtensions: ['ts', 'js'],
+
+  transform: {
+    '^.+\\.ts$': ['ts-jest', { tsconfig: 'tsconfig.json' }]
+  }
 };
