@@ -100,7 +100,6 @@ jobs:
     - name: Verify Liquibase History (H2)
       run: |
         liquibase history \
-          --changelog-file=changelog.xml \
           --url=jdbc:h2:mem:test \
           --username=sa \
           --password=
