@@ -89,7 +89,7 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
     core.info(`Installing Liquibase ${edition} version ${resolvedVersion}`);
     
     // Get the appropriate download URL for this version and edition
-    const downloadUrl = getDownloadUrl(resolvedVersion, edition);
+    const downloadUrl = getDownloadUrl(resolvedVersion);
     
     // Download the Liquibase archive
     const downloadPath = await tc.downloadTool(downloadUrl);
@@ -133,10 +133,9 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
  * Uses Scarf proxy URLs for download analytics and tracking
  * 
  * @param version - Exact version number to download
- * @param edition - Liquibase edition ('oss' or 'pro')
  * @returns Download URL for the specified version using Scarf proxy
  */
-function getDownloadUrl(version: string, edition: string): string {
+function getDownloadUrl(version: string): string {
   const extension = getArchiveExtension();
   
   // Use the OSS endpoint for both OSS and Pro editions until Pro endpoint is fully supported
