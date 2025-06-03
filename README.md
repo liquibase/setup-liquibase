@@ -250,14 +250,16 @@ jobs:
 
 ## Migration from Legacy Actions
 
-If you're migrating from individual Liquibase actions, here's how to convert:
+If you're migrating from the official Liquibase GitHub Actions, here's how to convert:
 
 ### Before (Legacy)
 ```yaml
-- uses: liquibase/liquibase-update-action@v1
+- uses: liquibase-github-actions/update@v4.32.0
   with:
-    changeLogFile: 'changelog.xml'
+    changelogFile: 'changelog.xml'
     url: 'jdbc:h2:mem:test'
+    username: 'sa'
+    password: ''
 ```
 
 ### After (setup-liquibase)
@@ -265,8 +267,14 @@ If you're migrating from individual Liquibase actions, here's how to convert:
 - uses: liquibase/setup-liquibase@v1
   with:
     version: 'latest'
-- run: liquibase update --changelog-file=changelog.xml --url=jdbc:h2:mem:test
+- run: liquibase update \
+    --changelog-file=changelog.xml \
+    --url=jdbc:h2:mem:test \
+    --username=sa \
+    --password=
 ```
+
+Note: The legacy actions (like `liquibase-github-actions/update`) are specialized actions for specific Liquibase commands. Our `setup-liquibase` action provides more flexibility by installing Liquibase and allowing you to run any Liquibase command directly.
 
 ## Contributing
 
