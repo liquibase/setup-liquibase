@@ -9,7 +9,26 @@ This action provides the following functionality for GitHub Actions users:
 - Cache downloaded Liquibase versions for improved performance
 - Cross-platform support (Linux, Windows, macOS)
 
-## Usage
+## Quick Start
+
+```yaml
+steps:
+- uses: actions/checkout@v4
+- uses: liquibase/setup-liquibase@v1
+  with:
+    version: 'latest'
+- run: liquibase --version
+```
+
+## Features
+
+- **Version Control**: Install specific versions or use version ranges
+- **Edition Support**: Works with both OSS and Pro editions
+- **Caching**: Optional caching for faster workflow runs
+- **Cross-Platform**: Supports Linux, Windows, and macOS runners
+- **Auto-Detection**: Automatically detects Pro edition when license key is provided
+
+## Usage Examples
 
 ### Basic Usage
 
@@ -47,7 +66,7 @@ steps:
 - run: liquibase update --changelog-file=changelog.xml --url=jdbc:h2:mem:test
 ```
 
-### Version Range and Caching
+### Version Range with Caching
 
 ```yaml
 steps:
@@ -56,7 +75,6 @@ steps:
   with:
     version: '^4.20'
     cache: true
-    check-latest: true
 - run: liquibase --version
 ```
 
@@ -64,18 +82,18 @@ steps:
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
-| `version` | Version of Liquibase to install. Use "latest" for the most recent version. | No | `latest` |
-| `edition` | Edition to install: "oss" or "pro" | No | `oss` |
-| `license-key` | License key for Liquibase Pro. Required when edition is "pro". | No | |
-| `cache` | Used to specify whether caching is needed. Set to true, if you want to enable caching | No | `false` |
-| `check-latest` | Set this option if you want the action to check for the latest available version that satisfies the version spec | No | `false` |
+| `version` | Version of Liquibase to install. Supports specific versions (e.g., "4.25.0"), version ranges (e.g., "^4.20"), or "latest" | No | `latest` |
+| `edition` | Edition to install: "oss" (Open Source) or "pro" (Professional) | No | `oss` |
+| `license-key` | License key for Liquibase Pro. Required when edition is "pro". Store this securely in GitHub Secrets. | No | |
+| `cache` | Enable caching of downloaded Liquibase installations to improve workflow performance on subsequent runs | No | `false` |
+| `check-latest` | Check for the latest available version that satisfies the version specification, even if a cached version exists. Note: This will bypass the cache if enabled. | No | `false` |
 
 ## Outputs
 
 | Output | Description |
 |--------|-------------|
-| `liquibase-version` | The actual version of Liquibase that was installed |
-| `liquibase-path` | The path where Liquibase was installed |
+| `liquibase-version` | The actual version of Liquibase that was installed (useful when using "latest" or version ranges) |
+| `liquibase-path` | The file system path where Liquibase was installed and added to PATH |
 
 ## Version Support
 
@@ -86,7 +104,7 @@ This action supports:
 
 When using version ranges or `latest`, you can set `check-latest: true` to ensure you get the most recent version that satisfies your requirements.
 
-## Supported Platforms
+## Platform Support
 
 - Linux (ubuntu-latest, ubuntu-20.04, ubuntu-22.04)
 - Windows (windows-latest, windows-2019, windows-2022)
@@ -109,7 +127,7 @@ If you want to ensure you're always using the latest version that satisfies your
   with:
     version: '4.25.0'
     cache: true
-    check-latest: true  # Optional: ensures latest version is used
+    # check-latest: true  # Only use this if you want to bypass the cache
 ```
 
 ## Pro Edition Support
