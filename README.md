@@ -43,7 +43,7 @@ steps:
   with:
     version: 'latest'
     edition: 'pro'
-    liquibase-pro-license-key: ${{ secrets.LIQUIBASE_PRO_LICENSE_KEY }}
+    license-key: ${{ secrets.LICENSE_KEY }}
 - run: liquibase update --changelog-file=changelog.xml --url=jdbc:h2:mem:test
 ```
 
@@ -66,7 +66,7 @@ steps:
 |-------|-------------|----------|---------|
 | `version` | Version of Liquibase to install. Use "latest" for the most recent version. | No | `latest` |
 | `edition` | Edition to install: "oss" or "pro" | No | `oss` |
-| `liquibase-pro-license-key` | License key for Liquibase Pro. Required when edition is "pro". | No | |
+| `license-key` | License key for Liquibase Pro. Required when edition is "pro". | No | |
 | `cache` | Used to specify whether caching is needed. Set to true, if you want to enable caching | No | `false` |
 | `check-latest` | Set this option if you want the action to check for the latest available version that satisfies the version spec | No | `false` |
 
@@ -146,7 +146,7 @@ jobs:
       with:
         version: '4.25.0'
         edition: 'pro'
-        liquibase-pro-license-key: ${{ secrets.LIQUIBASE_PRO_LICENSE_KEY }}
+        license-key: ${{ secrets.LICENSE_KEY }}
         cache: true
     
     - name: Validate Changelog
@@ -193,7 +193,7 @@ jobs:
 ## Security Considerations
 
 - Store sensitive information like license keys in GitHub Secrets
-- Use `liquibase-pro-license-key: ${{ secrets.LIQUIBASE_PRO_LICENSE_KEY }}`
+- Use `license-key: ${{ secrets.LICENSE_KEY }}`
 - Never commit license keys directly to your repository
 
 ## Migration from Legacy Actions

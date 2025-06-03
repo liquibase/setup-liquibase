@@ -20,7 +20,7 @@ async function run(): Promise<void> {
     // Extract input parameters from the GitHub Action context
     const version = core.getInput('version') || 'latest';
     const editionInput = core.getInput('edition');
-    const licenseKey = core.getInput('liquibase-pro-license-key');
+    const licenseKey = core.getInput('license-key');
     const cache = core.getBooleanInput('cache');
     const checkLatest = core.getBooleanInput('check-latest');
 
