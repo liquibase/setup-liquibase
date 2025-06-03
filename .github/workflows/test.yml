@@ -92,7 +92,7 @@ jobs:
       run: |
         liquibase update \
           --changelog-file=changelog.xml \
-          --url=jdbc:h2:mem:test \
+          --url=jdbc:h2:./liquibase-test \
           --username=sa \
           --password=
 
@@ -100,6 +100,6 @@ jobs:
     - name: Verify Liquibase History (H2)
       run: |
         liquibase history \
-          --url=jdbc:h2:mem:test \
+          --url=jdbc:h2:./liquibase-test \
           --username=sa \
           --password=
