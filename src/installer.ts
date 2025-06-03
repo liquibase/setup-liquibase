@@ -84,12 +84,12 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
   // Check if we already have this version cached
   let toolPath = tc.find(toolName, resolvedVersion);
   
-  // Download and install if not cached or caching is disabled
-  if (!toolPath || !cache) {
+  // Download and install if not cached, caching is disabled, or checkLatest is true
+  if (!toolPath || !cache || checkLatest) {
     core.info(`Installing Liquibase ${edition} version ${resolvedVersion}`);
     
     // Get the appropriate download URL for this version and edition
-    const downloadUrl = getDownloadUrl(resolvedVersion);
+    const downloadUrl = getDownloadUrl(resolvedVersion, undefined, edition);
     
     // Download the Liquibase archive
     const downloadPath = await tc.downloadTool(downloadUrl);
@@ -133,11 +133,14 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
  * Uses Scarf proxy URLs for download analytics and tracking
  * 
  * @param version - Exact version number to download
+ * @param extension - Optional archive extension to use
+ * @param edition - Edition to download ('oss' or 'pro')
  * @returns Download URL for the specified version using Scarf proxy
  */
-export function getDownloadUrl(version: string, extension?: string): string {
+export function getDownloadUrl(version: string, extension?: string, edition: 'oss' | 'pro' = 'oss'): string {
   const ext = extension || getArchiveExtension();
-  const url = DOWNLOAD_URLS.OSS_TEMPLATE
+  const template = edition === 'pro' ? DOWNLOAD_URLS.PRO_TEMPLATE : DOWNLOAD_URLS.OSS_TEMPLATE;
+  const url = template
     .replace(/{version}/g, version)
     .replace('{extension}', ext);
   core.info(`Download URL: ${url}`);
@@ -161,9 +164,9 @@ export function getArchiveExtension(): string {
  * @returns Promise resolving to the path of the extracted directory
  */
 async function extractLiquibase(downloadPath: string): Promise<string> {
-  const isZip = downloadPath.endsWith('.zip');
+  const platform = process.platform;
   
-  if (isZip) {
+  if (platform === 'win32') {
     // Extract ZIP archives (Windows)
     return await tc.extractZip(downloadPath);
   } else {

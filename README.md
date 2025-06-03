@@ -84,21 +84,55 @@ This action supports:
 - Version ranges: `^4.20`, `~4.25.0`, etc.
 - Latest version: `latest`
 
+When using version ranges or `latest`, you can set `check-latest: true` to ensure you get the most recent version that satisfies your requirements.
+
 ## Supported Platforms
 
 - Linux (ubuntu-latest, ubuntu-20.04, ubuntu-22.04)
 - Windows (windows-latest, windows-2019, windows-2022)
 - macOS (macos-latest, macos-11, macos-12, macos-13)
 
+The action automatically detects the platform and uses the appropriate archive format (`.zip` for Windows, `.tar.gz` for Linux/macOS).
+
 ## Caching
 
 When `cache: true` is set, the action will cache the downloaded Liquibase installation. This can significantly improve workflow performance for subsequent runs.
+
+The cache is unique per:
+- Version
+- Edition (OSS vs Pro)
+
+If you want to ensure you're always using the latest version that satisfies your requirements, you can set `check-latest: true`. This will bypass the cache and download the latest version.
 
 ```yaml
 - uses: liquibase/setup-liquibase@v1
   with:
     version: '4.25.0'
     cache: true
+    check-latest: true  # Optional: ensures latest version is used
+```
+
+## Pro Edition Support
+
+The action supports both Liquibase OSS and Pro editions. The Pro edition requires a valid license key.
+
+The edition can be specified in two ways:
+1. Explicitly using the `edition: 'pro'` input
+2. Implicitly by providing a `license-key` (the action will auto-detect Pro edition)
+
+```yaml
+# Explicit Pro edition
+- uses: liquibase/setup-liquibase@v1
+  with:
+    version: 'latest'
+    edition: 'pro'
+    license-key: ${{ secrets.LICENSE_KEY }}
+
+# Auto-detected Pro edition
+- uses: liquibase/setup-liquibase@v1
+  with:
+    version: 'latest'
+    license-key: ${{ secrets.LICENSE_KEY }}
 ```
 
 ## Complete Workflow Examples
