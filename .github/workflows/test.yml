@@ -45,16 +45,16 @@ jobs:
 
   # Job: Cross-platform integration testing
   integration-testing:
-    name: Integration Tests (${{ matrix.os }}, Liquibase ${{ matrix.version }})
+    name: Integration Tests (${{ matrix.os }})
     # Only run integration tests if code quality checks pass
     needs: code-quality-and-build
     runs-on: ${{ matrix.os }}
     
-    # Test matrix: Multiple operating systems and Liquibase versions
+    # Test matrix: Multiple operating systems with latest Liquibase version
+    # This ensures the action works across platforms without testing outdated versions
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        version: ['4.25.0', 'latest']
     
     steps:
     # Checkout the repository code
@@ -76,12 +76,11 @@ jobs:
     - name: Build Action for Testing
       run: npm run build
     
-    # Test the actual setup-liquibase action with different configurations
+    # Test the actual setup-liquibase action with latest version (auto-detects OSS edition)
     - name: Test Liquibase Setup Action
       uses: ./
       with:
-        version: ${{ matrix.version }}
-        edition: 'oss'
+        version: 'latest'
         cache: true
     
     # Verify that Liquibase was successfully installed and is accessible

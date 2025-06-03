@@ -17,6 +17,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { HttpClient } from '@actions/http-client';
 import * as semver from 'semver';
+import { API_ENDPOINTS, DOWNLOAD_URLS, ARCHIVE_EXTENSIONS } from './config';
 
 /**
  * Configuration options for setting up Liquibase
@@ -24,9 +25,9 @@ import * as semver from 'semver';
 export interface LiquibaseSetupOptions {
   /** Version to install (specific version, range, or 'latest') */
   version: string;
-  /** Edition to install: 'oss' for Open Source, 'pro' for Professional */
-  edition: 'oss' | 'pro';
-  /** License key for Pro edition (required when edition is 'pro') */
+  /** Edition to install: 'oss' for Open Source, 'pro' for Professional (auto-detected if not specified) */
+  edition?: 'oss' | 'pro';
+  /** License key for Pro edition (presence auto-detects Pro edition if edition not specified) */
   licenseKey?: string;
   /** Whether to cache the downloaded installation */
   cache: boolean;
@@ -60,9 +61,16 @@ export interface LiquibaseSetupResult {
  * @returns Promise resolving to the setup result with version and path
  */
 export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<LiquibaseSetupResult> {
-  const { version, edition, licenseKey, cache, checkLatest } = options;
+  const { version, licenseKey, cache, checkLatest } = options;
+  let { edition } = options;
   
-  // Early validation: Pro edition requires a license key
+  // Auto-detect edition based on license key presence if not explicitly specified
+  if (!edition) {
+    edition = licenseKey ? 'pro' : 'oss';
+    core.info(`Auto-detected Liquibase edition: ${edition} (based on ${licenseKey ? 'license key presence' : 'no license key'})`);
+  }
+  
+  // Validate Pro edition requirements
   if (edition === 'pro' && !licenseKey) {
     throw new Error('License key is required for Liquibase Pro edition');
   }
@@ -165,15 +173,15 @@ async function getLatestVersion(edition: string): Promise<string> {
   const http = new HttpClient('setup-liquibase');
   
   if (edition === 'oss') {
-    // For OSS, query GitHub releases API
-    const response = await http.getJson<{ tag_name: string }>('https://api.github.com/repos/liquibase/liquibase/releases/latest');
+    // For OSS, query GitHub releases API using configured endpoint
+    const response = await http.getJson<{ tag_name: string }>(API_ENDPOINTS.OSS_LATEST);
     if (response.result?.tag_name) {
       // Remove 'v' prefix from tag name (e.g., 'v4.25.0' -> '4.25.0')
       return response.result.tag_name.replace(/^v/, '');
     }
   } else {
-    // For Pro, query Liquibase's Pro releases endpoint
-    const response = await http.getJson<Array<{ version: string }>>('https://download.liquibase.org/pro/releases.json');
+    // For Pro, query Liquibase's Pro releases endpoint using configured endpoint
+    const response = await http.getJson<Array<{ version: string }>>(API_ENDPOINTS.PRO_RELEASES);
     if (response.result && response.result.length > 0) {
       // Return the first (latest) version from the sorted list
       return response.result[0].version;
@@ -194,15 +202,15 @@ async function getAvailableVersions(edition: string): Promise<string[]> {
   const http = new HttpClient('setup-liquibase');
   
   if (edition === 'oss') {
-    // For OSS, get all GitHub releases
-    const response = await http.getJson<Array<{ tag_name: string }>>('https://api.github.com/repos/liquibase/liquibase/releases');
+    // For OSS, get all GitHub releases using configured endpoint
+    const response = await http.getJson<Array<{ tag_name: string }>>(API_ENDPOINTS.OSS_RELEASES);
     if (response.result) {
       // Remove 'v' prefix from all tag names and return as array
       return response.result.map(release => release.tag_name.replace(/^v/, ''));
     }
   } else {
-    // For Pro, get all versions from Liquibase's releases endpoint
-    const response = await http.getJson<Array<{ version: string }>>('https://download.liquibase.org/pro/releases.json');
+    // For Pro, get all versions from Liquibase's releases endpoint using configured endpoint
+    const response = await http.getJson<Array<{ version: string }>>(API_ENDPOINTS.PRO_RELEASES);
     if (response.result) {
       return response.result.map(release => release.version);
     }
@@ -214,42 +222,28 @@ async function getAvailableVersions(edition: string): Promise<string[]> {
 
 /**
  * Constructs the download URL for a specific Liquibase version and edition
+ * Uses Scarf proxy URLs for download analytics and tracking
  * 
  * @param version - Exact version number to download
  * @param edition - Liquibase edition ('oss' or 'pro')
- * @returns Download URL for the specified version and platform
+ * @returns Download URL for the specified version using Scarf proxy
  */
 function getDownloadUrl(version: string, edition: string): string {
-  const platform = getPlatform();
+  const extension = getArchiveExtension();
   
   if (edition === 'oss') {
-    // OSS releases are hosted on GitHub with a consistent naming pattern
-    return `https://github.com/liquibase/liquibase/releases/download/v${version}/liquibase-${version}.${getArchiveExtension()}`;
+    // OSS releases use Scarf proxy URLs from liquibase.com/download-oss
+    return DOWNLOAD_URLS.OSS_TEMPLATE
+      .replace('{version}', version)
+      .replace('{extension}', extension);
   } else {
-    // Pro releases are hosted on Liquibase's download server with platform-specific naming
-    return `https://download.liquibase.org/pro/liquibase-pro-${version}-${platform}.${getArchiveExtension()}`;
+    // Pro releases use Scarf proxy URLs from liquibase.com/download-pro
+    return DOWNLOAD_URLS.PRO_TEMPLATE
+      .replace('{version}', version)
+      .replace('{extension}', extension);
   }
 }
 
-/**
- * Maps Node.js platform names to Liquibase download platform names
- * 
- * @returns Platform string used in Liquibase download URLs
- * @throws Error if the current platform is not supported
- */
-function getPlatform(): string {
-  const platform = process.platform;
-  switch (platform) {
-    case 'win32':
-      return 'windows';
-    case 'darwin':
-      return 'macos';
-    case 'linux':
-      return 'linux';
-    default:
-      throw new Error(`Unsupported platform: ${platform}`);
-  }
-}
 
 /**
  * Determines the appropriate archive file extension for the current platform
@@ -257,7 +251,8 @@ function getPlatform(): string {
  * @returns 'zip' for Windows, 'tar.gz' for Unix-like systems
  */
 function getArchiveExtension(): string {
-  return process.platform === 'win32' ? 'zip' : 'tar.gz';
+  const platform = process.platform;
+  return platform === 'win32' ? ARCHIVE_EXTENSIONS.win32 : ARCHIVE_EXTENSIONS.unix;
 }
 
 /**
