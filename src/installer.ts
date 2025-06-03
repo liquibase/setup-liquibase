@@ -135,11 +135,11 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
  * @param version - Exact version number to download
  * @returns Download URL for the specified version using Scarf proxy
  */
-function getDownloadUrl(version: string): string {
-  const extension = getArchiveExtension();
+export function getDownloadUrl(version: string, extension?: string): string {
+  const ext = extension || getArchiveExtension();
   const url = DOWNLOAD_URLS.OSS_TEMPLATE
-    .replace('{version}', version)
-    .replace('{extension}', extension);
+    .replace(/{version}/g, version)
+    .replace('{extension}', ext);
   core.info(`Download URL: ${url}`);
   return url;
 }
@@ -149,7 +149,7 @@ function getDownloadUrl(version: string): string {
  * 
  * @returns 'zip' for Windows, 'tar.gz' for Unix-like systems
  */
-function getArchiveExtension(): string {
+export function getArchiveExtension(): string {
   const platform = process.platform;
   return platform === 'win32' ? ARCHIVE_EXTENSIONS.win32 : ARCHIVE_EXTENSIONS.unix;
 }

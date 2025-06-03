@@ -45,3 +45,8 @@ export const ARCHIVE_EXTENSIONS = {
   'win32': 'zip',
   'unix': 'tar.gz'
 } as const;
+
+export const TEST_VERSIONS = {
+  OSS: '4.32.0',
+  // Add more as needed
+};
