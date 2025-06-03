@@ -139,17 +139,21 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
 function getDownloadUrl(version: string, edition: string): string {
   const extension = getArchiveExtension();
   
-  if (edition === 'oss') {
-    // OSS releases use Scarf proxy URLs from liquibase.com/download-oss
-    return DOWNLOAD_URLS.OSS_TEMPLATE
-      .replace('{version}', version)
-      .replace('{extension}', extension);
-  } else {
-    // Pro releases use Scarf proxy URLs from liquibase.com/download-pro
-    return DOWNLOAD_URLS.PRO_TEMPLATE
-      .replace('{version}', version)
-      .replace('{extension}', extension);
-  }
+  // Use the OSS endpoint for both OSS and Pro editions until Pro endpoint is fully supported
+  return DOWNLOAD_URLS.OSS_TEMPLATE
+    .replace('{version}', version)
+    .replace('{extension}', extension);
+  
+  // Comment out Pro-specific logic until Pro endpoint is fully supported
+  // if (edition === 'oss') {
+  //   return DOWNLOAD_URLS.OSS_TEMPLATE
+  //     .replace('{version}', version)
+  //     .replace('{extension}', extension);
+  // } else {
+  //   return DOWNLOAD_URLS.PRO_TEMPLATE
+  //     .replace('{version}', version)
+  //     .replace('{extension}', extension);
+  // }
 }
 
 /**
