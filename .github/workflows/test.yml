@@ -78,11 +78,12 @@ jobs:
     - name: Build Action for Testing
       run: npm run build
     
-    # Test the actual setup-liquibase action with latest version (auto-detects OSS edition)
+    # Test the actual setup-liquibase action with latest version (OSS edition)
     - name: Test Liquibase Setup Action
       uses: ./
       with:
         version: 'latest'
+        edition: 'oss'
         cache: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
