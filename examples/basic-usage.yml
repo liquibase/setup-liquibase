@@ -10,6 +10,7 @@ jobs:
       - uses: jnewton03/setup-liquibase@v1
         with:
           version: 'latest'
+          edition: 'oss'
           cache: true
       
       - name: Run Liquibase Update
