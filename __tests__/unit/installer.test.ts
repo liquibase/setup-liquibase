@@ -2,38 +2,74 @@ import { getDownloadUrl, setupLiquibase } from '../../src/installer';
 import { MIN_SUPPORTED_VERSION } from '../../src/config';
 
 describe('getDownloadUrl', () => {
-  it('should construct correct OSS URL for specific version', () => {
+  it('should construct correct OSS URL for specific version on Linux x64', () => {
+    const originalPlatform = process.platform;
+    const originalArch = process.arch;
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+    Object.defineProperty(process, 'arch', { value: 'x64' });
+    
     const version = '4.32.0';
     const url = getDownloadUrl(version, 'oss');
-    expect(url).toBe(`https://download.liquibase.org/download/${version}/liquibase-${version}.tar.gz`);
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/download/v${version}/liquibase-linux-x64-installer-${version}.deb`);
+    
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
+    Object.defineProperty(process, 'arch', { value: originalArch });
   });
 
   it('should construct correct Pro URL when edition is pro', () => {
+    const originalPlatform = process.platform;
+    const originalArch = process.arch;
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+    Object.defineProperty(process, 'arch', { value: 'x64' });
+    
     const version = '4.32.0';
     const url = getDownloadUrl(version, 'pro');
-    expect(url).toBe(`https://download.liquibase.org/download-pro/${version}/liquibase-pro-${version}.tar.gz`);
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/pro/${version}/liquibase-pro-linux-x64-installer-${version}.deb`);
+    
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
+    Object.defineProperty(process, 'arch', { value: originalArch });
   });
 
-  it('should use zip extension for Windows', () => {
+  it('should use exe extension for Windows', () => {
     const originalPlatform = process.platform;
+    const originalArch = process.arch;
     Object.defineProperty(process, 'platform', { value: 'win32' });
+    Object.defineProperty(process, 'arch', { value: 'x64' });
     
     const version = '4.32.0';
     const url = getDownloadUrl(version, 'oss');
-    expect(url).toBe(`https://download.liquibase.org/download/${version}/liquibase-${version}.zip`);
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/download/v${version}/liquibase-windows-x64-installer-${version}.exe`);
     
     Object.defineProperty(process, 'platform', { value: originalPlatform });
+    Object.defineProperty(process, 'arch', { value: originalArch });
   });
 
-  it('should use tar.gz extension for Unix-like systems', () => {
+  it('should use dmg extension for macOS', () => {
     const originalPlatform = process.platform;
-    Object.defineProperty(process, 'platform', { value: 'linux' });
+    const originalArch = process.arch;
+    Object.defineProperty(process, 'platform', { value: 'darwin' });
+    Object.defineProperty(process, 'arch', { value: 'x64' });
     
     const version = '4.32.0';
     const url = getDownloadUrl(version, 'oss');
-    expect(url).toBe(`https://download.liquibase.org/download/${version}/liquibase-${version}.tar.gz`);
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/download/v${version}/liquibase-macos-x64-installer-${version}.dmg`);
     
     Object.defineProperty(process, 'platform', { value: originalPlatform });
+    Object.defineProperty(process, 'arch', { value: originalArch });
+  });
+
+  it('should handle arm64 architecture', () => {
+    const originalPlatform = process.platform;
+    const originalArch = process.arch;
+    Object.defineProperty(process, 'platform', { value: 'darwin' });
+    Object.defineProperty(process, 'arch', { value: 'arm64' });
+    
+    const version = '4.32.0';
+    const url = getDownloadUrl(version, 'oss');
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/download/v${version}/liquibase-macos-arm64-installer-${version}.dmg`);
+    
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
+    Object.defineProperty(process, 'arch', { value: originalArch });
   });
 });
 

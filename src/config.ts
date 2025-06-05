@@ -26,15 +26,17 @@ export const API_ENDPOINTS = {
 export const DOWNLOAD_URLS = {
   /** 
    * OSS download URL template from liquibase.com/download-oss
-   * Template variables: {version}, {extension}
+   * Template variables: {version}, {platform}, {arch}
+   * Example: https://package.liquibase.com/downloads/cli/liquibase/releases/download/v4.32.0/liquibase-windows-x64-installer-4.32.0.exe
    */
-  OSS_TEMPLATE: 'https://download.liquibase.org/download/{version}/liquibase-{version}.{extension}',
+  OSS_TEMPLATE: 'https://package.liquibase.com/downloads/cli/liquibase/releases/download/v{version}/liquibase-{platform}-{arch}-installer-{version}.{extension}',
   
   /** 
    * Pro download URL template from liquibase.com/download-pro
-   * Template variables: {version}, {extension}
+   * Template variables: {version}, {platform}, {arch}
+   * Example: https://package.liquibase.com/downloads/cli/liquibase/releases/pro/4.32.0/liquibase-pro-windows-x64-installer-4.32.0.exe
    */
-  PRO_TEMPLATE: 'https://download.liquibase.org/download-pro/{version}/liquibase-pro-{version}.{extension}'
+  PRO_TEMPLATE: 'https://package.liquibase.com/downloads/cli/liquibase/releases/pro/{version}/liquibase-pro-{platform}-{arch}-installer-{version}.{extension}'
 } as const;
 
 

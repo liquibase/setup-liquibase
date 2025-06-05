@@ -138,12 +138,69 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
  * @returns Download URL for the specified version from official Liquibase endpoints
  */
 export function getDownloadUrl(version: string, edition: 'oss' | 'pro'): string {
-  const ext = process.platform === 'win32' ? 'zip' : 'tar.gz';
+  const platform = getPlatformString();
+  const arch = getArchitectureString();
+  const ext = getFileExtension();
   const template = edition === 'pro' ? DOWNLOAD_URLS.PRO_TEMPLATE : DOWNLOAD_URLS.OSS_TEMPLATE;
   
   return template
     .replace(/\{version\}/g, version)
+    .replace(/\{platform\}/g, platform)
+    .replace(/\{arch\}/g, arch)
     .replace(/\{extension\}/g, ext);
+}
+
+/**
+ * Maps Node.js platform identifiers to Liquibase download platform names
+ * 
+ * @returns Platform string for download URL
+ */
+function getPlatformString(): string {
+  switch (process.platform) {
+    case 'win32':
+      return 'windows';
+    case 'darwin':
+      return 'macos';
+    case 'linux':
+      return 'linux';
+    default:
+      throw new Error(`Unsupported platform: ${process.platform}`);
+  }
+}
+
+/**
+ * Maps Node.js architecture identifiers to Liquibase download architecture names
+ * 
+ * @returns Architecture string for download URL
+ */
+function getArchitectureString(): string {
+  switch (process.arch) {
+    case 'x64':
+      return 'x64';
+    case 'arm64':
+      return 'arm64';
+    default:
+      // Default to x64 for compatibility
+      return 'x64';
+  }
+}
+
+/**
+ * Determines the appropriate file extension for the current platform
+ * 
+ * @returns File extension for the installer
+ */
+function getFileExtension(): string {
+  switch (process.platform) {
+    case 'win32':
+      return 'exe';
+    case 'darwin':
+      return 'dmg';
+    case 'linux':
+      return 'deb';
+    default:
+      throw new Error(`Unsupported platform: ${process.platform}`);
+  }
 }
 
 /**
@@ -157,20 +214,61 @@ export function getArchiveExtension(): string {
 }
 
 /**
- * Extracts a downloaded Liquibase archive to a temporary directory
+ * Extracts or installs a downloaded Liquibase installer to a temporary directory
  * 
- * @param downloadPath - Path to the downloaded archive file
- * @returns Promise resolving to the path of the extracted directory
+ * @param downloadPath - Path to the downloaded installer file
+ * @returns Promise resolving to the path of the extracted/installed directory
  */
 async function extractLiquibase(downloadPath: string): Promise<string> {
   const platform = process.platform;
+  const tempDir = path.join(process.env.RUNNER_TEMP || '/tmp', `liquibase-${Date.now()}`);
+  await fs.promises.mkdir(tempDir, { recursive: true });
   
-  if (platform === 'win32') {
-    // Extract ZIP archives (Windows)
-    return await tc.extractZip(downloadPath);
-  } else {
-    // Extract tar.gz archives (Linux, macOS) with xz compression
-    return await tc.extractTar(downloadPath, undefined, 'xz');
+  switch (platform) {
+    case 'win32':
+      // Windows .exe installer - extract silently to temp directory
+      await exec.exec(downloadPath, ['/S', `/D=${tempDir}`]);
+      return tempDir;
+      
+    case 'darwin':
+      // macOS .dmg - mount, copy contents, unmount
+      const mountPoint = path.join(tempDir, 'mount');
+      await fs.promises.mkdir(mountPoint, { recursive: true });
+      
+      // Mount the DMG
+      await exec.exec('hdiutil', ['attach', downloadPath, '-mountpoint', mountPoint, '-nobrowse', '-noautoopen']);
+      
+      // Copy contents to temp directory
+      const appPath = path.join(mountPoint, 'Liquibase.app');
+      const destPath = path.join(tempDir, 'liquibase');
+      await exec.exec('cp', ['-R', path.join(appPath, 'Contents', 'Resources', 'liquibase'), destPath]);
+      
+      // Unmount the DMG
+      await exec.exec('hdiutil', ['detach', mountPoint]);
+      
+      return destPath;
+      
+    case 'linux':
+      // Linux .deb - extract with dpkg-deb
+      await exec.exec('dpkg-deb', ['-x', downloadPath, tempDir]);
+      
+      // Find the liquibase directory (usually in opt or usr/local)
+      const liquibaseDirs = [
+        path.join(tempDir, 'opt', 'liquibase'),
+        path.join(tempDir, 'usr', 'local', 'liquibase'),
+        path.join(tempDir, 'usr', 'share', 'liquibase')
+      ];
+      
+      for (const dir of liquibaseDirs) {
+        if (fs.existsSync(dir)) {
+          return dir;
+        }
+      }
+      
+      throw new Error('Could not find Liquibase installation in extracted .deb package');
+      
+    default:
+      throw new Error(`Unsupported platform: ${platform}`);
   }
 }
 
