@@ -16,7 +16,7 @@ steps:
 - uses: actions/checkout@v4
 - uses: liquibase/setup-liquibase@v1
   with:
-    version: 'latest'
+    version: '4.32.0'
     edition: 'oss'
 - run: liquibase --version
 ```
@@ -38,7 +38,7 @@ steps:
 - uses: actions/checkout@v4
 - uses: liquibase/setup-liquibase@v1
   with:
-    version: 'latest'
+    version: '4.32.0'
     edition: 'oss'
 - run: liquibase --version
 ```
@@ -62,7 +62,7 @@ steps:
 - uses: actions/checkout@v4
 - uses: liquibase/setup-liquibase@v1
   with:
-    version: 'latest'
+    version: '4.32.0'
     edition: 'pro'
   env:
     LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
@@ -85,7 +85,7 @@ steps:
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
-| `version` | Version of Liquibase to install. Supports specific versions (e.g., "4.25.0"), version ranges (e.g., "^4.20"), or "latest" | No | `latest` |
+| `version` | Specific version of Liquibase to install (e.g., "4.32.0"). Must be 4.32.0 or higher. | Yes | |
 | `edition` | Edition to install: "oss" (Open Source) or "pro" (Professional) | Yes | |
 | `license-key` | License key for Liquibase Pro. Required when edition is "pro". Can be provided via this input or LIQUIBASE_LICENSE_KEY environment variable. Store this securely in GitHub Secrets. | No | |
 | `cache` | Enable caching of downloaded Liquibase installations to improve workflow performance on subsequent runs | No | `false` |
@@ -95,17 +95,16 @@ steps:
 
 | Output | Description |
 |--------|-------------|
-| `liquibase-version` | The actual version of Liquibase that was installed (useful when using "latest" or version ranges) |
+| `liquibase-version` | The actual version of Liquibase that was installed |
 | `liquibase-path` | The file system path where Liquibase was installed and added to PATH |
 
 ## Version Support
 
-This action supports:
-- Specific versions: `4.25.0`, `4.24.1`, etc.
-- Version ranges: `^4.20`, `~4.25.0`, etc.
-- Latest version: `latest`
+This action supports Liquibase versions 4.32.0 and higher:
+- Specific versions: `4.32.0`, `4.33.0`, etc.
+- Must be a valid semantic version
 
-When using version ranges or `latest`, you can set `check-latest: true` to ensure you get the most recent version that satisfies your requirements.
+The minimum supported version is `4.32.0` to ensure compatibility with the official Liquibase download endpoints used by this action.
 
 ## Platform Support
 
@@ -145,14 +144,14 @@ The license key can be provided in two ways:
 # Using license-key input
 - uses: liquibase/setup-liquibase@v1
   with:
-    version: 'latest'
+    version: '4.32.0'
     edition: 'pro'
     license-key: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
 
 # Using environment variable (recommended)
 - uses: liquibase/setup-liquibase@v1
   with:
-    version: 'latest'
+    version: '4.32.0'
     edition: 'pro'
   env:
     LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
@@ -174,7 +173,7 @@ jobs:
     
     - uses: liquibase/setup-liquibase@v1
       with:
-        version: 'latest'
+        version: '4.32.0'
         edition: 'oss'
         cache: true
     
@@ -232,7 +231,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        liquibase-version: ['4.23.0', '4.24.0', '4.25.0', 'latest']
+        liquibase-version: ['4.32.0', '4.33.0', '4.34.0']
     
     steps:
     - uses: actions/checkout@v4
@@ -273,7 +272,7 @@ If you're migrating from the official Liquibase GitHub Actions, here's how to co
 ```yaml
 - uses: liquibase/setup-liquibase@v1
   with:
-    version: 'latest'
+    version: '4.32.0'
     edition: 'oss'
 - run: liquibase update \
     --changelog-file=changelog.xml \

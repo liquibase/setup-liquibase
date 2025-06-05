@@ -15,14 +15,14 @@ import * as tc from '@actions/tool-cache';
 import * as exec from '@actions/exec';
 import * as path from 'path';
 import * as fs from 'fs';
-import { ARCHIVE_EXTENSIONS } from './config';
-import { VersionResolver } from './version-resolver';
+import { ARCHIVE_EXTENSIONS, DOWNLOAD_URLS, MIN_SUPPORTED_VERSION } from './config';
+import * as semver from 'semver';
 
 /**
  * Configuration options for setting up Liquibase
  */
 export interface LiquibaseSetupOptions {
-  /** Version to install (specific version, range, or 'latest') */
+  /** Specific version to install (must be 4.32.0 or higher) */
   version: string;
   /** Edition to install: 'oss' for Open Source, 'pro' for Professional */
   edition: 'oss' | 'pro';
@@ -62,14 +62,22 @@ export interface LiquibaseSetupResult {
 export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<LiquibaseSetupResult> {
   const { version, edition, licenseKey, cache, checkLatest } = options;
   
+  // Validate version requirement
+  if (!semver.valid(version)) {
+    throw new Error(`Invalid version format: ${version}. Must be a valid semantic version (e.g., "4.32.0")`);
+  }
+  
+  if (semver.lt(version, MIN_SUPPORTED_VERSION)) {
+    throw new Error(`Version ${version} is not supported. Minimum supported version is ${MIN_SUPPORTED_VERSION}`);
+  }
+  
   // Validate Pro edition requirements
   if (edition === 'pro' && !licenseKey) {
     throw new Error('License key is required for Liquibase Pro edition');
   }
   
-  // Resolve the exact version to install using the version resolver
-  const versionResolver = VersionResolver.getInstance();
-  const resolvedVersion = await versionResolver.resolveVersion(version, edition, checkLatest);
+  // Use the provided version directly (no resolution needed since we require specific versions)
+  const resolvedVersion = version;
   
   // Create a unique tool name for caching that includes the edition
   const toolName = `liquibase-${edition}`;
@@ -123,19 +131,19 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
 
 /**
  * Constructs the download URL for a specific Liquibase version and edition
- * Uses Scarf proxy URLs for download analytics and tracking
+ * Uses official Liquibase download endpoints
  * 
  * @param version - Exact version number to download
- * @param extension - Optional archive extension to use
  * @param edition - Edition to download ('oss' or 'pro')
- * @returns Download URL for the specified version using Scarf proxy
+ * @returns Download URL for the specified version from official Liquibase endpoints
  */
 export function getDownloadUrl(version: string, edition: 'oss' | 'pro'): string {
   const ext = process.platform === 'win32' ? 'zip' : 'tar.gz';
-  if (edition === 'pro') {
-    return `https://package.liquibase.com/downloads/cli/liquibase-pro/releases/download/v${version}/liquibase-pro-${version}.${ext}`;
-  }
-  return `https://package.liquibase.com/downloads/cli/liquibase/releases/download/v${version}/liquibase-${version}.${ext}`;
+  const template = edition === 'pro' ? DOWNLOAD_URLS.PRO_TEMPLATE : DOWNLOAD_URLS.OSS_TEMPLATE;
+  
+  return template
+    .replace(/\{version\}/g, version)
+    .replace(/\{extension\}/g, ext);
 }
 
 /**

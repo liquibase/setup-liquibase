@@ -27,13 +27,13 @@ describe('setupLiquibase Integration', () => {
       (tc.find as jest.Mock).mockReturnValue('/path/to/cached/liquibase');
       
       const result = await setupLiquibase({
-        version: '4.25.0',
+        version: '4.32.0',
         edition: 'oss',
         cache: true,
         checkLatest: false
       });
       
-      expect(tc.find).toHaveBeenCalledWith('liquibase-oss', '4.25.0');
+      expect(tc.find).toHaveBeenCalledWith('liquibase-oss', '4.32.0');
       expect(tc.downloadTool).not.toHaveBeenCalled();
       expect(result.path).toBe('/path/to/cached/liquibase');
     });
@@ -45,13 +45,13 @@ describe('setupLiquibase Integration', () => {
       (tc.cacheDir as jest.Mock).mockResolvedValue('/path/to/cached/dir');
       
       const result = await setupLiquibase({
-        version: '4.25.0',
+        version: '4.32.0',
         edition: 'oss',
         cache: true,
         checkLatest: false
       });
       
-      expect(tc.find).toHaveBeenCalledWith('liquibase-oss', '4.25.0');
+      expect(tc.find).toHaveBeenCalledWith('liquibase-oss', '4.32.0');
       expect(tc.downloadTool).toHaveBeenCalled();
       expect(tc.extractTar).toHaveBeenCalled();
       expect(tc.cacheDir).toHaveBeenCalled();
@@ -65,7 +65,7 @@ describe('setupLiquibase Integration', () => {
       (tc.cacheDir as jest.Mock).mockResolvedValue('/path/to/cached/dir');
       
       const result = await setupLiquibase({
-        version: '4.25.0',
+        version: '4.32.0',
         edition: 'oss',
         cache: true,
         checkLatest: true
@@ -80,7 +80,7 @@ describe('setupLiquibase Integration', () => {
   describe('Pro Edition Support', () => {
     it('should require license key for Pro edition', async () => {
       await expect(setupLiquibase({
-        version: 'latest',
+        version: '4.32.0',
         edition: 'pro',
         cache: false,
         checkLatest: false
@@ -96,7 +96,7 @@ describe('setupLiquibase Integration', () => {
       jest.spyOn(fs.promises, 'writeFile').mockResolvedValue(undefined);
       
       await setupLiquibase({
-        version: 'latest',
+        version: '4.32.0',
         edition: 'pro',
         licenseKey: 'test-license-key',
         cache: false,
@@ -120,7 +120,7 @@ describe('setupLiquibase Integration', () => {
       (tc.cacheDir as jest.Mock).mockResolvedValue('/path/to/cached/dir');
       
       await setupLiquibase({
-        version: 'latest',
+        version: '4.32.0',
         edition: 'oss',
         cache: false,
         checkLatest: false
@@ -141,7 +141,7 @@ describe('setupLiquibase Integration', () => {
       (tc.cacheDir as jest.Mock).mockResolvedValue('/path/to/cached/dir');
       
       await setupLiquibase({
-        version: 'latest',
+        version: '4.32.0',
         edition: 'oss',
         cache: false,
         checkLatest: false
@@ -159,7 +159,7 @@ describe('setupLiquibase Integration', () => {
       (tc.downloadTool as jest.Mock).mockRejectedValue(new Error('Download failed'));
       
       await expect(setupLiquibase({
-        version: 'latest',
+        version: '4.32.0',
         edition: 'oss',
         cache: false,
         checkLatest: false
@@ -171,7 +171,7 @@ describe('setupLiquibase Integration', () => {
       (tc.extractTar as jest.Mock).mockRejectedValue(new Error('Extraction failed'));
       
       await expect(setupLiquibase({
-        version: 'latest',
+        version: '4.32.0',
         edition: 'oss',
         cache: false,
         checkLatest: false
@@ -185,7 +185,7 @@ describe('setupLiquibase Integration', () => {
       (exec.exec as jest.Mock).mockRejectedValue(new Error('Failed to validate Liquibase installation'));
       
       await expect(setupLiquibase({
-        version: 'latest',
+        version: '4.32.0',
         edition: 'oss',
         cache: false,
         checkLatest: false

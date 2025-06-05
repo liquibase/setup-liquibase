@@ -18,11 +18,16 @@ import { setupLiquibase } from './installer';
 async function run(): Promise<void> {
   try {
     // Extract input parameters from the GitHub Action context
-    const version = core.getInput('version') || 'latest';
+    const version = core.getInput('version');
     const editionInput = core.getInput('edition');
     const licenseKeyInput = core.getInput('license-key');
     const cache = core.getBooleanInput('cache');
     const checkLatest = core.getBooleanInput('check-latest');
+
+    // Validate required version input
+    if (!version) {
+      throw new Error('Version input is required. Must be a specific version (e.g., "4.32.0")');
+    }
 
     // Validate required edition input
     if (!editionInput) {

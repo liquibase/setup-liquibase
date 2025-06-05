@@ -13,9 +13,8 @@ branding:
 # Input parameters that users can configure when using this action
 inputs:
   version:
-    description: 'Version of Liquibase to install. Supports specific versions (e.g., "4.25.0"), version ranges (e.g., "^4.20"), or "latest"'
-    required: false
-    default: 'latest'
+    description: 'Specific version of Liquibase to install (e.g., "4.32.0"). Must be 4.32.0 or higher.'
+    required: true
   
   edition:
     description: 'Edition to install: "oss" (Open Source) or "pro" (Professional with additional features)'
