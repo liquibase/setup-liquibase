@@ -29,8 +29,7 @@ describe('setupLiquibase Integration', () => {
       const result = await setupLiquibase({
         version: '4.32.0',
         edition: 'oss',
-        cache: true,
-        checkLatest: false
+        cache: true
       });
       
       expect(tc.find).toHaveBeenCalledWith('liquibase-oss', '4.32.0');
@@ -47,8 +46,7 @@ describe('setupLiquibase Integration', () => {
       const result = await setupLiquibase({
         version: '4.32.0',
         edition: 'oss',
-        cache: true,
-        checkLatest: false
+        cache: true
       });
       
       expect(tc.find).toHaveBeenCalledWith('liquibase-oss', '4.32.0');
@@ -58,22 +56,20 @@ describe('setupLiquibase Integration', () => {
       expect(result.path).toBe('/path/to/cached/dir');
     });
 
-    it('should bypass cache when check-latest is true', async () => {
-      (tc.find as jest.Mock).mockReturnValue('/path/to/cached/liquibase');
+    it('should not download when cache is disabled', async () => {
+      (tc.find as jest.Mock).mockReturnValue('');
       (tc.downloadTool as jest.Mock).mockResolvedValue('/path/to/downloaded/file');
-      (tc.extractTar as jest.Mock).mockResolvedValue('/path/to/cached/dir');
-      (tc.cacheDir as jest.Mock).mockResolvedValue('/path/to/cached/dir');
+      (tc.extractTar as jest.Mock).mockResolvedValue('/path/to/extract/dir');
       
       const result = await setupLiquibase({
         version: '4.32.0',
         edition: 'oss',
-        cache: true,
-        checkLatest: true
+        cache: false
       });
       
-      // expect(tc.find).not.toHaveBeenCalled();
       expect(tc.downloadTool).toHaveBeenCalled();
-      expect(result.path).toBe('/path/to/cached/dir');
+      expect(tc.cacheDir).not.toHaveBeenCalled();
+      expect(result.path).toBe('/path/to/extract/dir');
     });
   });
 
@@ -82,8 +78,7 @@ describe('setupLiquibase Integration', () => {
       await expect(setupLiquibase({
         version: '4.32.0',
         edition: 'pro',
-        cache: false,
-        checkLatest: false
+        cache: false
       })).rejects.toThrow('License key is required for Liquibase Pro edition');
     });
 
@@ -99,8 +94,7 @@ describe('setupLiquibase Integration', () => {
         version: '4.32.0',
         edition: 'pro',
         licenseKey: 'test-license-key',
-        cache: false,
-        checkLatest: false
+        cache: false
       });
       
       expect(fs.promises.writeFile).toHaveBeenCalledWith(
@@ -122,8 +116,7 @@ describe('setupLiquibase Integration', () => {
       await setupLiquibase({
         version: '4.32.0',
         edition: 'oss',
-        cache: false,
-        checkLatest: false
+        cache: false
       });
       
       expect(tc.extractZip).toHaveBeenCalled();
@@ -143,8 +136,7 @@ describe('setupLiquibase Integration', () => {
       await setupLiquibase({
         version: '4.32.0',
         edition: 'oss',
-        cache: false,
-        checkLatest: false
+        cache: false
       });
       
       expect(tc.extractTar).toHaveBeenCalled();
@@ -161,8 +153,7 @@ describe('setupLiquibase Integration', () => {
       await expect(setupLiquibase({
         version: '4.32.0',
         edition: 'oss',
-        cache: false,
-        checkLatest: false
+        cache: false
       })).rejects.toThrow('Download failed');
     });
 
@@ -173,8 +164,7 @@ describe('setupLiquibase Integration', () => {
       await expect(setupLiquibase({
         version: '4.32.0',
         edition: 'oss',
-        cache: false,
-        checkLatest: false
+        cache: false
       })).rejects.toThrow('Extraction failed');
     });
 
@@ -187,8 +177,7 @@ describe('setupLiquibase Integration', () => {
       await expect(setupLiquibase({
         version: '4.32.0',
         edition: 'oss',
-        cache: false,
-        checkLatest: false
+        cache: false
       })).rejects.toThrow('Failed to validate Liquibase installation');
     });
   });

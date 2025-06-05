@@ -20,9 +20,7 @@ async function run(): Promise<void> {
     // Extract input parameters from the GitHub Action context
     const version = core.getInput('version');
     const editionInput = core.getInput('edition');
-    const licenseKeyInput = core.getInput('license-key');
     const cache = core.getBooleanInput('cache');
-    const checkLatest = core.getBooleanInput('check-latest');
 
     // Validate required version input
     if (!version) {
@@ -38,8 +36,8 @@ async function run(): Promise<void> {
     }
     const edition = editionInput as 'oss' | 'pro';
 
-    // Get license key from input or environment variable
-    const licenseKey = licenseKeyInput || process.env.LIQUIBASE_LICENSE_KEY;
+    // Get license key from environment variable only
+    const licenseKey = process.env.LIQUIBASE_LICENSE_KEY;
 
     // Log the setup configuration for debugging purposes
     core.info(`Setting up Liquibase version ${version} (${edition} edition)`);
@@ -49,8 +47,7 @@ async function run(): Promise<void> {
       version,
       edition,
       licenseKey,
-      cache,
-      checkLatest
+      cache
     });
 
     // Set output values that other workflow steps can reference
