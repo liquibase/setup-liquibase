@@ -20,21 +20,24 @@ async function run(): Promise<void> {
     // Extract input parameters from the GitHub Action context
     const version = core.getInput('version') || 'latest';
     const editionInput = core.getInput('edition');
-    const licenseKey = core.getInput('license-key');
+    const licenseKeyInput = core.getInput('license-key');
     const cache = core.getBooleanInput('cache');
     const checkLatest = core.getBooleanInput('check-latest');
 
-    // Validate edition input if provided, otherwise allow auto-detection
-    let edition: 'oss' | 'pro' | undefined;
-    if (editionInput) {
-      if (editionInput !== 'oss' && editionInput !== 'pro') {
-        throw new Error('Edition must be either "oss" or "pro"');
-      }
-      edition = editionInput as 'oss' | 'pro';
+    // Validate required edition input
+    if (!editionInput) {
+      throw new Error('Edition input is required. Must be either "oss" or "pro"');
     }
+    if (editionInput !== 'oss' && editionInput !== 'pro') {
+      throw new Error('Edition must be either "oss" or "pro"');
+    }
+    const edition = editionInput as 'oss' | 'pro';
+
+    // Get license key from input or environment variable
+    const licenseKey = licenseKeyInput || process.env.LIQUIBASE_LICENSE_KEY;
 
     // Log the setup configuration for debugging purposes
-    core.info(`Setting up Liquibase version ${version}${edition ? ` (${edition} edition)` : ' (auto-detecting edition)'}`);
+    core.info(`Setting up Liquibase version ${version} (${edition} edition)`);
 
     // Execute the main installation logic
     const result = await setupLiquibase({

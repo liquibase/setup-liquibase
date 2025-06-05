@@ -24,9 +24,9 @@ import { VersionResolver } from './version-resolver';
 export interface LiquibaseSetupOptions {
   /** Version to install (specific version, range, or 'latest') */
   version: string;
-  /** Edition to install: 'oss' for Open Source, 'pro' for Professional (auto-detected if not specified) */
-  edition?: 'oss' | 'pro';
-  /** License key for Pro edition (presence auto-detects Pro edition if edition not specified) */
+  /** Edition to install: 'oss' for Open Source, 'pro' for Professional */
+  edition: 'oss' | 'pro';
+  /** License key for Pro edition. Can be provided via input or LIQUIBASE_LICENSE_KEY environment variable */
   licenseKey?: string;
   /** Whether to cache the downloaded installation */
   cache: boolean;
@@ -60,14 +60,7 @@ export interface LiquibaseSetupResult {
  * @returns Promise resolving to the setup result with version and path
  */
 export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<LiquibaseSetupResult> {
-  const { version, licenseKey, cache, checkLatest } = options;
-  let { edition } = options;
-  
-  // Auto-detect edition based on license key presence if not explicitly specified
-  if (!edition) {
-    edition = licenseKey ? 'pro' : 'oss';
-    core.info(`Auto-detected Liquibase edition: ${edition} (based on ${licenseKey ? 'license key presence' : 'no license key'})`);
-  }
+  const { version, edition, licenseKey, cache, checkLatest } = options;
   
   // Validate Pro edition requirements
   if (edition === 'pro' && !licenseKey) {
@@ -137,7 +130,7 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
  * @param edition - Edition to download ('oss' or 'pro')
  * @returns Download URL for the specified version using Scarf proxy
  */
-export function getDownloadUrl(version: string, edition: 'oss' | 'pro' = 'oss'): string {
+export function getDownloadUrl(version: string, edition: 'oss' | 'pro'): string {
   const ext = process.platform === 'win32' ? 'zip' : 'tar.gz';
   if (edition === 'pro') {
     return `https://package.liquibase.com/downloads/cli/liquibase-pro/releases/download/v${version}/liquibase-pro-${version}.${ext}`;

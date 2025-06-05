@@ -17,6 +17,7 @@ steps:
 - uses: liquibase/setup-liquibase@v1
   with:
     version: 'latest'
+    edition: 'oss'
 - run: liquibase --version
 ```
 
@@ -26,7 +27,7 @@ steps:
 - **Edition Support**: Works with both OSS and Pro editions
 - **Caching**: Optional caching for faster workflow runs
 - **Cross-Platform**: Supports Linux, Windows, and macOS runners
-- **Auto-Detection**: Automatically detects Pro edition when license key is provided
+- **Environment Variables**: Supports LIQUIBASE_LICENSE_KEY environment variable for Pro edition
 
 ## Usage Examples
 
@@ -38,6 +39,7 @@ steps:
 - uses: liquibase/setup-liquibase@v1
   with:
     version: 'latest'
+    edition: 'oss'
 - run: liquibase --version
 ```
 
@@ -62,7 +64,8 @@ steps:
   with:
     version: 'latest'
     edition: 'pro'
-    license-key: ${{ secrets.LICENSE_KEY }}
+  env:
+    LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
 - run: liquibase update --changelog-file=changelog.xml --url=jdbc:h2:mem:test
 ```
 
@@ -83,8 +86,8 @@ steps:
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `version` | Version of Liquibase to install. Supports specific versions (e.g., "4.25.0"), version ranges (e.g., "^4.20"), or "latest" | No | `latest` |
-| `edition` | Edition to install: "oss" (Open Source) or "pro" (Professional) | No | `oss` |
-| `license-key` | License key for Liquibase Pro. Required when edition is "pro". Store this securely in GitHub Secrets. | No | |
+| `edition` | Edition to install: "oss" (Open Source) or "pro" (Professional) | Yes | |
+| `license-key` | License key for Liquibase Pro. Required when edition is "pro". Can be provided via this input or LIQUIBASE_LICENSE_KEY environment variable. Store this securely in GitHub Secrets. | No | |
 | `cache` | Enable caching of downloaded Liquibase installations to improve workflow performance on subsequent runs | No | `false` |
 | `check-latest` | Check for the latest available version that satisfies the version specification, even if a cached version exists. Note: This will bypass the cache if enabled. | No | `false` |
 
@@ -132,25 +135,27 @@ If you want to ensure you're always using the latest version that satisfies your
 
 ## Pro Edition Support
 
-The action supports both Liquibase OSS and Pro editions. The Pro edition requires a valid license key.
+The action supports both Liquibase OSS and Pro editions. The Pro edition requires a valid license key and must be explicitly specified using `edition: 'pro'`.
 
-The edition can be specified in two ways:
-1. Explicitly using the `edition: 'pro'` input
-2. Implicitly by providing a `license-key` (the action will auto-detect Pro edition)
+The license key can be provided in two ways:
+1. Using the `license-key` input parameter
+2. Using the `LIQUIBASE_LICENSE_KEY` environment variable (recommended)
 
 ```yaml
-# Explicit Pro edition
+# Using license-key input
 - uses: liquibase/setup-liquibase@v1
   with:
     version: 'latest'
     edition: 'pro'
-    license-key: ${{ secrets.LICENSE_KEY }}
+    license-key: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
 
-# Auto-detected Pro edition
+# Using environment variable (recommended)
 - uses: liquibase/setup-liquibase@v1
   with:
     version: 'latest'
-    license-key: ${{ secrets.LICENSE_KEY }}
+    edition: 'pro'
+  env:
+    LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
 ```
 
 ## Complete Workflow Examples
@@ -191,6 +196,8 @@ on: [push]
 jobs:
   database-operations:
     runs-on: ubuntu-latest
+    env:
+      LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
     steps:
     - uses: actions/checkout@v4
     
@@ -198,7 +205,6 @@ jobs:
       with:
         version: '4.25.0'
         edition: 'pro'
-        license-key: ${{ secrets.LICENSE_KEY }}
         cache: true
     
     - name: Validate Changelog
@@ -234,6 +240,7 @@ jobs:
     - uses: liquibase/setup-liquibase@v1
       with:
         version: ${{ matrix.liquibase-version }}
+        edition: 'oss'
         cache: true
     
     - name: Test Migration
@@ -245,7 +252,7 @@ jobs:
 ## Security Considerations
 
 - Store sensitive information like license keys in GitHub Secrets
-- Use `license-key: ${{ secrets.LICENSE_KEY }}`
+- Use `license-key: ${{ secrets.LIQUIBASE_LICENSE_KEY }}` or `LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}`
 - Never commit license keys directly to your repository
 
 ## Migration from Legacy Actions
@@ -267,6 +274,7 @@ If you're migrating from the official Liquibase GitHub Actions, here's how to co
 - uses: liquibase/setup-liquibase@v1
   with:
     version: 'latest'
+    edition: 'oss'
 - run: liquibase update \
     --changelog-file=changelog.xml \
     --url=jdbc:h2:mem:test \

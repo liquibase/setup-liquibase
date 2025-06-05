@@ -18,11 +18,11 @@ inputs:
     default: 'latest'
   
   edition:
-    description: 'Edition to install: "oss" (Open Source) or "pro" (Professional with additional features). If not specified, auto-detects based on license key presence.'
-    required: false
+    description: 'Edition to install: "oss" (Open Source) or "pro" (Professional with additional features)'
+    required: true
   
   license-key:
-    description: 'License key for Liquibase Pro edition. Required when edition is "pro". Store this securely in GitHub Secrets.'
+    description: 'License key for Liquibase Pro edition. Required when edition is "pro". Can be provided via this input or LIQUIBASE_LICENSE_KEY environment variable. Store this securely in GitHub Secrets.'
     required: false
   
   cache:
