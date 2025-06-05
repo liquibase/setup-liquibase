@@ -78,11 +78,11 @@ jobs:
     - name: Build Action for Testing
       run: npm run build
     
-    # Test the actual setup-liquibase action with latest version (OSS edition)
+    # Test the actual setup-liquibase action with specific version (OSS edition)
     - name: Test Liquibase Setup Action
       uses: ./
       with:
-        version: 'latest'
+        version: '4.32.0'
         edition: 'oss'
         cache: true
       env:

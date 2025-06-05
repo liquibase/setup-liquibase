@@ -21,20 +21,24 @@ export const API_ENDPOINTS = {
 
 /**
  * Download URL templates for Liquibase distributions
- * Using Scarf proxy URLs for download analytics and tracking
+ * Using official Liquibase download endpoints
  */
 export const DOWNLOAD_URLS = {
   /** 
-   * OSS download URL template using Scarf proxy from liquibase.com/download-oss
-   * Template variables: {version}, {extension}
+   * OSS download URL templates from liquibase.com/download-oss
+   * Note: OSS uses 'v' prefix in version path
    */
-  OSS_TEMPLATE: 'https://package.liquibase.com/downloads/cli/liquibase/releases/download/v{version}/liquibase-{version}.{extension}',
+  OSS_WINDOWS_INSTALLER: 'https://package.liquibase.com/downloads/cli/liquibase/releases/download/v{version}/liquibase-windows-x64-installer-{version}.exe',
+  OSS_WINDOWS_ZIP: 'https://package.liquibase.com/downloads/cli/liquibase/releases/download/v{version}/liquibase-{version}.zip',
+  OSS_UNIX: 'https://package.liquibase.com/downloads/cli/liquibase/releases/download/v{version}/liquibase-{version}.tar.gz',
   
   /** 
-   * Pro download URL template using Scarf proxy from liquibase.com/download-pro
-   * Template variables: {version}, {extension}
+   * Pro download URL templates from liquibase.com/download-pro
+   * Note: Pro does NOT use 'v' prefix in version path
    */
-  PRO_TEMPLATE: 'https://package.liquibase.com/downloads/cli/liquibase/releases/pro/{version}/liquibase-pro-{version}.{extension}'
+  PRO_WINDOWS_INSTALLER: 'https://package.liquibase.com/downloads/cli/liquibase/releases/pro/{version}/liquibase-pro-windows-x64-installer-{version}.exe',
+  PRO_WINDOWS_ZIP: 'https://package.liquibase.com/downloads/cli/liquibase/releases/pro/{version}/liquibase-pro-{version}.zip',
+  PRO_UNIX: 'https://package.liquibase.com/downloads/cli/liquibase/releases/pro/{version}/liquibase-pro-{version}.tar.gz'
 } as const;
 
 
@@ -45,6 +49,11 @@ export const ARCHIVE_EXTENSIONS = {
   'win32': 'zip',
   'unix': 'tar.gz'
 } as const;
+
+/**
+ * Minimum supported version for this action
+ */
+export const MIN_SUPPORTED_VERSION = '4.32.0';
 
 export const TEST_VERSIONS = {
   OSS: '4.32.0',

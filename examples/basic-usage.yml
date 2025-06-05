@@ -9,7 +9,7 @@ jobs:
       
       - uses: jnewton03/setup-liquibase@v1
         with:
-          version: 'latest'
+          version: '4.32.0'
           edition: 'oss'
           cache: true
       
