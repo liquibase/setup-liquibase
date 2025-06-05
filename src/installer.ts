@@ -15,7 +15,7 @@ import * as tc from '@actions/tool-cache';
 import * as exec from '@actions/exec';
 import * as path from 'path';
 import * as fs from 'fs';
-import { ARCHIVE_EXTENSIONS, DOWNLOAD_URLS, MIN_SUPPORTED_VERSION } from './config';
+import { DOWNLOAD_URLS, MIN_SUPPORTED_VERSION } from './config';
 import * as semver from 'semver';
 
 /**
