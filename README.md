@@ -23,7 +23,7 @@ steps:
 
 ## Features
 
-- **Version Control**: Install specific versions or use version ranges
+- **Version Control**: Install specific versions (4.32.0+)
 - **Edition Support**: Works with both OSS and Pro editions
 - **Caching**: Optional caching for faster workflow runs
 - **Cross-Platform**: Supports Linux, Windows, and macOS runners
@@ -50,7 +50,7 @@ steps:
 - uses: actions/checkout@v4
 - uses: liquibase/setup-liquibase@v1
   with:
-    version: '4.25.0'
+    version: '4.32.0'
     edition: 'oss'
 - run: liquibase update --changelog-file=changelog.xml --url=jdbc:h2:mem:test
 ```
@@ -69,14 +69,14 @@ steps:
 - run: liquibase update --changelog-file=changelog.xml --url=jdbc:h2:mem:test
 ```
 
-### Version Range with Caching
+### With Caching
 
 ```yaml
 steps:
 - uses: actions/checkout@v4
 - uses: liquibase/setup-liquibase@v1
   with:
-    version: '^4.20'
+    version: '4.32.0'
     cache: true
 - run: liquibase --version
 ```
@@ -87,9 +87,7 @@ steps:
 |-------|-------------|----------|---------|
 | `version` | Specific version of Liquibase to install (e.g., "4.32.0"). Must be 4.32.0 or higher. | Yes | |
 | `edition` | Edition to install: "oss" (Open Source) or "pro" (Professional) | Yes | |
-| `license-key` | License key for Liquibase Pro. Required when edition is "pro". Can be provided via this input or LIQUIBASE_LICENSE_KEY environment variable. Store this securely in GitHub Secrets. | No | |
 | `cache` | Enable caching of downloaded Liquibase installations to improve workflow performance on subsequent runs | No | `false` |
-| `check-latest` | Check for the latest available version that satisfies the version specification, even if a cached version exists. Note: This will bypass the cache if enabled. | No | `false` |
 
 ## Outputs
 
@@ -122,33 +120,20 @@ The cache is unique per:
 - Version
 - Edition (OSS vs Pro)
 
-If you want to ensure you're always using the latest version that satisfies your requirements, you can set `check-latest: true`. This will bypass the cache and download the latest version.
-
 ```yaml
 - uses: liquibase/setup-liquibase@v1
   with:
-    version: '4.25.0'
+    version: '4.32.0'
     cache: true
-    # check-latest: true  # Only use this if you want to bypass the cache
 ```
 
 ## Pro Edition Support
 
 The action supports both Liquibase OSS and Pro editions. The Pro edition requires a valid license key and must be explicitly specified using `edition: 'pro'`.
 
-The license key can be provided in two ways:
-1. Using the `license-key` input parameter
-2. Using the `LIQUIBASE_LICENSE_KEY` environment variable (recommended)
+The license key must be provided using the `LIQUIBASE_LICENSE_KEY` environment variable:
 
 ```yaml
-# Using license-key input
-- uses: liquibase/setup-liquibase@v1
-  with:
-    version: '4.32.0'
-    edition: 'pro'
-    license-key: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
-
-# Using environment variable (recommended)
 - uses: liquibase/setup-liquibase@v1
   with:
     version: '4.32.0'
@@ -202,7 +187,7 @@ jobs:
     
     - uses: liquibase/setup-liquibase@v1
       with:
-        version: '4.25.0'
+        version: '4.32.0'
         edition: 'pro'
         cache: true
     
@@ -251,7 +236,7 @@ jobs:
 ## Security Considerations
 
 - Store sensitive information like license keys in GitHub Secrets
-- Use `license-key: ${{ secrets.LIQUIBASE_LICENSE_KEY }}` or `LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}`
+- Use `LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}` in the environment
 - Never commit license keys directly to your repository
 
 ## Migration from Legacy Actions
