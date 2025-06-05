@@ -2,74 +2,59 @@ import { getDownloadUrl, setupLiquibase } from '../../src/installer';
 import { MIN_SUPPORTED_VERSION } from '../../src/config';
 
 describe('getDownloadUrl', () => {
-  it('should construct correct OSS URL for specific version on Linux x64', () => {
+  it('should construct correct OSS URL for Unix-like systems', () => {
     const originalPlatform = process.platform;
-    const originalArch = process.arch;
     Object.defineProperty(process, 'platform', { value: 'linux' });
-    Object.defineProperty(process, 'arch', { value: 'x64' });
     
     const version = '4.32.0';
     const url = getDownloadUrl(version, 'oss');
-    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/download/v${version}/liquibase-linux-x64-installer-${version}.deb`);
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/download/v${version}/liquibase-${version}.tar.gz`);
     
     Object.defineProperty(process, 'platform', { value: originalPlatform });
-    Object.defineProperty(process, 'arch', { value: originalArch });
   });
 
-  it('should construct correct Pro URL when edition is pro', () => {
+  it('should construct correct Pro URL for Unix-like systems', () => {
     const originalPlatform = process.platform;
-    const originalArch = process.arch;
     Object.defineProperty(process, 'platform', { value: 'linux' });
-    Object.defineProperty(process, 'arch', { value: 'x64' });
     
     const version = '4.32.0';
     const url = getDownloadUrl(version, 'pro');
-    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/pro/${version}/liquibase-pro-linux-x64-installer-${version}.deb`);
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/pro/${version}/liquibase-pro-${version}.tar.gz`);
     
     Object.defineProperty(process, 'platform', { value: originalPlatform });
-    Object.defineProperty(process, 'arch', { value: originalArch });
   });
 
-  it('should use exe extension for Windows', () => {
+  it('should use zip extension for Windows OSS', () => {
     const originalPlatform = process.platform;
-    const originalArch = process.arch;
     Object.defineProperty(process, 'platform', { value: 'win32' });
-    Object.defineProperty(process, 'arch', { value: 'x64' });
     
     const version = '4.32.0';
     const url = getDownloadUrl(version, 'oss');
-    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/download/v${version}/liquibase-windows-x64-installer-${version}.exe`);
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/download/v${version}/liquibase-${version}.zip`);
     
     Object.defineProperty(process, 'platform', { value: originalPlatform });
-    Object.defineProperty(process, 'arch', { value: originalArch });
   });
 
-  it('should use dmg extension for macOS', () => {
+  it('should use zip extension for Windows Pro', () => {
     const originalPlatform = process.platform;
-    const originalArch = process.arch;
-    Object.defineProperty(process, 'platform', { value: 'darwin' });
-    Object.defineProperty(process, 'arch', { value: 'x64' });
+    Object.defineProperty(process, 'platform', { value: 'win32' });
     
     const version = '4.32.0';
-    const url = getDownloadUrl(version, 'oss');
-    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/download/v${version}/liquibase-macos-x64-installer-${version}.dmg`);
+    const url = getDownloadUrl(version, 'pro');
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/pro/${version}/liquibase-pro-${version}.zip`);
     
     Object.defineProperty(process, 'platform', { value: originalPlatform });
-    Object.defineProperty(process, 'arch', { value: originalArch });
   });
 
-  it('should handle arm64 architecture', () => {
+  it('should use tar.gz for macOS', () => {
     const originalPlatform = process.platform;
-    const originalArch = process.arch;
     Object.defineProperty(process, 'platform', { value: 'darwin' });
-    Object.defineProperty(process, 'arch', { value: 'arm64' });
     
     const version = '4.32.0';
     const url = getDownloadUrl(version, 'oss');
-    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/download/v${version}/liquibase-macos-arm64-installer-${version}.dmg`);
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/download/v${version}/liquibase-${version}.tar.gz`);
     
     Object.defineProperty(process, 'platform', { value: originalPlatform });
-    Object.defineProperty(process, 'arch', { value: originalArch });
   });
 });
 

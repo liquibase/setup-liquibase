@@ -25,18 +25,20 @@ export const API_ENDPOINTS = {
  */
 export const DOWNLOAD_URLS = {
   /** 
-   * OSS download URL template from liquibase.com/download-oss
-   * Template variables: {version}, {platform}, {arch}
-   * Example: https://package.liquibase.com/downloads/cli/liquibase/releases/download/v4.32.0/liquibase-windows-x64-installer-4.32.0.exe
+   * OSS download URL templates from liquibase.com/download-oss
+   * Note: OSS uses 'v' prefix in version path
    */
-  OSS_TEMPLATE: 'https://package.liquibase.com/downloads/cli/liquibase/releases/download/v{version}/liquibase-{platform}-{arch}-installer-{version}.{extension}',
+  OSS_WINDOWS_INSTALLER: 'https://package.liquibase.com/downloads/cli/liquibase/releases/download/v{version}/liquibase-windows-x64-installer-{version}.exe',
+  OSS_WINDOWS_ZIP: 'https://package.liquibase.com/downloads/cli/liquibase/releases/download/v{version}/liquibase-{version}.zip',
+  OSS_UNIX: 'https://package.liquibase.com/downloads/cli/liquibase/releases/download/v{version}/liquibase-{version}.tar.gz',
   
   /** 
-   * Pro download URL template from liquibase.com/download-pro
-   * Template variables: {version}, {platform}, {arch}
-   * Example: https://package.liquibase.com/downloads/cli/liquibase/releases/pro/4.32.0/liquibase-pro-windows-x64-installer-4.32.0.exe
+   * Pro download URL templates from liquibase.com/download-pro
+   * Note: Pro does NOT use 'v' prefix in version path
    */
-  PRO_TEMPLATE: 'https://package.liquibase.com/downloads/cli/liquibase/releases/pro/{version}/liquibase-pro-{platform}-{arch}-installer-{version}.{extension}'
+  PRO_WINDOWS_INSTALLER: 'https://package.liquibase.com/downloads/cli/liquibase/releases/pro/{version}/liquibase-pro-windows-x64-installer-{version}.exe',
+  PRO_WINDOWS_ZIP: 'https://package.liquibase.com/downloads/cli/liquibase/releases/pro/{version}/liquibase-pro-{version}.zip',
+  PRO_UNIX: 'https://package.liquibase.com/downloads/cli/liquibase/releases/pro/{version}/liquibase-pro-{version}.tar.gz'
 } as const;
 
 
