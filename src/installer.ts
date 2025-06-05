@@ -26,12 +26,10 @@ export interface LiquibaseSetupOptions {
   version: string;
   /** Edition to install: 'oss' for Open Source, 'pro' for Professional */
   edition: 'oss' | 'pro';
-  /** License key for Pro edition. Can be provided via input or LIQUIBASE_LICENSE_KEY environment variable */
+  /** License key for Pro edition from LIQUIBASE_LICENSE_KEY environment variable */
   licenseKey?: string;
   /** Whether to cache the downloaded installation */
   cache: boolean;
-  /** Whether to check for the latest version even if cached version exists */
-  checkLatest: boolean;
 }
 
 /**
@@ -60,7 +58,7 @@ export interface LiquibaseSetupResult {
  * @returns Promise resolving to the setup result with version and path
  */
 export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<LiquibaseSetupResult> {
-  const { version, edition, licenseKey, cache, checkLatest } = options;
+  const { version, edition, licenseKey, cache } = options;
   
   // Validate version requirement
   if (!semver.valid(version)) {
@@ -85,8 +83,8 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
   // Check if we already have this version cached
   let toolPath = tc.find(toolName, resolvedVersion);
   
-  // Download and install if not cached, caching is disabled, or checkLatest is true
-  if (!toolPath || !cache || checkLatest) {
+  // Download and install if not cached or caching is disabled
+  if (!toolPath || !cache) {
     core.info(`Installing Liquibase ${edition} version ${resolvedVersion}`);
     
     // Get the appropriate download URL for this version and edition

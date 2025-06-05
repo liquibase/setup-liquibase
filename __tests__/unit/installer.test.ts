@@ -63,8 +63,7 @@ describe('setupLiquibase', () => {
     const options = {
       version: '4.25.0', // Below 4.32.0
       edition: 'oss' as const,
-      cache: false,
-      checkLatest: false
+      cache: false
     };
 
     await expect(setupLiquibase(options)).rejects.toThrow(
@@ -76,8 +75,7 @@ describe('setupLiquibase', () => {
     const options = {
       version: 'invalid-version',
       edition: 'oss' as const,
-      cache: false,
-      checkLatest: false
+      cache: false
     };
 
     await expect(setupLiquibase(options)).rejects.toThrow(
@@ -89,8 +87,7 @@ describe('setupLiquibase', () => {
     const options = {
       version: '4.32.0',
       edition: 'pro' as const,
-      cache: false,
-      checkLatest: false
+      cache: false
     };
 
     await expect(setupLiquibase(options)).rejects.toThrow(
