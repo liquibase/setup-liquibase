@@ -24,9 +24,11 @@ describe('Real-world Integration Scenarios', () => {
         cache: true
       };
 
-      // Should pass validation (will fail at actual download in test env)
-      await expect(setupLiquibase(options)).rejects.toThrow();
-      // But the error should NOT be a validation error
+      // Should pass validation and complete successfully in CI environment
+      const result = await setupLiquibase(options);
+      expect(result).toBeDefined();
+      expect(result.version).toBe('4.32.0');
+      expect(result.path).toBeTruthy();
     }, 30000);
 
     it('should work with different caching strategies', async () => {
@@ -42,8 +44,11 @@ describe('Real-world Integration Scenarios', () => {
           cache: scenario.cache
         };
 
-        // Validation should pass regardless of cache setting
-        await expect(setupLiquibase(options)).rejects.toThrow();
+        // Should complete successfully regardless of cache setting
+        const result = await setupLiquibase(options);
+        expect(result).toBeDefined();
+        expect(result.version).toBe('4.32.0');
+        expect(result.path).toBeTruthy();
       }
     }, 30000);
   });

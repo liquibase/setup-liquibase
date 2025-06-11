@@ -138,10 +138,11 @@ describe('setupLiquibase validation', () => {
       cache: false
     };
 
-    // This test will fail at download stage since we're not mocking the actual download
-    // But it should pass validation and get to the download attempt
-    await expect(setupLiquibase(options)).rejects.toThrow();
-    // The error should NOT be a validation error
+    // Should pass validation and complete successfully in CI environment
+    const result = await setupLiquibase(options);
+    expect(result).toBeDefined();
+    expect(result.version).toBe('4.32.0');
+    expect(result.path).toBeTruthy();
   }, 30000);
 
   it('should accept valid Pro configuration with license', async () => {
@@ -152,10 +153,11 @@ describe('setupLiquibase validation', () => {
       cache: false
     };
 
-    // This test will fail at download stage since we're not mocking the actual download
-    // But it should pass validation and get to the download attempt
-    await expect(setupLiquibase(options)).rejects.toThrow();
-    // The error should NOT be a validation error about missing license
+    // Should pass validation and complete successfully in CI environment
+    const result = await setupLiquibase(options);
+    expect(result).toBeDefined();
+    expect(result.version).toBe('4.32.0');
+    expect(result.path).toBeTruthy();
   }, 30000);
 
   it('should handle edge cases in version validation', async () => {
@@ -179,8 +181,11 @@ describe('setupLiquibase validation', () => {
       if (testCase.shouldFail) {
         await expect(setupLiquibase(options)).rejects.toThrow();
       } else {
-        // These will fail at download, but should pass validation
-        await expect(setupLiquibase(options)).rejects.toThrow();
+        // These should complete successfully for valid versions
+        const result = await setupLiquibase(options);
+        expect(result).toBeDefined();
+        expect(result.version).toBe(testCase.version);
+        expect(result.path).toBeTruthy();
       }
     }
   }, 30000);
@@ -204,8 +209,11 @@ describe('setupLiquibase validation', () => {
         // Empty and whitespace keys should fail during Pro license configuration
         await expect(setupLiquibase(options)).rejects.toThrow();
       } else if (!testCase.shouldFail) {
-        // Valid license keys will fail at download, but should pass validation
-        await expect(setupLiquibase(options)).rejects.toThrow();
+        // Valid license keys should complete successfully
+        const result = await setupLiquibase(options);
+        expect(result).toBeDefined();
+        expect(result.version).toBe('4.32.0');
+        expect(result.path).toBeTruthy();
       }
     }
   }, 30000);
