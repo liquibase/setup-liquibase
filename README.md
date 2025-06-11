@@ -55,7 +55,7 @@ steps:
 - run: liquibase update --changelog-file=changelog.xml --url=jdbc:h2:mem:test
 ```
 
-### Liquibase Pro with License Key
+### Liquibase Pro with License Key (Environment Variable)
 
 ```yaml
 steps:
@@ -66,6 +66,19 @@ steps:
     edition: 'pro'
   env:
     LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
+- run: liquibase update --changelog-file=changelog.xml --url=jdbc:h2:mem:test
+```
+
+### Liquibase Pro with License Key (Input Parameter)
+
+```yaml
+steps:
+- uses: actions/checkout@v4
+- uses: liquibase/setup-liquibase@v1
+  with:
+    version: '4.32.0'
+    edition: 'pro'
+    liquibase-pro-license-key: ${{ secrets.LIQUIBASE_PRO_LICENSE_KEY }}
 - run: liquibase update --changelog-file=changelog.xml --url=jdbc:h2:mem:test
 ```
 
@@ -87,6 +100,7 @@ steps:
 |-------|-------------|----------|---------|
 | `version` | Specific version of Liquibase to install (e.g., "4.32.0"). Must be 4.32.0 or higher. | Yes | |
 | `edition` | Edition to install: "oss" (Open Source) or "pro" (Professional) | Yes | |
+| `liquibase-pro-license-key` | License key for Liquibase Pro edition (can also be provided via LIQUIBASE_LICENSE_KEY environment variable) | No | |
 | `cache` | Enable caching of downloaded Liquibase installations to improve workflow performance on subsequent runs | No | `false` |
 
 ## Outputs

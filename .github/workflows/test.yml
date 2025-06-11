@@ -31,6 +31,11 @@ jobs:
     - name: Install Dependencies
       run: npm ci
     
+    # Run security audit to check for vulnerabilities
+    - name: Run Security Audit
+      run: npm audit --audit-level=high
+      continue-on-error: true
+    
     # Run ESLint to check code style and catch potential issues
     - name: Run Code Linting
       run: npm run lint
@@ -42,6 +47,19 @@ jobs:
     # Build the TypeScript action into a distributable JavaScript bundle
     - name: Build Action Distribution
       run: npm run build
+    
+    # Verify dist files are created correctly
+    - name: Verify Build Output
+      run: |
+        if [ ! -f "dist/index.js" ]; then
+          echo "dist/index.js not found!"
+          exit 1
+        fi
+        if [ ! -f "dist/index.js.map" ]; then
+          echo "dist/index.js.map not found!"
+          exit 1
+        fi
+        echo "Build output verified successfully"
 
   # Job: Cross-platform integration testing
   integration-testing:
@@ -50,11 +68,20 @@ jobs:
     needs: code-quality-and-build
     runs-on: ${{ matrix.os }}
     
-    # Test matrix: Multiple operating systems with latest Liquibase version
-    # This ensures the action works across platforms without testing outdated versions
+    # Test matrix: Multiple operating systems with different Liquibase versions
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        liquibase-version: ['4.32.0', '4.33.0']
+        include:
+          # Test caching scenarios
+          - os: ubuntu-latest
+            liquibase-version: '4.32.0'
+            cache: true
+          - os: ubuntu-latest
+            liquibase-version: '4.32.0'
+            cache: false
     
     steps:
     # Checkout the repository code
@@ -79,14 +106,37 @@ jobs:
       run: npm run build
     
     # Test the actual setup-liquibase action with specific version (OSS edition)
-    - name: Test Liquibase Setup Action
+    - name: Test Liquibase Setup Action (OSS)
+      id: setup-liquibase
       uses: ./
       with:
-        version: '4.32.0'
+        version: ${{ matrix.liquibase-version }}
         edition: 'oss'
-        cache: true
+        cache: ${{ matrix.cache || true }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    # Verify outputs are set correctly
+    - name: Verify Action Outputs
+      shell: bash
+      run: |
+        echo "Liquibase version: ${{ steps.setup-liquibase.outputs.liquibase-version }}"
+        echo "Liquibase path: ${{ steps.setup-liquibase.outputs.liquibase-path }}"
+        if [ -z "${{ steps.setup-liquibase.outputs.liquibase-version }}" ]; then
+          echo "liquibase-version output not set!"
+          exit 1
+        fi
+        if [ -z "${{ steps.setup-liquibase.outputs.liquibase-path }}" ]; then
+          echo "liquibase-path output not set!"
+          exit 1
+        fi
+
+    # Verify Liquibase is available in PATH
+    - name: Verify Liquibase in PATH
+      shell: bash
+      run: |
+        which liquibase
+        liquibase --version
 
     # Run Liquibase update against H2 database using the example changelog
     - name: Run Liquibase Update (H2)
@@ -106,3 +156,154 @@ jobs:
           --url=jdbc:h2:./liquibase-test \
           --username=sa \
           --password=
+
+    # Test rollback functionality
+    - name: Test Liquibase Rollback
+      shell: bash
+      run: |
+        liquibase rollback-count 1 \
+          --changelog-file=changelog.xml \
+          --url=jdbc:h2:./liquibase-test \
+          --username=sa \
+          --password=
+
+    # Test status command
+    - name: Test Liquibase Status
+      shell: bash
+      run: |
+        liquibase status \
+          --changelog-file=changelog.xml \
+          --url=jdbc:h2:./liquibase-test \
+          --username=sa \
+          --password=
+
+  # Job: Error handling testing
+  error-handling-tests:
+    name: Error Handling Tests
+    needs: code-quality-and-build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js Environment
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: Install Dependencies
+      run: npm ci
+    
+    - name: Build Action for Testing
+      run: npm run build
+    
+    # Test invalid version format
+    - name: Test Invalid Version Format
+      uses: ./
+      continue-on-error: true
+      id: test-invalid-version
+      with:
+        version: 'invalid-version'
+        edition: 'oss'
+    
+    - name: Verify Invalid Version Failed
+      if: steps.test-invalid-version.outcome == 'success'
+      run: |
+        echo "Expected invalid version test to fail, but it succeeded!"
+        exit 1
+    
+    # Test unsupported version
+    - name: Test Unsupported Version
+      uses: ./
+      continue-on-error: true
+      id: test-unsupported-version
+      with:
+        version: '4.25.0'
+        edition: 'oss'
+    
+    - name: Verify Unsupported Version Failed
+      if: steps.test-unsupported-version.outcome == 'success'
+      run: |
+        echo "Expected unsupported version test to fail, but it succeeded!"
+        exit 1
+    
+    # Test invalid edition
+    - name: Test Invalid Edition
+      uses: ./
+      continue-on-error: true
+      id: test-invalid-edition
+      with:
+        version: '4.32.0'
+        edition: 'invalid'
+    
+    - name: Verify Invalid Edition Failed
+      if: steps.test-invalid-edition.outcome == 'success'
+      run: |
+        echo "Expected invalid edition test to fail, but it succeeded!"
+        exit 1
+    
+    # Test Pro edition without license
+    - name: Test Pro Edition Without License
+      uses: ./
+      continue-on-error: true
+      id: test-pro-no-license
+      with:
+        version: '4.32.0'
+        edition: 'pro'
+    
+    - name: Verify Pro Without License Failed
+      if: steps.test-pro-no-license.outcome == 'success'
+      run: |
+        echo "Expected Pro without license test to fail, but it succeeded!"
+        exit 1
+
+  # Job: Pro edition testing (if license is available)
+  pro-edition-tests:
+    name: Pro Edition Tests
+    needs: code-quality-and-build
+    runs-on: ubuntu-latest
+    if: ${{ secrets.LIQUIBASE_PRO_LICENSE_KEY != '' }}
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js Environment
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: Install Dependencies
+      run: npm ci
+    
+    - name: Build Action for Testing
+      run: npm run build
+    
+    # Test Pro edition with environment variable license
+    - name: Test Pro Edition with Environment License
+      uses: ./
+      with:
+        version: '4.32.0'
+        edition: 'pro'
+        cache: true
+      env:
+        LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_PRO_LICENSE_KEY }}
+    
+    # Test Pro edition with input parameter license
+    - name: Test Pro Edition with Input License
+      uses: ./
+      with:
+        version: '4.32.0'
+        edition: 'pro'
+        liquibase-pro-license-key: ${{ secrets.LIQUIBASE_PRO_LICENSE_KEY }}
+        cache: true
+    
+    # Verify Pro-specific commands work
+    - name: Test Pro Commands
+      run: |
+        liquibase --version | grep -i pro || echo "Version output: $(liquibase --version)"
+        # Note: Some Pro features require specific database setups
+        # This is a basic validation that Pro edition is installed

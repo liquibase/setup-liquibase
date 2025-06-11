@@ -20,6 +20,10 @@ inputs:
     description: 'Edition to install: "oss" (Open Source) or "pro" (Professional with additional features)'
     required: true
   
+  liquibase-pro-license-key:
+    description: 'License key for Liquibase Pro edition (can also be provided via LIQUIBASE_LICENSE_KEY environment variable)'
+    required: false
+  
   cache:
     description: 'Enable caching of downloaded Liquibase installations to improve workflow performance on subsequent runs'
     required: false

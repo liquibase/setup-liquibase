@@ -60,7 +60,11 @@ export interface LiquibaseSetupResult {
 export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<LiquibaseSetupResult> {
   const { version, edition, licenseKey, cache } = options;
   
-  // Validate version requirement
+  // Enhanced version validation
+  if (!version) {
+    throw new Error('Version is required');
+  }
+  
   if (!semver.valid(version)) {
     throw new Error(`Invalid version format: ${version}. Must be a valid semantic version (e.g., "4.32.0")`);
   }
@@ -69,9 +73,14 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
     throw new Error(`Version ${version} is not supported. Minimum supported version is ${MIN_SUPPORTED_VERSION}`);
   }
   
-  // Validate Pro edition requirements
+  // Enhanced edition validation
+  if (!['oss', 'pro'].includes(edition)) {
+    throw new Error(`Invalid edition: ${edition}. Must be either 'oss' or 'pro'`);
+  }
+  
+  // Enhanced Pro license validation
   if (edition === 'pro' && !licenseKey) {
-    throw new Error('License key is required for Liquibase Pro edition');
+    throw new Error('License key is required for Liquibase Pro edition. Provide it via the liquibase-pro-license-key input or LIQUIBASE_LICENSE_KEY environment variable');
   }
   
   // Use the provided version directly (no resolution needed since we require specific versions)
@@ -87,20 +96,34 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
   if (!toolPath || !cache) {
     core.info(`Installing Liquibase ${edition} version ${resolvedVersion}`);
     
-    // Get the appropriate download URL for this version and edition
-    const downloadUrl = getDownloadUrl(resolvedVersion, edition);
-    
-    // Download the Liquibase archive
-    const downloadPath = await tc.downloadTool(downloadUrl);
-    
-    // Extract the archive to a temporary directory
-    const extractedPath = await extractLiquibase(downloadPath);
-    
-    // Cache the installation if caching is enabled
-    if (cache) {
-      toolPath = await tc.cacheDir(extractedPath, toolName, resolvedVersion);
-    } else {
-      toolPath = extractedPath;
+    try {
+      // Get the appropriate download URL for this version and edition
+      const downloadUrl = getDownloadUrl(resolvedVersion, edition);
+      core.info(`Downloading from: ${downloadUrl}`);
+      
+      // Download the Liquibase archive with error handling
+      const downloadPath = await tc.downloadTool(downloadUrl);
+      
+      // Extract the archive to a temporary directory
+      const extractedPath = await extractLiquibase(downloadPath);
+      
+      // Cache the installation if caching is enabled
+      if (cache) {
+        toolPath = await tc.cacheDir(extractedPath, toolName, resolvedVersion);
+      } else {
+        toolPath = extractedPath;
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message.includes('404') || error.message.includes('Not Found')) {
+          throw new Error(`Liquibase ${edition} version ${resolvedVersion} not found. Please check that this version exists and is available for download.`);
+        } else if (error.message.includes('ENOTFOUND') || error.message.includes('network')) {
+          throw new Error(`Network error downloading Liquibase. Please check your internet connection and try again.`);
+        } else if (error.message.includes('EACCES') || error.message.includes('permission')) {
+          throw new Error(`Permission denied while installing Liquibase. Please check that the runner has sufficient permissions.`);
+        }
+      }
+      throw new Error(`Failed to download and install Liquibase: ${error instanceof Error ? error.message : String(error)}`);
     }
   } else {
     core.info(`Found cached Liquibase ${edition} version ${resolvedVersion}`);
@@ -157,12 +180,16 @@ export function getDownloadUrl(version: string, edition: 'oss' | 'pro'): string 
 async function extractLiquibase(downloadPath: string): Promise<string> {
   const platform = process.platform;
   
-  if (platform === 'win32') {
-    // Extract ZIP archives (Windows)
-    return await tc.extractZip(downloadPath);
-  } else {
-    // Extract tar.gz archives (Linux, macOS)
-    return await tc.extractTar(downloadPath, undefined, 'xz');
+  try {
+    if (platform === 'win32') {
+      // Extract ZIP archives (Windows)
+      return await tc.extractZip(downloadPath);
+    } else {
+      // Extract tar.gz archives (Linux, macOS)
+      return await tc.extractTar(downloadPath, undefined, 'xz');
+    }
+  } catch (error) {
+    throw new Error(`Failed to extract Liquibase archive: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
@@ -173,12 +200,21 @@ async function extractLiquibase(downloadPath: string): Promise<string> {
  * @param licenseKey - Pro license key to configure
  */
 async function configureLiquibasePro(toolPath: string, licenseKey: string): Promise<void> {
-  // Create liquibase.properties file in the installation directory
-  const propertiesPath = path.join(toolPath, 'liquibase.properties');
-  const propertiesContent = `liquibase.licenseKey=${licenseKey}\n`;
-  
-  await fs.promises.writeFile(propertiesPath, propertiesContent);
-  core.info('Configured Liquibase Pro license key');
+  try {
+    // Validate license key format (basic validation)
+    if (!licenseKey.trim()) {
+      throw new Error('License key cannot be empty');
+    }
+    
+    // Create liquibase.properties file in the installation directory
+    const propertiesPath = path.join(toolPath, 'liquibase.properties');
+    const propertiesContent = `liquibase.licenseKey=${licenseKey.trim()}\n`;
+    
+    await fs.promises.writeFile(propertiesPath, propertiesContent);
+    core.info('Configured Liquibase Pro license key');
+  } catch (error) {
+    throw new Error(`Failed to configure Liquibase Pro license: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 /**
@@ -192,10 +228,35 @@ async function validateInstallation(liquibasePath: string): Promise<void> {
     // On Windows, Liquibase uses .bat extension; Unix systems use the binary directly
     const executable = process.platform === 'win32' ? `${liquibasePath}.bat` : liquibasePath;
     
+    // Check if the executable exists
+    if (!fs.existsSync(executable)) {
+      throw new Error(`Liquibase executable not found at ${executable}`);
+    }
+    
     // Run 'liquibase --version' to verify the installation works
-    await exec.exec(executable, ['--version'], { silent: true });
+    let output = '';
+    
+    await exec.exec(executable, ['--version'], {
+      silent: true,
+      listeners: {
+        stdout: (data: Buffer) => {
+          output += data.toString();
+        },
+        stderr: (data: Buffer) => {
+          // Log stderr but don't fail if there's only warnings
+          core.debug(`Liquibase stderr: ${data.toString()}`);
+        }
+      }
+    });
+    
+    // Check if version output contains expected content
+    if (!output.toLowerCase().includes('liquibase')) {
+      throw new Error(`Unexpected version output: ${output}`);
+    }
+    
     core.info('Liquibase installation validated successfully');
+    core.debug(`Version output: ${output}`);
   } catch (error) {
-    throw new Error(`Failed to validate Liquibase installation: ${error}`);
+    throw new Error(`Failed to validate Liquibase installation: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
