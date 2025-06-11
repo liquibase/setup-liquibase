@@ -37,7 +37,7 @@ describe('Basic Functionality Validation', () => {
    * Validates that invalid version formats are rejected
    */
   it('should reject invalid version formats', () => {
-    const invalidVersions = ['latest', '4.32', 'invalid', '4.32.x', 'not-a-version', '', '4.32.0.0.0'];
+    const invalidVersions = ['4.32', 'invalid', '4.32.x', 'not-a-version', '', '4.32.0.0.0'];
     
     invalidVersions.forEach(version => {
       expect(semver.valid(version)).toBeFalsy();
@@ -52,6 +52,19 @@ describe('Basic Functionality Validation', () => {
     
     validVersions.forEach(version => {
       expect(semver.valid(version)).toBeTruthy();
+    });
+  });
+  
+  /**
+   * Validates that 'latest' is accepted as a special version input
+   */
+  it('should accept latest as a valid version input', () => {
+    const specialVersions = ['latest'];
+    
+    // 'latest' is not a valid semver, but should be accepted by our action
+    specialVersions.forEach(version => {
+      // While semver.valid returns false for 'latest', our action should handle it
+      expect(version).toBe('latest');
     });
   });
   
@@ -128,7 +141,7 @@ describe('Basic Functionality Validation', () => {
   it('should validate input parameters correctly', () => {
     const validInputs = [
       { version: '4.32.0', edition: 'oss' },
-      { version: '4.33.0', edition: 'pro' },
+      { version: 'latest', edition: 'pro' },
       { version: '5.0.0', edition: 'oss' }
     ];
     

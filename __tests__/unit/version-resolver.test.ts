@@ -46,15 +46,64 @@ describe('VersionResolver', () => {
 
     it('should fetch latest version when "latest" is specified', async () => {
       mockHttpClient.getJson.mockResolvedValueOnce({
-        result: { tag_name: 'v4.25.0' },
+        result: { tag_name: 'v4.32.0' },
         statusCode: 200,
         headers: mockHeaders
       });
 
       const result = await versionResolver.resolveVersion('latest', 'oss', false);
-      expect(result).toBe('4.25.0');
+      expect(result).toBe('4.32.0');
       expect(mockHttpClient.getJson).toHaveBeenCalledWith(
-        expect.stringContaining('/releases/latest'),
+        'https://api.github.com/repos/liquibase/liquibase/releases/latest',
+        {}
+      );
+    });
+
+    it('should handle latest version request with GitHub token', async () => {
+      process.env.GITHUB_TOKEN = 'test-token';
+      
+      mockHttpClient.getJson.mockResolvedValueOnce({
+        result: { tag_name: 'v4.32.0' },
+        statusCode: 200,
+        headers: mockHeaders
+      });
+
+      const result = await versionResolver.resolveVersion('latest', 'oss', false);
+      expect(result).toBe('4.32.0');
+      expect(mockHttpClient.getJson).toHaveBeenCalledWith(
+        'https://api.github.com/repos/liquibase/liquibase/releases/latest',
+        { 'Authorization': 'Bearer test-token' }
+      );
+      
+      delete process.env.GITHUB_TOKEN;
+    });
+
+    it('should use fallback version when GitHub API rate limit is exceeded', async () => {
+      const rateLimitError = new Error('rate limit exceeded');
+      mockHttpClient.getJson.mockRejectedValueOnce(rateLimitError);
+
+      const result = await versionResolver.resolveVersion('latest', 'oss', false);
+      expect(result).toBe('4.32.0'); // FALLBACK_VERSION
+      expect(core.warning).toHaveBeenCalledWith('GitHub API rate limit exceeded. Using fallback version.');
+    });
+
+    it('should cache latest version results', async () => {
+      mockHttpClient.getJson.mockResolvedValueOnce({
+        result: { tag_name: 'v4.32.0' },
+        statusCode: 200,
+        headers: mockHeaders
+      });
+
+      // First call
+      const result1 = await versionResolver.resolveVersion('latest', 'oss', false);
+      expect(result1).toBe('4.32.0');
+
+      // Second call should use cache
+      const result2 = await versionResolver.resolveVersion('latest', 'oss', false);
+      expect(result2).toBe('4.32.0');
+
+      // HTTP client should only be called once due to caching
+      expect(mockHttpClient.getJson).toHaveBeenCalledTimes(1);
         expect.any(Object)
       );
     });

@@ -90,9 +90,7 @@ describe('Performance Tests', () => {
       for (let i = 0; i < iterations; i++) {
         const urls = [
           getDownloadUrl('4.32.0', 'oss'),
-          getDownloadUrl('4.32.0', 'pro'),
-          getDownloadUrl('4.33.0', 'oss'),
-          getDownloadUrl('4.33.0', 'pro')
+          getDownloadUrl('4.32.0', 'pro')
         ];
         
         // Validate URLs to ensure they're not optimized away

@@ -17,12 +17,13 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { DOWNLOAD_URLS, MIN_SUPPORTED_VERSION } from './config';
 import * as semver from 'semver';
+import { VersionResolver } from './version-resolver';
 
 /**
  * Configuration options for setting up Liquibase
  */
 export interface LiquibaseSetupOptions {
-  /** Specific version to install (must be 4.32.0 or higher) */
+  /** Specific version to install (e.g., "4.32.0") or "latest" for the latest version */
   version: string;
   /** Edition to install: 'oss' for Open Source, 'pro' for Professional */
   edition: 'oss' | 'pro';
@@ -65,11 +66,13 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
     throw new Error('Version is required');
   }
   
-  if (!semver.valid(version)) {
-    throw new Error(`Invalid version format: ${version}. Must be a valid semantic version (e.g., "4.32.0")`);
+  // Allow 'latest' or valid semantic versions
+  if (version !== 'latest' && !semver.valid(version)) {
+    throw new Error(`Invalid version format: ${version}. Must be a valid semantic version (e.g., "4.32.0") or "latest"`);
   }
   
-  if (semver.lt(version, MIN_SUPPORTED_VERSION)) {
+  // Only validate minimum version for specific versions (not 'latest')
+  if (version !== 'latest' && semver.lt(version, MIN_SUPPORTED_VERSION)) {
     throw new Error(`Version ${version} is not supported. Minimum supported version is ${MIN_SUPPORTED_VERSION}`);
   }
   
@@ -83,8 +86,14 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
     throw new Error('License key is required for Liquibase Pro edition. Provide it via the liquibase-pro-license-key input or LIQUIBASE_LICENSE_KEY environment variable');
   }
   
-  // Use the provided version directly (no resolution needed since we require specific versions)
-  const resolvedVersion = version;
+  // Resolve the version (handles 'latest' and specific versions)
+  const versionResolver = VersionResolver.getInstance();
+  const resolvedVersion = await versionResolver.resolveVersion(version, edition, false);
+  
+  // Validate the resolved version meets minimum requirements
+  if (semver.lt(resolvedVersion, MIN_SUPPORTED_VERSION)) {
+    throw new Error(`Resolved version ${resolvedVersion} is not supported. Minimum supported version is ${MIN_SUPPORTED_VERSION}`);
+  }
   
   // Create a unique tool name for caching that includes the edition
   const toolName = `liquibase-${edition}`;

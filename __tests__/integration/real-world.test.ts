@@ -51,6 +51,23 @@ describe('Real-world Integration Scenarios', () => {
         expect(result.path).toBeTruthy();
       }
     }, 30000);
+
+    it('should handle latest version in CI/CD workflow', async () => {
+      const options = {
+        version: 'latest',
+        edition: 'oss' as const,
+        cache: true
+      };
+
+      // Should resolve latest version and complete successfully
+      const result = await setupLiquibase(options);
+      expect(result).toBeDefined();
+      expect(result.version).toMatch(/^\d+\.\d+\.\d+$/); // Should be a semantic version
+      expect(result.path).toBeTruthy();
+      
+      // The resolved version should be 4.32.0 or higher
+      expect(result.version >= '4.32.0').toBe(true);
+    }, 30000);
   });
 
   /**

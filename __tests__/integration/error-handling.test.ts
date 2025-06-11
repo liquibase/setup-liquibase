@@ -380,7 +380,7 @@ describe('Error Handling Tests', () => {
       const resourceIntensiveScenarios = [
         { version: '4.32.0', edition: 'oss' as const, cache: true },
         { version: '4.32.0', edition: 'oss' as const, cache: false },
-        { version: '4.33.0', edition: 'oss' as const, cache: true }
+        { version: 'latest', edition: 'oss' as const, cache: true }
       ];
 
       for (const scenario of resourceIntensiveScenarios) {

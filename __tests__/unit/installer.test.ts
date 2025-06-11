@@ -95,7 +95,7 @@ describe('setupLiquibase validation', () => {
     );
   });
 
-  it('should reject invalid version formats', async () => {
+  it('should reject invalid version format', async () => {
     const options = {
       version: 'invalid-version',
       edition: 'oss' as const,
@@ -103,7 +103,7 @@ describe('setupLiquibase validation', () => {
     };
 
     await expect(setupLiquibase(options)).rejects.toThrow(
-      'Invalid version format: invalid-version. Must be a valid semantic version (e.g., "4.32.0")'
+      'Invalid version format: invalid-version. Must be a valid semantic version (e.g., "4.32.0") or "latest"'
     );
   });
 
@@ -157,6 +157,35 @@ describe('setupLiquibase validation', () => {
     const result = await setupLiquibase(options);
     expect(result).toBeDefined();
     expect(result.version).toBe('4.32.0');
+    expect(result.path).toBeTruthy();
+  }, 30000);
+
+  it('should accept latest version for OSS', async () => {
+    const options = {
+      version: 'latest',
+      edition: 'oss' as const,
+      cache: false
+    };
+
+    // Should resolve latest version and complete successfully
+    const result = await setupLiquibase(options);
+    expect(result).toBeDefined();
+    expect(result.version).toMatch(/^\d+\.\d+\.\d+$/); // Should be a semantic version
+    expect(result.path).toBeTruthy();
+  }, 30000);
+
+  it('should accept latest version for Pro with license', async () => {
+    const options = {
+      version: 'latest',
+      edition: 'pro' as const,
+      licenseKey: 'test-license-key',
+      cache: false
+    };
+
+    // Should resolve latest version and complete successfully
+    const result = await setupLiquibase(options);
+    expect(result).toBeDefined();
+    expect(result.version).toMatch(/^\d+\.\d+\.\d+$/); // Should be a semantic version
     expect(result.path).toBeTruthy();
   }, 30000);
 
