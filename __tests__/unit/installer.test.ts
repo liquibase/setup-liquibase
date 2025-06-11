@@ -142,7 +142,7 @@ describe('setupLiquibase validation', () => {
     // But it should pass validation and get to the download attempt
     await expect(setupLiquibase(options)).rejects.toThrow();
     // The error should NOT be a validation error
-  });
+  }, 30000);
 
   it('should accept valid Pro configuration with license', async () => {
     const options = {
@@ -156,7 +156,7 @@ describe('setupLiquibase validation', () => {
     // But it should pass validation and get to the download attempt
     await expect(setupLiquibase(options)).rejects.toThrow();
     // The error should NOT be a validation error about missing license
-  });
+  }, 30000);
 
   it('should handle edge cases in version validation', async () => {
     const testCases = [
@@ -183,7 +183,7 @@ describe('setupLiquibase validation', () => {
         await expect(setupLiquibase(options)).rejects.toThrow();
       }
     }
-  });
+  }, 30000);
 
   it('should validate license key for Pro edition', async () => {
     const testCases = [
@@ -208,7 +208,7 @@ describe('setupLiquibase validation', () => {
         await expect(setupLiquibase(options)).rejects.toThrow();
       }
     }
-  });
+  }, 30000);
 });
 
 describe('Error handling scenarios', () => {

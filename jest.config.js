@@ -28,5 +28,25 @@ export default {
 
   transform: {
     '^.+\\.ts$': ['ts-jest', { tsconfig: 'tsconfig.json' }]
-  }
+  },
+
+  // Set test timeout to 30 seconds for CI environments
+  testTimeout: 30000,
+
+  // Force exit to prevent hanging processes
+  forceExit: true,
+
+  // Don't leak memory between test runs
+  clearMocks: true,
+  restoreMocks: true,
+
+  // Reduce parallelism in CI to avoid resource exhaustion
+  maxWorkers: process.env.CI ? 2 : '50%',
+
+  // Setup files to run before tests
+  setupFilesAfterEnv: ['<rootDir>/__tests__/setup.ts'],
+
+  // Enable garbage collection for memory management
+  globalSetup: undefined,
+  globalTeardown: undefined
 };

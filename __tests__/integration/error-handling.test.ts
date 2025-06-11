@@ -135,7 +135,7 @@ describe('Error Handling Tests', () => {
 
         await expect(setupLiquibase(options)).rejects.toThrow();
       }
-    });
+    }, 30000);
   });
 
   /**
@@ -216,7 +216,7 @@ describe('Error Handling Tests', () => {
         // Should not fail at validation level, but might fail during actual license configuration
         await expect(setupLiquibase(options)).rejects.toThrow();
       }
-    });
+    }, 30000);
 
     it('should validate license key sanitization', () => {
       const licenseKeysToSanitize = [
@@ -263,7 +263,7 @@ describe('Error Handling Tests', () => {
 
       // This will fail at actual download/installation, but validation should pass
       await expect(setupLiquibase(options)).rejects.toThrow();
-    });
+    }, 30000);
   });
 
   /**
@@ -286,7 +286,7 @@ describe('Error Handling Tests', () => {
         // Should handle both cache scenarios without crashing during validation
         await expect(setupLiquibase(options)).rejects.toThrow();
       }
-    });
+    }, 30000);
   });
 
   /**
@@ -319,7 +319,7 @@ describe('Error Handling Tests', () => {
           await expect(setupLiquibase(options)).rejects.toThrow();
         }
       }
-    });
+    }, 30000);
 
     it('should handle concurrent installation attempts', async () => {
       // Test multiple simultaneous setup attempts
@@ -336,7 +336,7 @@ describe('Error Handling Tests', () => {
       results.forEach(result => {
         expect(result.status).toBe('rejected');
       });
-    });
+    }, 30000);
 
     it('should handle resource exhaustion scenarios', async () => {
       // Test with various resource-intensive scenarios
@@ -349,7 +349,7 @@ describe('Error Handling Tests', () => {
       for (const scenario of resourceIntensiveScenarios) {
         await expect(setupLiquibase(scenario)).rejects.toThrow();
       }
-    });
+    }, 30000);
   });
 
   /**

@@ -30,6 +30,8 @@ jobs:
     # Install all npm dependencies using package-lock.json for reproducible builds
     - name: Install Dependencies
       run: npm ci
+      env:
+        NODE_OPTIONS: --max-old-space-size=4096
     
     # Run security audit to check for vulnerabilities
     - name: Run Security Audit
@@ -42,11 +44,13 @@ jobs:
     
     # Execute unit tests to validate core functionality
     - name: Run Unit Tests
-      run: npm test
+      run: npm run test:ci
     
     # Build the TypeScript action into a distributable JavaScript bundle
     - name: Build Action Distribution
       run: npm run build
+      env:
+        NODE_OPTIONS: --max-old-space-size=4096
     
     # Verify dist files are created correctly
     - name: Verify Build Output
@@ -100,10 +104,14 @@ jobs:
     # Install dependencies required for building the action
     - name: Install Dependencies
       run: npm ci
+      env:
+        NODE_OPTIONS: --max-old-space-size=4096
     
     # Build the action since integration tests use the local action
     - name: Build Action for Testing
       run: npm run build
+      env:
+        NODE_OPTIONS: --max-old-space-size=4096
     
     # Test the actual setup-liquibase action with specific version (OSS edition)
     - name: Test Liquibase Setup Action (OSS)
@@ -195,9 +203,13 @@ jobs:
     
     - name: Install Dependencies
       run: npm ci
+      env:
+        NODE_OPTIONS: --max-old-space-size=4096
     
     - name: Build Action for Testing
       run: npm run build
+      env:
+        NODE_OPTIONS: --max-old-space-size=4096
     
     # Test invalid version format
     - name: Test Invalid Version Format
