@@ -8,7 +8,7 @@ export class VersionResolver {
   private http: HttpClient;
   private versionCache: Map<string, string[]> = new Map();
   private latestVersionCache: Map<string, string> = new Map();
-  private readonly FALLBACK_VERSION = '4.25.0';
+  private readonly FALLBACK_VERSION = '4.32.0';
 
   private constructor() {
     this.http = new HttpClient('setup-liquibase');
@@ -107,10 +107,10 @@ export class VersionResolver {
         core.warning('GitHub API rate limit exceeded. Using fallback version.');
         const fallbackVersions = [
           this.FALLBACK_VERSION,
-          '4.24.0',
-          '4.23.0',
-          '4.22.0',
-          '4.21.0',
+          '4.33.0',
+          '4.34.0',
+          '4.35.0',
+          '4.36.0',
         ];
         this.versionCache.set('oss', fallbackVersions);
         return fallbackVersions;

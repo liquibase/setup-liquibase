@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "ncc build src/index.ts -o dist --source-map --license licenses.txt",
-    "test": "jest",
+    "test": "node --max-old-space-size=4096 --expose-gc ./node_modules/.bin/jest",
+    "test:ci": "node --max-old-space-size=4096 --expose-gc ./node_modules/.bin/jest --ci --maxWorkers=2 --forceExit --no-coverage",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write src/**/*.ts",
     "package": "npm run build && npm test"
