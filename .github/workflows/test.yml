@@ -264,7 +264,6 @@ jobs:
     name: Pro Edition Tests
     needs: code-quality-and-build
     runs-on: ubuntu-latest
-    if: ${{ secrets.LIQUIBASE_PRO_LICENSE_KEY != '' }}
     
     steps:
     - name: Checkout Repository
