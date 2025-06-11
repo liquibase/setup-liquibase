@@ -319,8 +319,31 @@ jobs:
     - name: Build Action for Testing
       run: npm run build
     
+    # Check if license key is available and set an output for conditional execution
+    - name: Check License Key Availability
+      id: check-license
+      run: |
+        if [ -n "$LIQUIBASE_LICENSE_KEY" ]; then
+          echo "LIQUIBASE_LICENSE_KEY is set"
+          echo "has_license=true" >> $GITHUB_OUTPUT
+        else
+          echo "LIQUIBASE_LICENSE_KEY is NOT set - skipping Pro tests"
+          echo "has_license=false" >> $GITHUB_OUTPUT
+        fi
+      env:
+        LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
+    
+    # Debug check for environment variable
+    - name: Debug License Key
+      if: steps.check-license.outputs.has_license == 'true'
+      run: |
+        echo "LIQUIBASE_LICENSE_KEY is set (not showing value for security)"
+      env:
+        LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
+    
     # Test Pro edition with environment variable license
     - name: Test Pro Edition with Environment License
+      if: steps.check-license.outputs.has_license == 'true'
       uses: ./
       with:
         version: '4.32.0'
@@ -331,6 +354,7 @@ jobs:
     
     # Test Pro edition with input parameter license
     - name: Test Pro Edition with Input License
+      if: steps.check-license.outputs.has_license == 'true'
       uses: ./
       with:
         version: '4.32.0'
@@ -340,6 +364,7 @@ jobs:
     
     # Verify Pro-specific commands work
     - name: Test Pro Commands
+      if: steps.check-license.outputs.has_license == 'true'
       run: |
         liquibase --version | grep -i pro || echo "Version output: $(liquibase --version)"
         # Note: Some Pro features require specific database setups
