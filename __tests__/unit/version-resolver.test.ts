@@ -43,8 +43,8 @@ describe('VersionResolver', () => {
     };
 
     it('should return exact version when valid semver is provided', async () => {
-      const result = await versionResolver.resolveVersion('4.25.0', 'oss', false);
-      expect(result).toBe('4.25.0');
+      const result = await versionResolver.resolveVersion('4.32.0', 'oss', false);
+      expect(result).toBe('4.32.0');
     });
 
     it('should fetch latest version when "latest" is specified', async () => {
@@ -112,22 +112,22 @@ describe('VersionResolver', () => {
     it('should handle version ranges correctly', async () => {
       mockHttpClient.getJson.mockResolvedValueOnce({
         result: [
-          { tag_name: 'v4.25.0' },
-          { tag_name: 'v4.24.0' },
-          { tag_name: 'v4.23.0' }
+          { tag_name: 'v4.32.1' },
+          { tag_name: 'v4.32.0' },
+          { tag_name: 'v4.31.0' }
         ],
         statusCode: 200,
         headers: mockHeaders
       });
 
-      const result = await versionResolver.resolveVersion('^4.24.0', 'oss', false);
-      expect(result).toBe('4.25.0');
+      const result = await versionResolver.resolveVersion('^4.32.0', 'oss', false);
+      expect(result).toBe('4.32.1');
     });
 
     it('should use cached versions when available', async () => {
       // First call to populate cache
       mockHttpClient.getJson.mockResolvedValueOnce({
-        result: { tag_name: 'v4.25.0' },
+        result: { tag_name: 'v4.32.0' },
         statusCode: 200,
         headers: mockHeaders
       });
@@ -136,7 +136,7 @@ describe('VersionResolver', () => {
       // Second call should use cache
       mockHttpClient.getJson.mockClear();
       const result = await versionResolver.resolveVersion('latest', 'oss', false);
-      expect(result).toBe('4.25.0');
+      expect(result).toBe('4.32.0');
       expect(mockHttpClient.getJson).not.toHaveBeenCalled();
     });
 
@@ -152,13 +152,13 @@ describe('VersionResolver', () => {
 
     it('should handle Pro edition version resolution', async () => {
       mockHttpClient.getJson.mockResolvedValueOnce({
-        result: { tag_name: 'v4.25.0' },
+        result: { tag_name: 'v4.32.0' },
         statusCode: 200,
         headers: mockHeaders
       });
 
       const result = await versionResolver.resolveVersion('latest', 'pro', false);
-      expect(result).toBe('4.25.0');
+      expect(result).toBe('4.32.0');
     });
 
     it('should throw error when no matching version is found', async () => {
