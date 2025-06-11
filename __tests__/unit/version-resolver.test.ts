@@ -35,8 +35,11 @@ describe('VersionResolver', () => {
   });
 
   describe('resolveVersion', () => {
+    // Define mockHeaders to be used in all tests
     const mockHeaders: IncomingHttpHeaders = {
-      'content-type': 'application/json'
+      'content-type': 'application/json',
+      'x-ratelimit-limit': '60',
+      'x-ratelimit-remaining': '59'
     };
 
     it('should return exact version when valid semver is provided', async () => {

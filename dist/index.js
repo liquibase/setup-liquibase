@@ -31110,8 +31110,10 @@ exports.getDownloadUrl = getDownloadUrl;
 const core = __importStar(__nccwpck_require__(7484));
 const tc = __importStar(__nccwpck_require__(3472));
 const exec = __importStar(__nccwpck_require__(5236));
+const io = __importStar(__nccwpck_require__(4994));
 const path = __importStar(__nccwpck_require__(6928));
 const fs = __importStar(__nccwpck_require__(9896));
+const os = __importStar(__nccwpck_require__(857));
 const config_1 = __nccwpck_require__(2973);
 const semver = __importStar(__nccwpck_require__(2088));
 const version_resolver_1 = __nccwpck_require__(3318);
@@ -31248,20 +31250,45 @@ async function extractLiquibase(downloadPath) {
             // Extract ZIP archives (Windows)
             return await tc.extractZip(downloadPath);
         }
+        else if (platform === 'darwin') {
+            // macOS specific handling - use BSD tar without specific compression flags
+            // Let it auto-detect the compression format
+            return await tc.extractTar(downloadPath, undefined, '-xf');
+        }
         else {
-            // Extract tar.gz archives (Linux, macOS)
-            if (platform === 'darwin') {
-                // Use direct tar command for macOS to handle BSD tar
-                return await tc.extractTar(downloadPath);
-            }
-            else {
-                // Use gz flag for Linux GNU tar
-                return await tc.extractTar(downloadPath, undefined, 'gz');
-            }
+            // Linux handling - use GNU tar with appropriate flags
+            return await tc.extractTar(downloadPath, undefined, 'gz');
         }
     }
     catch (error) {
-        throw new Error(`Failed to extract Liquibase archive: ${error instanceof Error ? error.message : String(error)}`);
+        // Add debug information to help diagnose extraction issues
+        core.debug(`Extraction error details: ${error instanceof Error ? error.stack : String(error)}`);
+        core.debug(`Platform: ${platform}, Download path: ${downloadPath}`);
+        // Try alternative extraction methods if the first method failed
+        try {
+            core.debug('First extraction method failed, trying alternative extraction method');
+            // Get tar version info to better understand available options
+            await exec.exec('tar', ['--version'], { silent: true, listeners: {
+                    stdout: (data) => core.debug(data.toString()),
+                    stderr: (data) => core.debug(data.toString())
+                } });
+            if (platform === 'darwin') {
+                // For macOS, try creating a temporary directory and using basic tar command
+                const tempDir = path.join(os.tmpdir(), `liquibase-extract-${Math.random().toString(36).substring(2, 15)}`);
+                await io.mkdirP(tempDir);
+                await exec.exec('tar', ['-xf', downloadPath, '-C', tempDir]);
+                return tempDir;
+            }
+            else if (platform !== 'win32') {
+                // Try without specifying compression format for Linux
+                return await tc.extractTar(downloadPath);
+            }
+            throw error; // Re-throw if we're on Windows or if all alternatives failed
+        }
+        catch (fallbackError) {
+            core.debug(`Alternative extraction also failed: ${fallbackError instanceof Error ? fallbackError.stack : String(fallbackError)}`);
+            throw new Error(`Failed to extract Liquibase archive: ${error instanceof Error ? error.message : String(error)}`);
+        }
     }
 }
 /**

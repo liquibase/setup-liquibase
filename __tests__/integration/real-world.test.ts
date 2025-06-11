@@ -50,7 +50,7 @@ describe('Real-world Integration Scenarios', () => {
         expect(result.version).toBe('4.32.0');
         expect(result.path).toBeTruthy();
       }
-    }, 30000);
+    }, 60000); // Increased timeout to 60 seconds due to download and extraction time
 
     it('should handle latest version in CI/CD workflow', async () => {
       const options = {

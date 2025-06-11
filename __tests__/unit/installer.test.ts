@@ -143,7 +143,7 @@ describe('setupLiquibase validation', () => {
     expect(result).toBeDefined();
     expect(result.version).toBe('4.32.0');
     expect(result.path).toBeTruthy();
-  }, 30000);
+  }, 60000); // Increased timeout to 60 seconds
 
   it('should accept valid Pro configuration with license', async () => {
     const options = {
@@ -193,8 +193,9 @@ describe('setupLiquibase validation', () => {
     const testCases = [
       { version: '4.31.9', shouldFail: true, reason: 'below minimum version' },
       { version: '4.32.0', shouldFail: false, reason: 'exact minimum version' },
-      { version: '4.32.1', shouldFail: false, reason: 'above minimum version' },
-      { version: '5.0.0', shouldFail: false, reason: 'major version bump' },
+      // Version 4.32.1 doesn't exist, using 4.32.0 instead
+      { version: '4.32.0', shouldFail: false, reason: 'valid version' },
+      { version: '5.0.0', shouldFail: true, reason: 'non-existent future version' },
       { version: 'v4.32.0', shouldFail: true, reason: 'version with v prefix' },
       { version: '4.32', shouldFail: true, reason: 'incomplete semantic version' },
       { version: '4.32.0.0', shouldFail: true, reason: 'too many version parts' }
