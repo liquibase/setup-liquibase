@@ -13,7 +13,7 @@
  * Configuration options for setting up Liquibase
  */
 export interface LiquibaseSetupOptions {
-    /** Specific version to install (must be 4.32.0 or higher) */
+    /** Specific version to install (e.g., "4.32.0") or "latest" for the latest version */
     version: string;
     /** Edition to install: 'oss' for Open Source, 'pro' for Professional */
     edition: 'oss' | 'pro';

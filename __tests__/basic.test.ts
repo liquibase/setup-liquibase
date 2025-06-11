@@ -153,9 +153,12 @@ describe('Basic Functionality Validation', () => {
     ];
     
     validInputs.forEach(input => {
-      expect(semver.valid(input.version)).toBeTruthy();
+      // Skip semver validation for 'latest' special version
+      if (input.version !== 'latest') {
+        expect(semver.valid(input.version)).toBeTruthy();
+        expect(semver.gte(input.version, MIN_SUPPORTED_VERSION)).toBeTruthy();
+      }
       expect(['oss', 'pro']).toContain(input.edition);
-      expect(semver.gte(input.version, MIN_SUPPORTED_VERSION)).toBeTruthy();
     });
     
     invalidInputs.forEach(input => {

@@ -195,7 +195,13 @@ async function extractLiquibase(downloadPath: string): Promise<string> {
       return await tc.extractZip(downloadPath);
     } else {
       // Extract tar.gz archives (Linux, macOS)
-      return await tc.extractTar(downloadPath, undefined, 'xz');
+      if (platform === 'darwin') {
+        // Use direct tar command for macOS to handle BSD tar
+        return await tc.extractTar(downloadPath);
+      } else {
+        // Use gz flag for Linux GNU tar
+        return await tc.extractTar(downloadPath, undefined, 'gz');
+      }
     }
   } catch (error) {
     throw new Error(`Failed to extract Liquibase archive: ${error instanceof Error ? error.message : String(error)}`);

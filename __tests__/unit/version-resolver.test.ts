@@ -104,8 +104,6 @@ describe('VersionResolver', () => {
 
       // HTTP client should only be called once due to caching
       expect(mockHttpClient.getJson).toHaveBeenCalledTimes(1);
-        expect.any(Object)
-      );
     });
 
     it('should handle version ranges correctly', async () => {
@@ -143,7 +141,7 @@ describe('VersionResolver', () => {
       mockHttpClient.getJson.mockRejectedValueOnce(new Error('API rate limit exceeded'));
       
       const result = await versionResolver.resolveVersion('latest', 'oss', false);
-      expect(result).toBe('4.25.0');
+      expect(result).toBe('4.32.0');
       expect(core.warning).toHaveBeenCalledWith(
         expect.stringContaining('GitHub API rate limit exceeded')
       );
