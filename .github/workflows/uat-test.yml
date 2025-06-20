@@ -183,49 +183,44 @@ jobs:
         echo "Running Liquibase update..."
         liquibase update \
           --changelog-file=test-changelog.xml \
-          --url=jdbc:h2:mem:uat-test-db \
+          --url=jdbc:h2:./uat-test-db \
           --username=sa \
-          --password= \
-          --driver=org.h2.Driver
+          --password=
     
     - name: Test Liquibase Status
       run: |
         echo "Checking Liquibase status..."
         liquibase status \
           --changelog-file=test-changelog.xml \
-          --url=jdbc:h2:mem:uat-test-db \
+          --url=jdbc:h2:./uat-test-db \
           --username=sa \
-          --password= \
-          --driver=org.h2.Driver
+          --password=
     
     - name: Test Liquibase History
       run: |
         echo "Checking Liquibase history..."
         liquibase history \
-          --url=jdbc:h2:mem:uat-test-db \
+          --url=jdbc:h2:./uat-test-db \
           --username=sa \
-          --password= \
-          --driver=org.h2.Driver
+          --password=
     
     - name: Test Liquibase Rollback
       run: |
         echo "Testing Liquibase rollback..."
         liquibase rollback-count 1 \
           --changelog-file=test-changelog.xml \
-          --url=jdbc:h2:mem:uat-test-db \
+          --url=jdbc:h2:./uat-test-db \
           --username=sa \
-          --password= \
-          --driver=org.h2.Driver
+          --password=
     
     - name: Verify Rollback
       run: |
         echo "Verifying rollback with status check..."
         liquibase status \
           --changelog-file=test-changelog.xml \
-          --url=jdbc:h2:mem:uat-test-db \
+          --url=jdbc:h2:./uat-test-db \
           --username=sa \
-          --password= \
-          --driver=org.h2.Driver
+          --password=
 
   # Error handling tests
   error-handling-tests:
