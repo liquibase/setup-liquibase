@@ -43,11 +43,104 @@ We use GitHub issues to track public bugs. Report a bug by [opening a new issue]
 - What actually happens
 - Notes (possibly including why you think this might be happening, or stuff you tried that didn't work)
 
+## Development Setup
+
+### Prerequisites
+
+- Node.js 20 or later
+- npm (comes with Node.js)
+
+### Setup Instructions
+
+1. Fork the repository and clone your fork
+2. Install dependencies:
+   ```bash
+   npm ci
+   ```
+3. Build the action:
+   ```bash
+   npm run build
+   ```
+4. Run tests:
+   ```bash
+   npm test
+   ```
+
+### Running Tests
+
+This repository has comprehensive test coverage that external contributors can run:
+
+#### ✅ **Tests External Contributors Can Run**
+- **Unit tests**: Core functionality validation
+- **OSS Edition tests**: Installation and integration testing
+- **Error handling tests**: Invalid input validation
+- **Performance tests**: Baseline performance validation
+- **Cross-platform tests**: Ubuntu, Windows, macOS compatibility
+
+```bash
+# Run all tests
+npm test
+
+# Run specific test suites
+npm test -- --testPathPattern=unit
+npm test -- --testPathPattern=integration
+npm test -- --testPathPattern=performance
+```
+
+#### ⚠️ **Pro License Tests (Maintainer Only)**
+
+Pro edition tests require a Liquibase Pro license and will be **automatically skipped** for external contributors:
+
+- Pro edition installation
+- Pro feature validation
+- Pro license verification
+
+**For External Contributors**: This is expected behavior. Your PRs will be fully validated using OSS tests, which cover 95%+ of the action's functionality.
+
+**For Maintainers**: Pro tests run automatically when the `PRO_LICENSE_KEY` repository secret is available.
+
+### Continuous Integration
+
+When you create a pull request:
+
+1. **✅ All core tests run** - No secrets required
+2. **⏩ Pro tests skip gracefully** - Expected for external PRs
+3. **✅ Cross-platform validation** - Ubuntu, Windows, macOS
+4. **✅ Integration testing** - Real Liquibase installation and commands
+
+Your contribution will be fully validated even without Pro license access.
+
 ## Use a Consistent Coding Style
 
 * Use TypeScript for all new code
 * 2 spaces for indentation rather than tabs
 * Run `npm run lint` for style verification
+* Run `npm run build` before committing to ensure distribution files are updated
+
+## Testing Your Changes
+
+Before submitting a PR:
+
+1. **Run the full test suite**:
+   ```bash
+   npm test
+   npm run lint
+   npm run build
+   ```
+
+2. **Test your changes manually** (optional but recommended):
+   - Create a test workflow in a fork
+   - Use your action with `uses: your-username/setup-liquibase@your-branch`
+   - Validate OSS edition functionality
+
+3. **Check that all tests pass in CI** - Pro tests may show as skipped, this is expected
+
+## Getting Help
+
+- **Questions about development**: Open a discussion in the repository
+- **Bug reports**: Use the issue template
+- **Feature requests**: Open an issue with detailed use case
+- **Pro license testing**: Only maintainers can fully test Pro features
 
 ## License
 

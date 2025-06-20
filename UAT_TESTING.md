@@ -65,7 +65,7 @@ steps:
     edition: 'pro'
     cache: true
   env:
-    LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
+    LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
 ```
 
 ### 2. Platform-Specific Tests
@@ -301,6 +301,18 @@ The repository includes automated UAT testing via GitHub Actions:
 - **Test Scenarios**: Choose from all, basic, platform, integration, or error-handling
 - **Comprehensive Coverage**: Tests across all supported platforms and configurations
 
+### External Contributor Notes
+
+For external contributors testing this action:
+
+- ✅ **OSS Edition Tests**: Full access to all OSS functionality testing
+- ✅ **Integration Tests**: Database operations with H2 (no license required)
+- ✅ **Error Handling Tests**: Complete validation of error scenarios
+- ✅ **Performance Tests**: Caching and performance validation
+- ⏩ **Pro Edition Tests**: Will be skipped (license not available to external contributors)
+
+**This is expected behavior** - OSS tests provide comprehensive validation of 95%+ of the action's functionality. See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development guidance.
+
 ## Troubleshooting Common Issues
 
 ### Performance Issues
@@ -313,8 +325,9 @@ The repository includes automated UAT testing via GitHub Actions:
 - **Ubuntu dependency issues**: Action includes all required dependencies
 
 ### License Issues
-- **Pro edition fails**: Ensure `LIQUIBASE_LICENSE_KEY` secret is set
+- **Pro edition fails**: Ensure `PRO_LICENSE_KEY` repository secret is set with valid license
 - **License validation**: Check that license is valid and not expired
+- **External contributors**: Pro edition tests will skip automatically (expected behavior)
 
 ### Version Issues
 - **Unsupported versions**: Only versions 4.32.0+ are supported
