@@ -84,17 +84,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - os: ubuntu-20.04
+        - os: ubuntu-latest
           version: '4.32.0'
-        - os: ubuntu-22.04
+        - os: windows-latest
           version: '4.32.0'
-        - os: windows-2019
-          version: '4.32.0'
-        - os: windows-2022
-          version: '4.32.0'
-        - os: macos-11
-          version: '4.32.0'
-        - os: macos-12
+        - os: macos-latest
           version: '4.32.0'
     runs-on: ${{ matrix.os }}
     
