@@ -260,9 +260,12 @@ describe('Performance Tests', () => {
       const mean = runTimes.reduce((a, b) => a + b, 0) / runTimes.length;
       const variance = runTimes.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / runTimes.length;
       const stdDev = Math.sqrt(variance);
-      const cv = stdDev / mean;
+      
+      // Handle edge case where mean is 0 (operations are too fast to measure)
+      const cv = mean === 0 ? 0 : stdDev / mean;
       
       // Performance should be consistent (CV < 2.5 means < 250% variation for local/CI environments)
+      // If CV is 0, it means operations are consistently instantaneous, which is acceptable
       expect(cv).toBeLessThan(2.5);
       expect(mean).toBeLessThan(50); // Mean time should be reasonable
     });
