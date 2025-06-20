@@ -27,8 +27,44 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
+      - name: Run tests
+        run: npm test
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Build distribution
         run: npm run build
+
+      - name: Verify build output
+        run: |
+          if [ ! -f "dist/index.js" ]; then
+            echo "dist/index.js not found!"
+            exit 1
+          fi
+          if [ ! -f "dist/index.js.map" ]; then
+            echo "dist/index.js.map not found!"
+            exit 1
+          fi
+          echo "Build output verified successfully"
+
+      - name: Test action locally
+        uses: ./
+        with:
+          version: '4.32.0'
+          edition: 'oss'
+          cache: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit dist files to release
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add dist/
+          git commit -m "Add built distribution files for release ${{ github.ref_name }}" || echo "No changes to commit"
+          git tag -f ${{ github.ref_name }}
+          git push -f origin ${{ github.ref_name }}
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
