@@ -10,8 +10,6 @@
 export declare const API_ENDPOINTS: {
     /** GitHub API endpoint for Liquibase OSS releases */
     readonly OSS_RELEASES: "https://api.github.com/repos/liquibase/liquibase/releases";
-    /** GitHub API endpoint for the latest Liquibase OSS release */
-    readonly OSS_LATEST: "https://api.github.com/repos/liquibase/liquibase/releases/latest";
     /** Liquibase Pro releases endpoint */
     readonly PRO_RELEASES: "https://download.liquibase.org/pro/releases.json";
 };

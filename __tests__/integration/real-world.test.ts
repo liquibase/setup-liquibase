@@ -180,10 +180,6 @@ describe('Real-world Integration Scenarios', () => {
           description: 'License via LIQUIBASE_LICENSE_KEY environment variable'
         },
         {
-          method: 'input_parameter',
-          description: 'License via liquibase-pro-license-key input parameter'
-        },
-        {
           method: 'properties_file',
           description: 'License via liquibase.properties file'
         }
@@ -280,8 +276,7 @@ describe('Real-world Integration Scenarios', () => {
     it('should handle sensitive data appropriately', () => {
       // Test that license keys are handled securely
       const sensitiveInputs = [
-        'LIQUIBASE_LICENSE_KEY',
-        'liquibase-pro-license-key'
+        'LIQUIBASE_LICENSE_KEY'
       ];
 
       sensitiveInputs.forEach(input => {

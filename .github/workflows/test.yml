@@ -1,5 +1,5 @@
 # CI/CD workflow for setup-liquibase GitHub Action
-# Validates code quality, builds the action, and tests it across multiple platforms
+# Validates code quality and tests it across multiple platforms
 name: Continuous Integration
 
 # Trigger workflow on pushes to main branch and all pull requests
@@ -80,7 +80,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        liquibase-version: ['4.32.0', 'latest']
+        liquibase-version: ['4.32.0']
         include:
           # Test caching scenarios
           - os: ubuntu-latest
@@ -89,9 +89,9 @@ jobs:
           - os: ubuntu-latest
             liquibase-version: '4.32.0'
             cache: false
-          # Test latest version with caching
+          # Test with different supported version
           - os: ubuntu-latest
-            liquibase-version: 'latest'
+            liquibase-version: '4.33.1'
             cache: true
     
     steps:
@@ -278,27 +278,20 @@ jobs:
         echo "Expected Pro without license test to fail, but it succeeded!"
         exit 1
     
-    # Test latest version functionality
-    - name: Test Latest Version
+    # Test latest version (should fail since we removed support)
+    - name: Test Latest Version (Should Fail)
       uses: ./
-      id: test-latest
+      continue-on-error: true
+      id: test-latest-version
       with:
         version: 'latest'
         edition: 'oss'
     
-    - name: Verify Latest Version Success
+    - name: Verify Latest Version Failed
+      if: steps.test-latest-version.outcome == 'success'
       run: |
-        echo "Latest version resolved to: ${{ steps.test-latest.outputs.liquibase-version }}"
-        # Verify that a version was actually resolved
-        if [ -z "${{ steps.test-latest.outputs.liquibase-version }}" ]; then
-          echo "Latest version test failed - no version output!"
-          exit 1
-        fi
-        # Verify the version format is semantic versioning
-        if ! [[ "${{ steps.test-latest.outputs.liquibase-version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "Latest version test failed - invalid version format: ${{ steps.test-latest.outputs.liquibase-version }}"
-          exit 1
-        fi
+        echo "Expected latest version test to fail, but it succeeded!"
+        exit 1
 
   # Job: Pro edition testing (if license is available)
   pro-edition-tests:
@@ -354,16 +347,6 @@ jobs:
         cache: true
       env:
         LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
-    
-    # Test Pro edition with input parameter license
-    - name: Test Pro Edition with Input License
-      if: steps.check-license.outputs.has_license == 'true'
-      uses: ./
-      with:
-        version: '4.32.0'
-        edition: 'pro'
-        liquibase-pro-license-key: ${{ secrets.PRO_LICENSE_KEY }}
-        cache: true
     
     # Verify Pro-specific commands work
     - name: Test Pro Commands
@@ -595,9 +578,9 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "| Platform | Versions | Edition |" >> $GITHUB_STEP_SUMMARY
         echo "|----------|----------|---------|" >> $GITHUB_STEP_SUMMARY
-        echo "| Ubuntu Linux | 4.32.0, latest | OSS, Pro |" >> $GITHUB_STEP_SUMMARY
-        echo "| Windows | 4.32.0, latest | OSS |" >> $GITHUB_STEP_SUMMARY
-        echo "| macOS | 4.32.0, latest | OSS |" >> $GITHUB_STEP_SUMMARY
+        echo "| Ubuntu Linux | 4.32.0, 4.33.1 | OSS, Pro |" >> $GITHUB_STEP_SUMMARY
+        echo "| Windows | 4.32.0 | OSS |" >> $GITHUB_STEP_SUMMARY
+        echo "| macOS | 4.32.0 | OSS |" >> $GITHUB_STEP_SUMMARY
         
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "## 🧪 Additional Tests" >> $GITHUB_STEP_SUMMARY
