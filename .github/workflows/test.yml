@@ -91,7 +91,7 @@ jobs:
             cache: false
           # Test with different supported version
           - os: ubuntu-latest
-            liquibase-version: '4.33.1'
+            liquibase-version: '4.31.1'
             cache: true
     
     steps:
@@ -578,7 +578,7 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "| Platform | Versions | Edition |" >> $GITHUB_STEP_SUMMARY
         echo "|----------|----------|---------|" >> $GITHUB_STEP_SUMMARY
-        echo "| Ubuntu Linux | 4.32.0, 4.33.1 | OSS, Pro |" >> $GITHUB_STEP_SUMMARY
+        echo "| Ubuntu Linux | 4.32.0, 4.31.1 | OSS, Pro |" >> $GITHUB_STEP_SUMMARY
         echo "| Windows | 4.32.0 | OSS |" >> $GITHUB_STEP_SUMMARY
         echo "| macOS | 4.32.0 | OSS |" >> $GITHUB_STEP_SUMMARY
         
