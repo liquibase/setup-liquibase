@@ -11,3 +11,6 @@ coverage/
 .claude/
 .cursorrules
 .cursor/
+
+# Local development documentation (keep locally but exclude from public repo)
+CLAUDE.md

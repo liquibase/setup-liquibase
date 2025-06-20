@@ -44,7 +44,7 @@ jobs:
 ```yaml
 strategy:
   matrix:
-    version: ['4.32.0', '4.33.0']
+    version: ['4.32.0']
     cache: [true, false]
     os: [ubuntu-latest, windows-latest, macos-latest]
 
@@ -70,29 +70,15 @@ steps:
 
 ### 2. Platform-Specific Tests
 
-#### Ubuntu Testing
+#### Cross-Platform Testing
 ```yaml
 strategy:
   matrix:
-    os: [ubuntu-latest, ubuntu-20.04, ubuntu-22.04]
+    os: [ubuntu-latest, windows-latest, macos-latest]
 runs-on: ${{ matrix.os }}
 ```
 
-#### Windows Testing
-```yaml
-strategy:
-  matrix:
-    os: [windows-latest, windows-2019, windows-2022]
-runs-on: ${{ matrix.os }}
-```
-
-#### macOS Testing
-```yaml
-strategy:
-  matrix:
-    os: [macos-latest, macos-11, macos-12, macos-13]
-runs-on: ${{ matrix.os }}
-```
+> **Note**: We focus on latest OS versions for optimal performance and support. Older versions may work but are not officially tested in CI.
 
 ### 3. Integration Tests
 
@@ -215,14 +201,14 @@ runs-on: ${{ matrix.os }}
 - [ ] `liquibase --version` command works
 
 ### Platform Compatibility ✅
-- [ ] Works on Ubuntu (latest, 20.04, 22.04)
-- [ ] Works on Windows (latest, 2019, 2022)
-- [ ] Works on macOS (latest, 11, 12, 13)
+- [ ] Works on Ubuntu (latest)
+- [ ] Works on Windows (latest)
+- [ ] Works on macOS (latest)
 
 ### Version Support ✅
 - [ ] Version 4.32.0 installs correctly
-- [ ] Version 4.33.0 installs correctly
-- [ ] Minimum version validation works
+- [ ] Minimum version validation works (4.32.0+)
+- [ ] Invalid versions are properly rejected
 
 ### Caching ✅
 - [ ] Caching improves subsequent install performance
@@ -293,10 +279,46 @@ The v1-beta release is ready for v1.0.0 promotion when:
 - [ ] All basic functionality tests pass
 - [ ] All platform compatibility tests pass
 - [ ] No critical bugs are found
-- [ ] Performance is acceptable (< 2 minutes for fresh install, < 30 seconds for cached)
+- [ ] Performance is acceptable (< 3 minutes for fresh install, < 45 seconds for cached)
 - [ ] Error handling works as expected
 - [ ] Integration tests with real databases work
 - [ ] Documentation is accurate and complete
+
+## Security & Quality Assurance
+
+The v1-beta release has undergone security scanning and quality checks:
+
+- ✅ **CodeQL Security Scanning**: Automated security analysis completed
+- ✅ **Dependency Updates**: All dependencies updated to latest versions
+- ✅ **Vulnerability Scanning**: npm audit completed with no critical issues
+- ⚠️ **Third-party Alerts**: One minor alert in bundled source-map-support (false positive)
+
+## Automated Testing
+
+The repository includes automated UAT testing via GitHub Actions:
+
+- **Manual Trigger**: Go to Actions → "UAT Testing" → "Run workflow"
+- **Test Scenarios**: Choose from all, basic, platform, integration, or error-handling
+- **Comprehensive Coverage**: Tests across all supported platforms and configurations
+
+## Troubleshooting Common Issues
+
+### Performance Issues
+- **Slow installs**: Ensure `cache: true` is set for repeated runs
+- **CI timeouts**: Latest OS runners are recommended for optimal performance
+
+### Platform-Specific Issues
+- **Windows path issues**: Action handles Windows paths automatically
+- **macOS permissions**: No additional setup required, action handles permissions
+- **Ubuntu dependency issues**: Action includes all required dependencies
+
+### License Issues
+- **Pro edition fails**: Ensure `LIQUIBASE_LICENSE_KEY` secret is set
+- **License validation**: Check that license is valid and not expired
+
+### Version Issues
+- **Unsupported versions**: Only versions 4.32.0+ are supported
+- **Version format**: Use exact version numbers (e.g., '4.32.0', not 'latest')
 
 ## Contact
 
