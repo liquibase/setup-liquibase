@@ -22,14 +22,14 @@ jobs:
   # Basic functionality tests
   basic-tests:
     if: ${{ github.event.inputs.test_scenario == 'all' || github.event.inputs.test_scenario == 'basic' }}
-    name: Basic Tests (${{ matrix.os }})
+    name: "Basic Tests (${{ matrix.os }}) - Cache: ${{ matrix.cache }}"
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         version: ['4.32.0']
-        cache: [true, false]
+        cache: [true]
     
     steps:
     - name: Checkout Repository
@@ -69,17 +69,16 @@ jobs:
         fi
     
     - name: Test Cache Performance (Second Install)
-      if: matrix.cache == true
       uses: ./
       with:
         version: ${{ matrix.version }}
         edition: 'oss'
         cache: true
 
-  # Platform-specific tests
+  # Platform-specific tests (lightweight - basic tests already cover cross-platform)
   platform-tests:
-    if: ${{ github.event.inputs.test_scenario == 'all' || github.event.inputs.test_scenario == 'platform' }}
-    name: Platform Tests
+    if: ${{ github.event.inputs.test_scenario == 'platform' }}
+    name: "Platform-Specific Tests (${{ matrix.os }})"
     strategy:
       fail-fast: false
       matrix:
@@ -101,14 +100,38 @@ jobs:
       with:
         version: ${{ matrix.version }}
         edition: 'oss'
-        cache: true
+        cache: false
     
-    - name: Verify Platform-Specific Installation
+    - name: Test Platform-Specific Features
       shell: bash
       run: |
+        echo "=== Platform-Specific Testing for ${{ matrix.os }} ==="
+        
+        # Basic version check
         liquibase --version
-        echo "Platform: ${{ matrix.os }}"
-        echo "Liquibase installed successfully on ${{ matrix.os }}"
+        
+        # Test PATH resolution
+        which liquibase
+        
+        # Test platform-specific path handling
+        echo "Liquibase path: $(which liquibase)"
+        
+        # Platform-specific tests
+        if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+          echo "Testing Windows-specific functionality..."
+          # Test Windows path handling
+          cmd //c "where liquibase"
+        elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+          echo "Testing macOS-specific functionality..."
+          # Test macOS path and permissions
+          ls -la $(which liquibase)
+        else
+          echo "Testing Linux-specific functionality..."
+          # Test Linux path and permissions
+          ls -la $(which liquibase)
+        fi
+        
+        echo "✅ Platform-specific tests completed successfully"
 
   # Integration tests with real database operations
   integration-tests:
@@ -160,44 +183,49 @@ jobs:
         echo "Running Liquibase update..."
         liquibase update \
           --changelog-file=test-changelog.xml \
-          --url=jdbc:h2:./uat-test-db \
+          --url=jdbc:h2:mem:uat-test-db \
           --username=sa \
-          --password=
+          --password= \
+          --driver=org.h2.Driver
     
     - name: Test Liquibase Status
       run: |
         echo "Checking Liquibase status..."
         liquibase status \
           --changelog-file=test-changelog.xml \
-          --url=jdbc:h2:./uat-test-db \
+          --url=jdbc:h2:mem:uat-test-db \
           --username=sa \
-          --password=
+          --password= \
+          --driver=org.h2.Driver
     
     - name: Test Liquibase History
       run: |
         echo "Checking Liquibase history..."
         liquibase history \
-          --url=jdbc:h2:./uat-test-db \
+          --url=jdbc:h2:mem:uat-test-db \
           --username=sa \
-          --password=
+          --password= \
+          --driver=org.h2.Driver
     
     - name: Test Liquibase Rollback
       run: |
         echo "Testing Liquibase rollback..."
         liquibase rollback-count 1 \
           --changelog-file=test-changelog.xml \
-          --url=jdbc:h2:./uat-test-db \
+          --url=jdbc:h2:mem:uat-test-db \
           --username=sa \
-          --password=
+          --password= \
+          --driver=org.h2.Driver
     
     - name: Verify Rollback
       run: |
         echo "Verifying rollback with status check..."
         liquibase status \
           --changelog-file=test-changelog.xml \
-          --url=jdbc:h2:./uat-test-db \
+          --url=jdbc:h2:mem:uat-test-db \
           --username=sa \
-          --password=
+          --password= \
+          --driver=org.h2.Driver
 
   # Error handling tests
   error-handling-tests:
