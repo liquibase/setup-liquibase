@@ -5,23 +5,10 @@ name: UAT Testing
 
 on:
   workflow_dispatch:
-    inputs:
-      test_scenario:
-        description: 'Test scenario to run'
-        required: true
-        default: 'all'
-        type: choice
-        options:
-        - all
-        - basic
-        - platform
-        - integration
-        - error-handling
 
 jobs:
   # Cross-platform tests - installation, compatibility, and caching across all platforms
   cross-platform-tests:
-    if: ${{ github.event.inputs.test_scenario == 'all' || github.event.inputs.test_scenario == 'basic' || github.event.inputs.test_scenario == 'platform' }}
     name: "Cross-Platform Tests (${{ matrix.os }}) - Cache: ${{ matrix.cache }}"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -149,7 +136,6 @@ jobs:
 
   # Comprehensive Ubuntu-only tests - integration, error handling, and pro edition
   comprehensive-tests:
-    if: ${{ github.event.inputs.test_scenario == 'all' || github.event.inputs.test_scenario == 'integration' || github.event.inputs.test_scenario == 'error-handling' }}
     name: Comprehensive Functionality Tests
     runs-on: ubuntu-latest
     
