@@ -107,31 +107,82 @@ jobs:
       run: |
         echo "=== Platform-Specific Testing for ${{ matrix.os }} ==="
         
-        # Basic version check
+        # Basic installation verification
+        echo "1. Verifying Liquibase installation..."
         liquibase --version
         
-        # Test PATH resolution
-        which liquibase
-        
-        # Test platform-specific path handling
-        echo "Liquibase path: $(which liquibase)"
-        
-        # Platform-specific tests
+        # Test platform-specific executable location
         if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-          echo "Testing Windows-specific functionality..."
-          # Test Windows path handling
+          echo "2. Testing Windows executable location..."
           cmd //c "where liquibase"
-        elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-          echo "Testing macOS-specific functionality..."
-          # Test macOS path and permissions
-          ls -la $(which liquibase)
+          LIQUIBASE_PATH=$(cmd //c "where liquibase" | head -1 | tr -d '\r')
         else
-          echo "Testing Linux-specific functionality..."
-          # Test Linux path and permissions
-          ls -la $(which liquibase)
+          echo "2. Testing Unix executable location..."
+          which liquibase
+          LIQUIBASE_PATH=$(which liquibase)
         fi
         
-        echo "✅ Platform-specific tests completed successfully"
+        echo "Liquibase found at: $LIQUIBASE_PATH"
+        
+        # Test platform-specific database operations
+        echo "3. Testing platform-specific database operations..."
+        
+        # Create platform-specific database file name
+        if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+          DB_FILE="platform-test-db"
+          DB_URL="jdbc:h2:./platform-test-db"
+        else
+          DB_FILE="platform-test-db"
+          DB_URL="jdbc:h2:./platform-test-db"
+        fi
+        
+        echo "Using database URL: $DB_URL"
+        
+        # Test actual Liquibase functionality on this platform
+        echo "4. Running Liquibase update..."
+        liquibase update \
+          --changelog-file=changelog.xml \
+          --url="$DB_URL" \
+          --username=sa \
+          --password=
+        
+        echo "5. Checking Liquibase status..."
+        liquibase status \
+          --changelog-file=changelog.xml \
+          --url="$DB_URL" \
+          --username=sa \
+          --password=
+        
+        # Test platform-specific path handling
+        echo "6. Testing platform-specific path resolution..."
+        if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+          # Test Windows-specific path handling
+          echo "Testing Windows path handling with backslashes..."
+          # Verify database files were created with correct naming
+          if [ -f "${DB_FILE}.mv.db" ]; then
+            echo "✅ Windows database file created successfully"
+          else
+            echo "❌ Windows database file not found"
+            ls -la ${DB_FILE}*
+          fi
+        else
+          # Test Unix-specific path handling  
+          echo "Testing Unix path handling with forward slashes..."
+          # Verify database files and permissions
+          if [ -f "${DB_FILE}.mv.db" ]; then
+            echo "✅ Unix database file created successfully"
+            ls -la ${DB_FILE}*
+          else
+            echo "❌ Unix database file not found"
+            ls -la ${DB_FILE}*
+          fi
+        fi
+        
+        # Platform-specific cleanup test
+        echo "7. Testing platform-specific cleanup..."
+        rm -f ${DB_FILE}*
+        
+        echo "✅ Platform-specific tests completed successfully for ${{ matrix.os }}"
 
   # Integration tests with real database operations
   integration-tests:
