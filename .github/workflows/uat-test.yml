@@ -1,0 +1,365 @@
+# UAT Testing Workflow for setup-liquibase v1-beta
+# This workflow provides comprehensive testing scenarios for the beta release
+
+name: UAT Testing
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_scenario:
+        description: 'Test scenario to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+        - all
+        - basic
+        - platform
+        - integration
+        - error-handling
+
+jobs:
+  # Basic functionality tests
+  basic-tests:
+    if: ${{ github.event.inputs.test_scenario == 'all' || github.event.inputs.test_scenario == 'basic' }}
+    name: Basic Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        version: ['4.32.0']
+        cache: [true, false]
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    
+    - name: Test Setup Liquibase OSS
+      id: setup-liquibase
+      uses: ./
+      with:
+        version: ${{ matrix.version }}
+        edition: 'oss'
+        cache: ${{ matrix.cache }}
+    
+    - name: Verify Installation
+      shell: bash
+      run: |
+        echo "Testing Liquibase installation..."
+        
+        # Check if liquibase is in PATH
+        which liquibase || (echo "ERROR: liquibase not found in PATH" && exit 1)
+        
+        # Check version output
+        liquibase --version
+        
+        # Verify outputs
+        echo "Version output: ${{ steps.setup-liquibase.outputs.liquibase-version }}"
+        echo "Path output: ${{ steps.setup-liquibase.outputs.liquibase-path }}"
+        
+        if [ -z "${{ steps.setup-liquibase.outputs.liquibase-version }}" ]; then
+          echo "ERROR: liquibase-version output not set"
+          exit 1
+        fi
+        
+        if [ -z "${{ steps.setup-liquibase.outputs.liquibase-path }}" ]; then
+          echo "ERROR: liquibase-path output not set"
+          exit 1
+        fi
+    
+    - name: Test Cache Performance (Second Install)
+      if: matrix.cache == true
+      uses: ./
+      with:
+        version: ${{ matrix.version }}
+        edition: 'oss'
+        cache: true
+
+  # Platform-specific tests
+  platform-tests:
+    if: ${{ github.event.inputs.test_scenario == 'all' || github.event.inputs.test_scenario == 'platform' }}
+    name: Platform Tests
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - os: ubuntu-20.04
+          version: '4.32.0'
+        - os: ubuntu-22.04
+          version: '4.32.0'
+        - os: windows-2019
+          version: '4.32.0'
+        - os: windows-2022
+          version: '4.32.0'
+        - os: macos-11
+          version: '4.32.0'
+        - os: macos-12
+          version: '4.32.0'
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Liquibase
+      uses: ./
+      with:
+        version: ${{ matrix.version }}
+        edition: 'oss'
+        cache: true
+    
+    - name: Verify Platform-Specific Installation
+      shell: bash
+      run: |
+        liquibase --version
+        echo "Platform: ${{ matrix.os }}"
+        echo "Liquibase installed successfully on ${{ matrix.os }}"
+
+  # Integration tests with real database operations
+  integration-tests:
+    if: ${{ github.event.inputs.test_scenario == 'all' || github.event.inputs.test_scenario == 'integration' }}
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Liquibase
+      uses: ./
+      with:
+        version: '4.32.0'
+        edition: 'oss'
+        cache: true
+    
+    - name: Create Test Changelog
+      run: |
+        cat > test-changelog.xml << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                           xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                           http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+          <changeSet id="1" author="uat-test">
+            <createTable tableName="uat_test_table">
+              <column name="id" type="int" autoIncrement="true">
+                <constraints primaryKey="true"/>
+              </column>
+              <column name="name" type="varchar(255)"/>
+              <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP"/>
+            </createTable>
+          </changeSet>
+          <changeSet id="2" author="uat-test">
+            <insert tableName="uat_test_table">
+              <column name="name" value="Test Record 1"/>
+            </insert>
+            <insert tableName="uat_test_table">
+              <column name="name" value="Test Record 2"/>
+            </insert>
+          </changeSet>
+        </databaseChangeLog>
+        EOF
+    
+    - name: Test Liquibase Update
+      run: |
+        echo "Running Liquibase update..."
+        liquibase update \
+          --changelog-file=test-changelog.xml \
+          --url=jdbc:h2:./uat-test-db \
+          --username=sa \
+          --password=
+    
+    - name: Test Liquibase Status
+      run: |
+        echo "Checking Liquibase status..."
+        liquibase status \
+          --changelog-file=test-changelog.xml \
+          --url=jdbc:h2:./uat-test-db \
+          --username=sa \
+          --password=
+    
+    - name: Test Liquibase History
+      run: |
+        echo "Checking Liquibase history..."
+        liquibase history \
+          --url=jdbc:h2:./uat-test-db \
+          --username=sa \
+          --password=
+    
+    - name: Test Liquibase Rollback
+      run: |
+        echo "Testing Liquibase rollback..."
+        liquibase rollback-count 1 \
+          --changelog-file=test-changelog.xml \
+          --url=jdbc:h2:./uat-test-db \
+          --username=sa \
+          --password=
+    
+    - name: Verify Rollback
+      run: |
+        echo "Verifying rollback with status check..."
+        liquibase status \
+          --changelog-file=test-changelog.xml \
+          --url=jdbc:h2:./uat-test-db \
+          --username=sa \
+          --password=
+
+  # Error handling tests
+  error-handling-tests:
+    if: ${{ github.event.inputs.test_scenario == 'all' || github.event.inputs.test_scenario == 'error-handling' }}
+    name: Error Handling Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    
+    - name: Test Invalid Version (Should Fail)
+      uses: ./
+      continue-on-error: true
+      id: invalid-version
+      with:
+        version: 'invalid-version'
+        edition: 'oss'
+    
+    - name: Verify Invalid Version Failed
+      run: |
+        if [ "${{ steps.invalid-version.outcome }}" == "success" ]; then
+          echo "ERROR: Invalid version test should have failed!"
+          exit 1
+        fi
+        echo "✅ Invalid version correctly rejected"
+    
+    - name: Test Unsupported Version (Should Fail)
+      uses: ./
+      continue-on-error: true
+      id: unsupported-version
+      with:
+        version: '4.25.0'
+        edition: 'oss'
+    
+    - name: Verify Unsupported Version Failed
+      run: |
+        if [ "${{ steps.unsupported-version.outcome }}" == "success" ]; then
+          echo "ERROR: Unsupported version test should have failed!"
+          exit 1
+        fi
+        echo "✅ Unsupported version correctly rejected"
+    
+    - name: Test Invalid Edition (Should Fail)
+      uses: ./
+      continue-on-error: true
+      id: invalid-edition
+      with:
+        version: '4.32.0'
+        edition: 'invalid'
+    
+    - name: Verify Invalid Edition Failed
+      run: |
+        if [ "${{ steps.invalid-edition.outcome }}" == "success" ]; then
+          echo "ERROR: Invalid edition test should have failed!"
+          exit 1
+        fi
+        echo "✅ Invalid edition correctly rejected"
+    
+    - name: Test Pro Edition Without License (Should Fail)
+      uses: ./
+      continue-on-error: true
+      id: pro-no-license
+      with:
+        version: '4.32.0'
+        edition: 'pro'
+    
+    - name: Verify Pro Without License Failed
+      run: |
+        if [ "${{ steps.pro-no-license.outcome }}" == "success" ]; then
+          echo "ERROR: Pro without license test should have failed!"
+          exit 1
+        fi
+        echo "✅ Pro edition without license correctly rejected"
+
+  # Pro edition tests (only if license is available)
+  pro-edition-tests:
+    if: ${{ github.event.inputs.test_scenario == 'all' || github.event.inputs.test_scenario == 'basic' }}
+    name: Pro Edition Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    
+    - name: Check License Availability
+      id: check-license
+      run: |
+        if [ -n "${{ secrets.LIQUIBASE_LICENSE_KEY }}" ]; then
+          echo "has_license=true" >> $GITHUB_OUTPUT
+        else
+          echo "has_license=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Test Pro Edition (If License Available)
+      if: steps.check-license.outputs.has_license == 'true'
+      uses: ./
+      with:
+        version: '4.32.0'
+        edition: 'pro'
+        cache: true
+      env:
+        LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
+    
+    - name: Verify Pro Installation
+      if: steps.check-license.outputs.has_license == 'true'
+      run: |
+        liquibase --version
+        echo "✅ Pro edition installed successfully"
+    
+    - name: Skip Pro Tests (No License)
+      if: steps.check-license.outputs.has_license == 'false'
+      run: |
+        echo "⏩ Skipping Pro edition tests - no license key available"
+        echo "To test Pro edition, add LIQUIBASE_LICENSE_KEY secret to the repository"
+
+  # Summary job
+  uat-summary:
+    name: UAT Test Summary
+    needs: [basic-tests, platform-tests, integration-tests, error-handling-tests, pro-edition-tests]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Generate Test Summary
+      run: |
+        echo "# UAT Test Results Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "## Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "| Test Category | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|---------------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Basic Tests | ${{ needs.basic-tests.result == 'success' && '✅ PASSED' || needs.basic-tests.result == 'skipped' && '⏩ SKIPPED' || '❌ FAILED' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Platform Tests | ${{ needs.platform-tests.result == 'success' && '✅ PASSED' || needs.platform-tests.result == 'skipped' && '⏩ SKIPPED' || '❌ FAILED' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Integration Tests | ${{ needs.integration-tests.result == 'success' && '✅ PASSED' || needs.integration-tests.result == 'skipped' && '⏩ SKIPPED' || '❌ FAILED' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Error Handling Tests | ${{ needs.error-handling-tests.result == 'success' && '✅ PASSED' || needs.error-handling-tests.result == 'skipped' && '⏩ SKIPPED' || '❌ FAILED' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Pro Edition Tests | ${{ needs.pro-edition-tests.result == 'success' && '✅ PASSED' || needs.pro-edition-tests.result == 'skipped' && '⏩ SKIPPED' || '❌ FAILED' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Overall result
+        if [[ "${{ needs.basic-tests.result }}" == "success" && 
+              "${{ needs.platform-tests.result }}" == "success" && 
+              "${{ needs.integration-tests.result }}" == "success" && 
+              "${{ needs.error-handling-tests.result }}" == "success" ]]; then
+          echo "## 🎉 Overall Result: PASSED" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All critical UAT tests have passed. The v1-beta release is ready for broader testing." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "## ❌ Overall Result: FAILED" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Some UAT tests have failed. Please review the results and address issues before promoting to v1.0.0." >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Next Steps" >> $GITHUB_STEP_SUMMARY
+        echo "- Review any failed tests" >> $GITHUB_STEP_SUMMARY
+        echo "- Test on additional platforms if needed" >> $GITHUB_STEP_SUMMARY
+        echo "- Share feedback via GitHub Issues with label 'uat-testing'" >> $GITHUB_STEP_SUMMARY
+        echo "- When ready, promote to v1.0.0 and publish to GitHub Marketplace" >> $GITHUB_STEP_SUMMARY
