@@ -69,16 +69,48 @@ jobs:
         fi
     
     - name: Test Cache Performance (Second Install)
+      id: cached-install
       uses: ./
       with:
         version: ${{ matrix.version }}
         edition: 'oss'
         cache: true
+    
+    - name: Cache Performance Validation
+      shell: bash
+      run: |
+        echo "=== Cache Performance Validation ==="
+        
+        # Validate that cached install completed successfully
+        echo "1. Cached installation completed successfully"
+        liquibase --version
+        
+        # Compare outputs between first and cached install
+        echo "2. Comparing installation outputs..."
+        FIRST_VERSION="${{ steps.setup-liquibase.outputs.liquibase-version }}"
+        CACHED_VERSION="${{ steps.cached-install.outputs.liquibase-version }}"
+        
+        if [ "$FIRST_VERSION" != "$CACHED_VERSION" ]; then
+          echo "❌ Version mismatch between installs: $FIRST_VERSION vs $CACHED_VERSION"
+          exit 1
+        fi
+        echo "✅ Version consistency verified: $FIRST_VERSION"
+        
+        FIRST_PATH="${{ steps.setup-liquibase.outputs.liquibase-path }}"
+        CACHED_PATH="${{ steps.cached-install.outputs.liquibase-path }}"
+        
+        if [ "$FIRST_PATH" != "$CACHED_PATH" ]; then
+          echo "❌ Path mismatch between installs: $FIRST_PATH vs $CACHED_PATH"
+          exit 1
+        fi
+        echo "✅ Path consistency verified: $FIRST_PATH"
+        
+        echo "3. Cache performance test completed - installations are consistent"
 
-  # Platform-specific tests (lightweight - basic tests already cover cross-platform)
+  # Platform-specific tests - focus on basic compatibility and platform differences
   platform-tests:
     if: ${{ github.event.inputs.test_scenario == 'platform' }}
-    name: "Platform-Specific Tests (${{ matrix.os }})"
+    name: "Platform Compatibility (${{ matrix.os }})"
     strategy:
       fail-fast: false
       matrix:
@@ -96,155 +128,177 @@ jobs:
       uses: actions/checkout@v4
     
     - name: Setup Liquibase
+      id: setup
       uses: ./
       with:
         version: ${{ matrix.version }}
         edition: 'oss'
         cache: false
     
-    - name: Test Platform-Specific Features
+    - name: Test Platform Compatibility
       shell: bash
       run: |
-        echo "=== Platform-Specific Testing for ${{ matrix.os }} ==="
+        echo "=== Platform Compatibility Testing for ${{ matrix.os }} ==="
         
-        # Basic installation verification
+        # Test 1: Basic installation verification
         echo "1. Verifying Liquibase installation..."
         liquibase --version
         
-        # Test platform-specific executable location
+        # Test 2: Platform-specific executable location and PATH
+        echo "2. Testing executable location and PATH..."
         if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-          echo "2. Testing Windows executable location..."
+          echo "Testing Windows executable resolution..."
           cmd //c "where liquibase"
           LIQUIBASE_PATH=$(cmd //c "where liquibase" | head -1 | tr -d '\r')
+          echo "Windows Liquibase path: $LIQUIBASE_PATH"
+          
+          # Verify it's actually executable on Windows
+          if cmd //c "liquibase --help" > /dev/null 2>&1; then
+            echo "✅ Windows executable works correctly"
+          else
+            echo "❌ Windows executable failed"
+            exit 1
+          fi
         else
-          echo "2. Testing Unix executable location..."
+          echo "Testing Unix executable resolution..."
           which liquibase
           LIQUIBASE_PATH=$(which liquibase)
-        fi
-        
-        echo "Liquibase found at: $LIQUIBASE_PATH"
-        
-        # Test platform-specific database operations
-        echo "3. Testing platform-specific database operations..."
-        
-        # Create platform-specific database file name
-        if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-          DB_FILE="platform-test-db"
-          DB_URL="jdbc:h2:./platform-test-db"
-        else
-          DB_FILE="platform-test-db"
-          DB_URL="jdbc:h2:./platform-test-db"
-        fi
-        
-        echo "Using database URL: $DB_URL"
-        
-        # Test actual Liquibase functionality on this platform
-        echo "4. Running Liquibase update..."
-        liquibase update \
-          --changelog-file=changelog.xml \
-          --url="$DB_URL" \
-          --username=sa \
-          --password=
-        
-        echo "5. Checking Liquibase status..."
-        liquibase status \
-          --changelog-file=changelog.xml \
-          --url="$DB_URL" \
-          --username=sa \
-          --password=
-        
-        # Test platform-specific path handling
-        echo "6. Testing platform-specific path resolution..."
-        if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-          # Test Windows-specific path handling
-          echo "Testing Windows path handling with backslashes..."
-          # Verify database files were created with correct naming
-          if [ -f "${DB_FILE}.mv.db" ]; then
-            echo "✅ Windows database file created successfully"
+          echo "Unix Liquibase path: $LIQUIBASE_PATH"
+          
+          # Verify permissions and execution on Unix
+          if [ -x "$LIQUIBASE_PATH" ]; then
+            echo "✅ Unix executable has correct permissions"
           else
-            echo "❌ Windows database file not found"
-            ls -la ${DB_FILE}*
-          fi
-        else
-          # Test Unix-specific path handling  
-          echo "Testing Unix path handling with forward slashes..."
-          # Verify database files and permissions
-          if [ -f "${DB_FILE}.mv.db" ]; then
-            echo "✅ Unix database file created successfully"
-            ls -la ${DB_FILE}*
-          else
-            echo "❌ Unix database file not found"
-            ls -la ${DB_FILE}*
+            echo "❌ Unix executable lacks execute permissions"
+            ls -la "$LIQUIBASE_PATH"
+            exit 1
           fi
         fi
         
-        # Platform-specific cleanup test
-        echo "7. Testing platform-specific cleanup..."
-        rm -f ${DB_FILE}*
+        # Test 3: Action outputs validation
+        echo "3. Validating action outputs..."
+        VERSION_OUTPUT="${{ steps.setup.outputs.liquibase-version }}"
+        PATH_OUTPUT="${{ steps.setup.outputs.liquibase-path }}"
         
-        echo "✅ Platform-specific tests completed successfully for ${{ matrix.os }}"
+        if [ -z "$VERSION_OUTPUT" ]; then
+          echo "❌ liquibase-version output not set"
+          exit 1
+        fi
+        echo "✅ Version output: $VERSION_OUTPUT"
+        
+        if [ -z "$PATH_OUTPUT" ]; then
+          echo "❌ liquibase-path output not set"
+          exit 1
+        fi
+        echo "✅ Path output: $PATH_OUTPUT"
+        
+        # Test 4: Platform-specific help command
+        echo "4. Testing platform-specific help command..."
+        liquibase --help | head -5
+        
+        echo "✅ Platform compatibility tests completed successfully for ${{ matrix.os }}"
 
-  # Integration tests with real database operations
+  # Integration tests with real database operations - cross-platform real-world scenarios
   integration-tests:
     if: ${{ github.event.inputs.test_scenario == 'all' || github.event.inputs.test_scenario == 'integration' }}
-    name: Integration Tests
-    runs-on: ubuntu-latest
+    name: "Integration Tests (${{ matrix.os }})"
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        version: ['4.32.0']
+    runs-on: ${{ matrix.os }}
     
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
     
     - name: Setup Liquibase
+      id: setup
       uses: ./
       with:
-        version: '4.32.0'
+        version: ${{ matrix.version }}
         edition: 'oss'
         cache: true
     
-    
-    - name: Test Liquibase Update
+    - name: Real-World Database Integration Test
+      shell: bash
       run: |
-        echo "Running Liquibase update..."
+        echo "=== Real-World Integration Testing on ${{ matrix.os }} ==="
+        
+        # Use platform-specific database file naming
+        if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+          DB_URL="jdbc:h2:./integration-test-db"
+        else
+          DB_URL="jdbc:h2:./integration-test-db"
+        fi
+        
+        echo "Using database: $DB_URL"
+        
+        # Test 1: Liquibase Update (Deploy changes)
+        echo "1. Running Liquibase update (deploy changes)..."
         liquibase update \
           --changelog-file=changelog.xml \
-          --url=jdbc:h2:./uat-test-db \
+          --url="$DB_URL" \
           --username=sa \
           --password=
-    
-    - name: Test Liquibase Status
-      run: |
-        echo "Checking Liquibase status..."
+        
+        # Test 2: Liquibase Status (Check deployment status)
+        echo "2. Checking deployment status..."
         liquibase status \
           --changelog-file=changelog.xml \
-          --url=jdbc:h2:./uat-test-db \
+          --url="$DB_URL" \
           --username=sa \
           --password=
-    
-    - name: Test Liquibase History
-      run: |
-        echo "Checking Liquibase history..."
+        
+        # Test 3: Liquibase History (View deployment history)
+        echo "3. Viewing deployment history..."
         liquibase history \
-          --url=jdbc:h2:./uat-test-db \
+          --url="$DB_URL" \
           --username=sa \
           --password=
-    
-    - name: Test Liquibase Rollback
-      run: |
-        echo "Testing Liquibase rollback..."
-        liquibase rollback-count 1 \
+        
+        # Test 4: Liquibase Tag (Create deployment tag)
+        echo "4. Creating deployment tag..."
+        liquibase tag uat-test-tag \
+          --url="$DB_URL" \
+          --username=sa \
+          --password=
+        
+        # Test 5: Liquibase Rollback (Rollback to tag)
+        echo "5. Testing rollback to tag..."
+        liquibase rollback uat-test-tag \
           --changelog-file=changelog.xml \
-          --url=jdbc:h2:./uat-test-db \
+          --url="$DB_URL" \
           --username=sa \
           --password=
-    
-    - name: Verify Rollback
-      run: |
-        echo "Verifying rollback with status check..."
+        
+        # Test 6: Verify Rollback Status
+        echo "6. Verifying rollback completed..."
         liquibase status \
           --changelog-file=changelog.xml \
-          --url=jdbc:h2:./uat-test-db \
+          --url="$DB_URL" \
           --username=sa \
           --password=
+        
+        # Test 7: Output validation
+        echo "7. Validating action outputs..."
+        VERSION_OUTPUT="${{ steps.setup.outputs.liquibase-version }}"
+        PATH_OUTPUT="${{ steps.setup.outputs.liquibase-path }}"
+        
+        if [[ "$VERSION_OUTPUT" != *"${{ matrix.version }}"* ]]; then
+          echo "❌ Version output mismatch: expected ${{ matrix.version }}, got $VERSION_OUTPUT"
+          exit 1
+        fi
+        echo "✅ Version output validated: $VERSION_OUTPUT"
+        
+        if [ ! -d "$PATH_OUTPUT" ]; then
+          echo "❌ Path output invalid: $PATH_OUTPUT does not exist"
+          exit 1
+        fi
+        echo "✅ Path output validated: $PATH_OUTPUT"
+        
+        echo "✅ Integration tests completed successfully on ${{ matrix.os }}"
 
   # Error handling tests
   error-handling-tests:
@@ -359,7 +413,7 @@ jobs:
       if: steps.check-license.outputs.has_license == 'false'
       run: |
         echo "⏩ Skipping Pro edition tests - no license key available"
-        echo "To test Pro edition, add LIQUIBASE_LICENSE_KEY secret to the repository"
+        echo "To test Pro edition, add PRO_LICENSE_KEY secret to the repository"
 
   # Summary job
   uat-summary:
