@@ -286,7 +286,7 @@ jobs:
     - name: Check License Availability
       id: check-license
       run: |
-        if [ -n "${{ secrets.LIQUIBASE_LICENSE_KEY }}" ]; then
+        if [ -n "${{ secrets.PRO_LICENSE_KEY }}" ]; then
           echo "has_license=true" >> $GITHUB_OUTPUT
         else
           echo "has_license=false" >> $GITHUB_OUTPUT
@@ -300,7 +300,7 @@ jobs:
         edition: 'pro'
         cache: true
       env:
-        LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
+        LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
     
     - name: Verify Pro Installation
       if: steps.check-license.outputs.has_license == 'true'
