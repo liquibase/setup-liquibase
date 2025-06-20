@@ -91,7 +91,7 @@ jobs:
             cache: false
           # Test with different supported version
           - os: ubuntu-latest
-            liquibase-version: '4.31.1'
+            liquibase-version: '4.32.0'
             cache: true
     
     steps:
