@@ -119,7 +119,7 @@ describe('Error Handling Tests', () => {
       };
 
       await expect(setupLiquibase(options)).rejects.toThrow(
-        'License key is required for Liquibase Pro edition. Provide it via the liquibase-pro-license-key input or LIQUIBASE_LICENSE_KEY environment variable'
+        'License key is required for Liquibase Pro edition. Provide it via the LIQUIBASE_LICENSE_KEY environment variable'
       );
     });
 
@@ -375,14 +375,14 @@ describe('Error Handling Tests', () => {
       const resourceIntensiveScenarios = [
         { version: '4.32.0', edition: 'oss' as const, cache: true },
         { version: '4.32.0', edition: 'oss' as const, cache: false },
-        { version: 'latest', edition: 'oss' as const, cache: true }
+        { version: '4.32.0', edition: 'oss' as const, cache: true }
       ];
 
       for (const scenario of resourceIntensiveScenarios) {
         // Should complete successfully in CI environment
         const result = await setupLiquibase(scenario);
         expect(result).toBeDefined();
-        expect(result.version).toBe('4.32.0');
+        expect(result.version).toBe(scenario.version);
         expect(result.path).toBeTruthy();
       }
     }, 30000);

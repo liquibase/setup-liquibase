@@ -56,15 +56,18 @@ describe('Basic Functionality Validation', () => {
   });
   
   /**
-   * Validates that 'latest' is accepted as a special version input
+   * Validates that only specific semantic versions are accepted
    */
-  it('should accept latest as a valid version input', () => {
-    const specialVersions = ['latest'];
+  it('should only accept valid semantic versions', () => {
+    const validVersions = ['4.32.0', '4.33.1', '5.0.0'];
+    const invalidVersions = ['latest', 'main', 'dev', '4.32', 'not-a-version'];
     
-    // 'latest' is not a valid semver, but should be accepted by our action
-    specialVersions.forEach(version => {
-      // While semver.valid returns false for 'latest', our action should handle it
-      expect(version).toBe('latest');
+    validVersions.forEach(version => {
+      expect(semver.valid(version)).toBeTruthy();
+    });
+    
+    invalidVersions.forEach(version => {
+      expect(semver.valid(version)).toBeFalsy();
     });
   });
   
@@ -141,23 +144,21 @@ describe('Basic Functionality Validation', () => {
   it('should validate input parameters correctly', () => {
     const validInputs = [
       { version: '4.32.0', edition: 'oss' },
-      { version: 'latest', edition: 'pro' },
+      { version: '4.33.1', edition: 'pro' },
       { version: '5.0.0', edition: 'oss' }
     ];
     
     const invalidInputs = [
       { version: '', edition: 'oss' },
       { version: '4.32.0', edition: 'invalid' },
+      { version: 'latest', edition: 'oss' },
       { version: 'invalid', edition: 'oss' },
       { version: '4.31.0', edition: 'oss' }
     ];
     
     validInputs.forEach(input => {
-      // Skip semver validation for 'latest' special version
-      if (input.version !== 'latest') {
-        expect(semver.valid(input.version)).toBeTruthy();
-        expect(semver.gte(input.version, MIN_SUPPORTED_VERSION)).toBeTruthy();
-      }
+      expect(semver.valid(input.version)).toBeTruthy();
+      expect(semver.gte(input.version, MIN_SUPPORTED_VERSION)).toBeTruthy();
       expect(['oss', 'pro']).toContain(input.edition);
     });
     

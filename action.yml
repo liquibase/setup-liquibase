@@ -13,16 +13,12 @@ branding:
 # Input parameters that users can configure when using this action
 inputs:
   version:
-    description: 'Specific version of Liquibase to install (e.g., "4.32.0") or "latest" for the most recent version. Specific versions must be 4.32.0 or higher.'
+    description: 'Specific version of Liquibase to install (e.g., "4.32.0"). Must be 4.32.0 or higher.'
     required: true
   
   edition:
-    description: 'Edition to install: "oss" (Open Source) or "pro" (Professional with additional features)'
+    description: 'Edition to install: "oss" (Open Source) or "pro" (Professional with additional features). For Pro edition, set LIQUIBASE_LICENSE_KEY environment variable.'
     required: true
-  
-  liquibase-pro-license-key:
-    description: 'License key for Liquibase Pro edition (can also be provided via LIQUIBASE_LICENSE_KEY environment variable)'
-    required: false
   
   cache:
     description: 'Enable caching of downloaded Liquibase installations to improve workflow performance on subsequent runs'
@@ -32,7 +28,7 @@ inputs:
 # Output values that other workflow steps can use
 outputs:
   liquibase-version:
-    description: 'The actual version of Liquibase that was installed (useful when using "latest")'
+    description: 'The version of Liquibase that was installed'
   
   liquibase-path:
     description: 'The file system path where Liquibase was installed and added to PATH'

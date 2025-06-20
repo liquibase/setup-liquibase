@@ -31027,8 +31027,8 @@ async function run() {
             throw new Error('Edition must be either "oss" or "pro"');
         }
         const edition = editionInput;
-        // Get license key from input parameter OR environment variable
-        const licenseKey = core.getInput('liquibase-pro-license-key') || process.env.LIQUIBASE_LICENSE_KEY;
+        // Get license key from environment variable only
+        const licenseKey = process.env.LIQUIBASE_LICENSE_KEY;
         // Log the setup configuration for debugging purposes
         core.info(`Setting up Liquibase version ${version} (${edition} edition)`);
         // Execute the main installation logic
@@ -31116,7 +31116,6 @@ const fs = __importStar(__nccwpck_require__(9896));
 const os = __importStar(__nccwpck_require__(857));
 const config_1 = __nccwpck_require__(2973);
 const semver = __importStar(__nccwpck_require__(2088));
-const version_resolver_1 = __nccwpck_require__(3318);
 /**
  * Main function to set up Liquibase in the GitHub Actions environment
  *
@@ -31138,12 +31137,12 @@ async function setupLiquibase(options) {
     if (!version) {
         throw new Error('Version is required');
     }
-    // Allow 'latest' or valid semantic versions
-    if (version !== 'latest' && !semver.valid(version)) {
-        throw new Error(`Invalid version format: ${version}. Must be a valid semantic version (e.g., "4.32.0") or "latest"`);
+    // Validate version format - only specific versions allowed
+    if (!semver.valid(version)) {
+        throw new Error(`Invalid version format: ${version}. Must be a valid semantic version (e.g., "4.32.0")`);
     }
-    // Only validate minimum version for specific versions (not 'latest')
-    if (version !== 'latest' && semver.lt(version, config_1.MIN_SUPPORTED_VERSION)) {
+    // Validate minimum version requirement
+    if (semver.lt(version, config_1.MIN_SUPPORTED_VERSION)) {
         throw new Error(`Version ${version} is not supported. Minimum supported version is ${config_1.MIN_SUPPORTED_VERSION}`);
     }
     // Enhanced edition validation
@@ -31152,14 +31151,13 @@ async function setupLiquibase(options) {
     }
     // Enhanced Pro license validation
     if (edition === 'pro' && !licenseKey) {
-        throw new Error('License key is required for Liquibase Pro edition. Provide it via the liquibase-pro-license-key input or LIQUIBASE_LICENSE_KEY environment variable');
+        throw new Error('License key is required for Liquibase Pro edition. Provide it via the LIQUIBASE_LICENSE_KEY environment variable');
     }
-    // Resolve the version (handles 'latest' and specific versions)
-    const versionResolver = version_resolver_1.VersionResolver.getInstance();
-    const resolvedVersion = await versionResolver.resolveVersion(version, edition, false);
-    // Validate the resolved version meets minimum requirements
+    // Use the specified version directly (no resolution needed since we only support specific versions)
+    const resolvedVersion = version;
+    // Validate the specified version meets minimum requirements
     if (semver.lt(resolvedVersion, config_1.MIN_SUPPORTED_VERSION)) {
-        throw new Error(`Resolved version ${resolvedVersion} is not supported. Minimum supported version is ${config_1.MIN_SUPPORTED_VERSION}`);
+        throw new Error(`Version ${resolvedVersion} is not supported. Minimum supported version is ${config_1.MIN_SUPPORTED_VERSION}`);
     }
     // Create a unique tool name for caching that includes the edition
     const toolName = `liquibase-${edition}`;
@@ -31352,158 +31350,6 @@ async function validateInstallation(liquibasePath) {
         throw new Error(`Failed to validate Liquibase installation: ${error instanceof Error ? error.message : String(error)}`);
     }
 }
-
-
-/***/ }),
-
-/***/ 3318:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.VersionResolver = void 0;
-const core = __importStar(__nccwpck_require__(7484));
-const http_client_1 = __nccwpck_require__(4844);
-const semver = __importStar(__nccwpck_require__(2088));
-const config_1 = __nccwpck_require__(2973);
-class VersionResolver {
-    constructor() {
-        this.versionCache = new Map();
-        this.latestVersionCache = new Map();
-        this.FALLBACK_VERSION = '4.32.0';
-        this.http = new http_client_1.HttpClient('setup-liquibase');
-    }
-    static getInstance() {
-        if (!VersionResolver.instance) {
-            VersionResolver.instance = new VersionResolver();
-        }
-        return VersionResolver.instance;
-    }
-    isRateLimitError(error) {
-        return error instanceof Error && error.message.includes('rate limit');
-    }
-    async resolveVersion(version, edition, checkLatest) {
-        // Handle 'latest' version or forced latest check
-        if (version === 'latest' || checkLatest) {
-            return await this.getLatestVersion();
-        }
-        // If it's already a valid exact version, return as-is
-        if (semver.valid(version)) {
-            return version;
-        }
-        // For version ranges, find the best matching version from available releases
-        const availableVersions = await this.getAvailableVersions();
-        const matchedVersion = semver.maxSatisfying(availableVersions, version);
-        if (!matchedVersion) {
-            throw new Error(`No version matching ${version} found for Liquibase ${edition}`);
-        }
-        return matchedVersion;
-    }
-    async getLatestVersion() {
-        var _a;
-        // Check cache first
-        const cachedVersion = this.latestVersionCache.get('oss'); // Use 'oss' as the cache key for both
-        if (cachedVersion) {
-            return cachedVersion;
-        }
-        const token = process.env.GITHUB_TOKEN;
-        const headers = {};
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
-        try {
-            // Use GitHub releases endpoint for both OSS and Pro
-            const response = await this.http.getJson(config_1.API_ENDPOINTS.OSS_LATEST, headers);
-            if ((_a = response.result) === null || _a === void 0 ? void 0 : _a.tag_name) {
-                const version = response.result.tag_name.replace(/^v/, '');
-                this.latestVersionCache.set('oss', version);
-                return version;
-            }
-        }
-        catch (error) {
-            if (!token && this.isRateLimitError(error)) {
-                core.warning('GitHub API rate limit exceeded. Using fallback version.');
-                const fallbackVersion = this.FALLBACK_VERSION;
-                this.latestVersionCache.set('oss', fallbackVersion);
-                return fallbackVersion;
-            }
-            throw error;
-        }
-        throw new Error(`Could not determine latest version for Liquibase`);
-    }
-    async getAvailableVersions() {
-        // Check cache first
-        const cachedVersions = this.versionCache.get('oss'); // Use 'oss' as the cache key for both
-        if (cachedVersions) {
-            return cachedVersions;
-        }
-        const token = process.env.GITHUB_TOKEN;
-        const headers = {};
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
-        try {
-            // Use GitHub releases endpoint for both OSS and Pro
-            const response = await this.http.getJson(config_1.API_ENDPOINTS.OSS_RELEASES, headers);
-            if (response.result) {
-                const versions = response.result.map(release => release.tag_name.replace(/^v/, ''));
-                this.versionCache.set('oss', versions);
-                return versions;
-            }
-        }
-        catch (error) {
-            if (!token && this.isRateLimitError(error)) {
-                core.warning('GitHub API rate limit exceeded. Using fallback version.');
-                const fallbackVersions = [
-                    this.FALLBACK_VERSION,
-                    '4.33.0',
-                    '4.34.0',
-                    '4.35.0',
-                    '4.36.0',
-                ];
-                this.versionCache.set('oss', fallbackVersions);
-                return fallbackVersions;
-            }
-            throw error;
-        }
-        return [];
-    }
-}
-exports.VersionResolver = VersionResolver;
 
 
 /***/ }),
