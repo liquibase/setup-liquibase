@@ -24,7 +24,7 @@ describe('VersionResolver', () => {
 
   describe('resolveVersion', () => {
     it('should return exact version when valid semver is provided', async () => {
-      const result = await versionResolver.resolveVersion('4.32.0', 'oss', false);
+      const result = await versionResolver.resolveVersion('4.32.0');
       expect(result).toBe('4.32.0');
     });
 
@@ -32,17 +32,18 @@ describe('VersionResolver', () => {
       const testVersions = ['4.32.0', '4.33.1', '5.0.0'];
       
       for (const version of testVersions) {
-        const result = await versionResolver.resolveVersion(version, 'oss', false);
+        const result = await versionResolver.resolveVersion(version);
         expect(result).toBe(version);
       }
     });
 
-    it('should handle both oss and pro editions', async () => {
-      const result1 = await versionResolver.resolveVersion('4.32.0', 'oss', false);
-      const result2 = await versionResolver.resolveVersion('4.32.0', 'pro', false);
+    it('should consistently return the same version', async () => {
+      const result1 = await versionResolver.resolveVersion('4.32.0');
+      const result2 = await versionResolver.resolveVersion('4.32.0');
       
       expect(result1).toBe('4.32.0');
       expect(result2).toBe('4.32.0');
+      expect(result1).toBe(result2);
     });
   });
 });

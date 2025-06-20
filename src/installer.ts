@@ -19,7 +19,6 @@ import * as fs from 'fs';
 import * as os from 'os';
 import { DOWNLOAD_URLS, MIN_SUPPORTED_VERSION } from './config';
 import * as semver from 'semver';
-import { VersionResolver } from './version-resolver';
 
 /**
  * Configuration options for setting up Liquibase

@@ -14,7 +14,7 @@ export class VersionResolver {
     return VersionResolver.instance;
   }
 
-  public async resolveVersion(version: string, edition: string, checkLatest: boolean): Promise<string> {
+  public async resolveVersion(version: string): Promise<string> {
     // For our simplified version, we only support exact semantic versions
     // No need to resolve "latest" or version ranges anymore
     if (semver.valid(version)) {
