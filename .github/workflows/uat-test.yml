@@ -150,39 +150,12 @@ jobs:
         edition: 'oss'
         cache: true
     
-    - name: Create Test Changelog
-      run: |
-        cat > test-changelog.xml << 'EOF'
-        <?xml version="1.0" encoding="UTF-8"?>
-        <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
-                           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                           xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-                           http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
-          <changeSet id="1" author="uat-test">
-            <createTable tableName="uat_test_table">
-              <column name="id" type="int" autoIncrement="true">
-                <constraints primaryKey="true"/>
-              </column>
-              <column name="name" type="varchar(255)"/>
-              <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP"/>
-            </createTable>
-          </changeSet>
-          <changeSet id="2" author="uat-test">
-            <insert tableName="uat_test_table">
-              <column name="name" value="Test Record 1"/>
-            </insert>
-            <insert tableName="uat_test_table">
-              <column name="name" value="Test Record 2"/>
-            </insert>
-          </changeSet>
-        </databaseChangeLog>
-        EOF
     
     - name: Test Liquibase Update
       run: |
         echo "Running Liquibase update..."
         liquibase update \
-          --changelog-file=test-changelog.xml \
+          --changelog-file=changelog.xml \
           --url=jdbc:h2:./uat-test-db \
           --username=sa \
           --password=
@@ -191,7 +164,7 @@ jobs:
       run: |
         echo "Checking Liquibase status..."
         liquibase status \
-          --changelog-file=test-changelog.xml \
+          --changelog-file=changelog.xml \
           --url=jdbc:h2:./uat-test-db \
           --username=sa \
           --password=
@@ -208,7 +181,7 @@ jobs:
       run: |
         echo "Testing Liquibase rollback..."
         liquibase rollback-count 1 \
-          --changelog-file=test-changelog.xml \
+          --changelog-file=changelog.xml \
           --url=jdbc:h2:./uat-test-db \
           --username=sa \
           --password=
@@ -217,7 +190,7 @@ jobs:
       run: |
         echo "Verifying rollback with status check..."
         liquibase status \
-          --changelog-file=test-changelog.xml \
+          --changelog-file=changelog.xml \
           --url=jdbc:h2:./uat-test-db \
           --username=sa \
           --password=
