@@ -132,6 +132,9 @@ template: |
 
   This release contains the built distribution files required for the GitHub Action to work.
 
+  ### What's Changed
+  $CHANGES
+  
   ### Usage Example
   ```yaml
   steps:
@@ -140,9 +143,6 @@ template: |
       with:
         liquibase-version: "latest"
   ```
-
-  ### What's Changed
-  $CHANGES
 
   ### Build Information
   - **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_VERSION
