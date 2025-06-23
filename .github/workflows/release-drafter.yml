@@ -603,4 +603,60 @@ jobs:
           echo "- Method: $RELEASE_METHOD"
           echo "- Status: $RELEASE_STATUS"
           echo "- URL: $RELEASE_URL"
+
+  # Update major version tag (e.g., v1 -> v1.2.3) after successful release
+  update-major-tag:
+    name: Update Major Version Tag
+    runs-on: ubuntu-latest
+    needs: [build-and-test, create-release]
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.publish_release == 'true'
+    steps:
+      - name: Get GitHub App token
+        id: get-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.LIQUIBASE_GITHUB_APP_ID }}
+          private-key: ${{ secrets.LIQUIBASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          permission-contents: write
+          permission-actions: write
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.get-token.outputs.token }}
+          fetch-depth: 0
+
+      - name: Update major version tag
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+        run: |
+          # Get the version that was just released
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION=$(node -p "require('./package.json').version")
+          fi
+          VERSION=${VERSION#v}
           
+          # Extract major version (e.g., 1.2.3 -> 1)
+          MAJOR_VERSION=$(echo "$VERSION" | cut -d. -f1)
+          MAJOR_TAG="v$MAJOR_VERSION"
+          FULL_TAG="v$VERSION"
+          
+          echo "Updating major tag $MAJOR_TAG to point to $FULL_TAG"
+          
+          # Check if the full version tag exists
+          if gh release view "$FULL_TAG" >/dev/null 2>&1; then
+            echo "✅ Release $FULL_TAG exists"
+            
+            # Force update the major tag to point to the new release
+            git tag -f "$MAJOR_TAG" "$FULL_TAG"
+            git push origin "$MAJOR_TAG" --force
+            
+            echo "✅ Updated $MAJOR_TAG tag to point to $FULL_TAG"
+            echo "Users can now reference this action with: uses: liquibase-github-actions/setup-liquibase@$MAJOR_TAG"
+          else
+            echo "❌ Release $FULL_TAG not found, skipping major tag update"
+            exit 1
+          fi
