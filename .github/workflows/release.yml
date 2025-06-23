@@ -34,10 +34,8 @@ jobs:
           # GitHub Actions require CommonJS modules, not ES modules
           if grep -q '"type": "module"' package.json; then
             echo "Removing ES module configuration from package.json for GitHub Actions compatibility"
-            sed -i.bak 's/"type": "module",\?//' package.json
-            sed -i.bak '/^  "type": "module"$/d' package.json
-            # Clean up empty lines
-            sed -i.bak '/^$/N;/^\n$/d' package.json
+            sed -i.bak -E '/"type": "module"/d;/^$/N;/^\n$/d' package.json
+            # Consolidated sed command to remove ES module configuration and clean up empty lines
           fi
 
       - name: Run tests
