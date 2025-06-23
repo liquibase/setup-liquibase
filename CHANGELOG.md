@@ -4,6 +4,33 @@
 
 ### 🚀 Features
 - feat: Enhance release workflow with asset verification and improved upload handling
+
+## [v1-beta] - 2025-06-23
+
+### 🎉 Initial Release
+
+#### ✨ Features
+- Setup Liquibase GitHub Action for automated installation
+- Support for Liquibase OSS and Pro editions
+- Cross-platform compatibility (Ubuntu, Windows, macOS)
+- Intelligent caching system for faster builds
+- Comprehensive error handling and validation
+
+#### 🔧 Technical Features
+- Automatic version detection and validation
+- GitHub Actions tool cache integration
+- Action outputs for version and installation path
+- Built with TypeScript and comprehensive testing
+
+#### 📋 Usage
+```yaml
+- name: Setup Liquibase
+  uses: liquibase-github-actions/setup-liquibase@v1-beta
+  with:
+    liquibase-version: 'latest'
+```
+
+
 - feat: Update release template to include changes summary
 - feat: Add build output verification and artifact upload steps to release workflow
 - feat: Enhance Jest configuration for improved performance and memory management
