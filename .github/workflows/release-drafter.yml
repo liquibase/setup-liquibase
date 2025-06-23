@@ -202,6 +202,55 @@ jobs:
       - name: Package action
         run: npm run package
 
+      - name: Verify build output for GitHub Actions
+        run: |
+          echo "=== Verifying GitHub Actions build output ==="
+          
+          # Check required files exist
+          if [ ! -f "dist/index.js" ]; then
+            echo "❌ dist/index.js not found!"
+            exit 1
+          fi
+          echo "✅ dist/index.js found"
+          
+          if [ ! -f "dist/index.js.map" ]; then
+            echo "❌ dist/index.js.map not found!"
+            exit 1
+          fi
+          echo "✅ dist/index.js.map found"
+          
+          # Verify the built file is CommonJS compatible (no ES module imports)
+          if grep -E -q '^import\s+.*\s+from\s+["'"'"'].*["'"'"'];?$' dist/index.js; then
+            echo "❌ dist/index.js contains ES6 imports - GitHub Actions require CommonJS!"
+            echo "Found ES6 imports:"
+            grep -E '^import\s+.*\s+from\s+["'"'"'].*["'"'"'];?$' dist/index.js | head -5
+            exit 1
+          fi
+          echo "✅ No ES6 imports found in dist/index.js"
+          
+          # Verify it uses require() statements (CommonJS)
+          if ! grep -q "require(" dist/index.js; then
+            echo "⚠️  Warning: No require() statements found - this may not be CommonJS"
+          else
+            echo "✅ CommonJS require() statements found"
+          fi
+          
+          # Check that no dist/package.json exists (which would cause ES module issues)
+          if [ -f "dist/package.json" ]; then
+            echo "❌ dist/package.json exists and may cause ES module conflicts!"
+            echo "Contents:"
+            cat dist/package.json
+            exit 1
+          fi
+          echo "✅ No problematic dist/package.json found"
+          
+          # Show basic file info
+          echo "=== Build output summary ==="
+          ls -la dist/
+          echo "dist/index.js size: $(wc -c < dist/index.js) bytes"
+          
+          echo "✅ Build output verified successfully for GitHub Actions"
+
       - name: Download build artifacts from Ubuntu
         uses: actions/download-artifact@v4
         with:
@@ -371,10 +420,75 @@ jobs:
           tag: "v${{ env.VERSION }}"
           name: "Setup Liquibase v${{ env.VERSION }}"
           bodyFile: "/tmp/changelog_entry.md"
+          artifacts: "dist/index.js,dist/index.js.map"
           makeLatest: true
           draft: ${{ github.event.inputs.publish_release != 'true' }}
           prerelease: false
           token: ${{ steps.get-token.outputs.token }}
+
+      - name: Upload Assets to Draft Release
+        if: steps.find-draft.outputs.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+        run: |
+          echo "Uploading assets to draft release: ${{ steps.find-draft.outputs.tag_name }}"
+          
+          # Verify that distribution files exist
+          if [ ! -f "dist/index.js" ]; then
+            echo "❌ dist/index.js not found!"
+            exit 1
+          fi
+          
+          if [ ! -f "dist/index.js.map" ]; then
+            echo "❌ dist/index.js.map not found!"
+            exit 1
+          fi
+          
+          echo "✅ Distribution files verified"
+          
+          # Upload build artifacts to the draft release
+          echo "Uploading artifacts to draft release ${{ steps.find-draft.outputs.tag_name }}..."
+          if gh release upload "${{ steps.find-draft.outputs.tag_name }}" \
+            dist/index.js \
+            dist/index.js.map \
+            --clobber; then
+            echo "✅ Assets uploaded successfully to draft release"
+          else
+            echo "❌ Failed to upload assets to draft release"
+            echo "Attempting to list current release assets..."
+            gh release view "${{ steps.find-draft.outputs.tag_name }}" --json assets --jq '.assets[].name' || true
+            exit 1
+          fi
+
+      - name: Upload Assets to New Release
+        if: steps.find-draft.outputs.outcome == 'create_new' && steps.create-release.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+        run: |
+          echo "Verifying assets were uploaded to new release..."
+          
+          # The ncipollo/release-action should have already uploaded the artifacts
+          # This step is mainly for verification and fallback
+          RELEASE_TAG="v${{ env.VERSION }}"
+          
+          # Check if assets exist on the release
+          ASSETS=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' || echo "")
+          
+          if echo "$ASSETS" | grep -q "index.js"; then
+            echo "✅ index.js found in release assets"
+          else
+            echo "⚠️  index.js not found, uploading manually..."
+            gh release upload "$RELEASE_TAG" dist/index.js --clobber
+          fi
+          
+          if echo "$ASSETS" | grep -q "index.js.map"; then
+            echo "✅ index.js.map found in release assets"
+          else
+            echo "⚠️  index.js.map not found, uploading manually..."
+            gh release upload "$RELEASE_TAG" dist/index.js.map --clobber
+          fi
+          
+          echo "✅ Asset verification completed for new release"
 
       - name: Commit and push changelog
         env:
@@ -386,11 +500,38 @@ jobs:
           if git diff --exit-code CHANGELOG.md; then
             echo "No changes to CHANGELOG.md"
           else
+            echo "Changes detected in CHANGELOG.md, committing..."
+            
+            # Pull latest changes to avoid non-fast-forward issues
+            git pull origin ${{ github.ref_name }} --rebase || true
+            
+            # Add files that exist
             git add CHANGELOG.md
-            git add dist/ || true
-            git add lib/ || true
+            
+            # Only add dist/ if it exists and has changes
+            if [ -d "dist/" ]; then
+              git add dist/ || echo "No changes in dist/ to add"
+            fi
+            
+            # Only add lib/ if it exists and has changes
+            if [ -d "lib/" ]; then
+              git add lib/ || echo "No changes in lib/ to add"
+            fi
+            
+            # Commit and push
             git commit -m "chore: update changelog for v${{ env.VERSION }}"
-            git push
+            
+            # Push with retry mechanism
+            for i in {1..3}; do
+              if git push origin ${{ github.ref_name }}; then
+                echo "✅ Successfully pushed changelog updates"
+                break
+              else
+                echo "Push attempt $i failed, retrying..."
+                git pull origin ${{ github.ref_name }} --rebase
+                sleep 2
+              fi
+            done
           fi
 
       - name: Generate Build Summary
@@ -444,6 +585,7 @@ jobs:
           | Artifact Type | Status |
           |---------------|--------|
           | **Action Build** | ✅ dist/ and lib/ updated |
+          | **Distribution Files** | ✅ dist/index.js and dist/index.js.map uploaded |
           | **Changelog** | ✅ CHANGELOG.md updated with v${{ env.VERSION }} |
           | **Release Notes** | ✅ Dynamic changelog from commit history |
 
@@ -461,3 +603,4 @@ jobs:
           echo "- Method: $RELEASE_METHOD"
           echo "- Status: $RELEASE_STATUS"
           echo "- URL: $RELEASE_URL"
+          
