@@ -390,7 +390,7 @@ jobs:
             # Update the draft release with new tag, title and changelog content
             echo "Updating draft release from $LATEST_DRAFT to $NEW_TAG"
             CHANGELOG_CONTENT=$(cat /tmp/changelog_entry.md)
-            gh release edit "$LATEST_DRAFT" --tag "$NEW_TAG" --title "Setup Liquibase v${{ env.VERSION }}" --notes "$CHANGELOG_CONTENT"
+            gh release edit "$LATEST_DRAFT" --tag "$NEW_TAG" --title "v${{ env.VERSION }}" --notes "$CHANGELOG_CONTENT"
             
             echo "tag_name=$NEW_TAG" >> $GITHUB_OUTPUT
             
@@ -419,7 +419,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           tag: "v${{ env.VERSION }}"
-          name: "Setup Liquibase v${{ env.VERSION }}"
+          name: "v${{ env.VERSION }}"
           bodyFile: "/tmp/changelog_entry.md"
           artifacts: "dist/index.js,dist/index.js.map"
           makeLatest: true
