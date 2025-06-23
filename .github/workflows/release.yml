@@ -198,4 +198,6 @@ jobs:
           output-file: 'CHANGELOG.md'
           skip-version-file: true
           skip-commit: true
-          release-count: 0 
+          release-count: 0
+          git-branch: 'main'
+          skip-on-empty: false 
