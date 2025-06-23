@@ -27,26 +27,40 @@ export default {
   moduleFileExtensions: ['ts', 'js'],
 
   transform: {
-    '^.+\\.ts$': ['ts-jest', { tsconfig: 'tsconfig.json' }]
+    '^.+\\.ts$': ['ts-jest', { 
+      tsconfig: 'tsconfig.json',
+      // Reduce memory usage during compilation
+      isolatedModules: true
+    }]
   },
 
   // Set test timeout to 30 seconds for CI environments
   testTimeout: 30000,
 
-  // Force exit to prevent hanging processes
+  // Force exit to prevent hanging processes (especially important on Windows)
   forceExit: true,
 
   // Don't leak memory between test runs
   clearMocks: true,
   restoreMocks: true,
 
-  // Reduce parallelism in CI to avoid resource exhaustion
-  maxWorkers: process.env.CI ? 2 : '50%',
+  // Reduce parallelism to avoid resource exhaustion and cross-platform issues
+  maxWorkers: process.env.CI ? 1 : 2,
 
   // Setup files to run before tests
   setupFilesAfterEnv: ['<rootDir>/__tests__/setup.ts'],
 
-  // Enable garbage collection for memory management
+  // Memory management and cross-platform compatibility
   globalSetup: undefined,
-  globalTeardown: undefined
+  globalTeardown: undefined,
+  
+  // Handle Windows path issues
+  modulePathIgnorePatterns: ['<rootDir>/dist/'],
+  
+  // Reduce memory usage
+  logHeapUsage: process.env.CI ? true : false,
+  
+  // Ensure clean slate for each test file
+  resetMocks: true,
+  resetModules: true
 };

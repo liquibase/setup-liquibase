@@ -2,14 +2,6 @@
 
 This document explains how the improved release automation works for the setup-liquibase GitHub Action.
 
-## Overview
-
-The release process now follows the sophisticated patterns from Liquibase's Pro Release workflow, with three main components:
-
-1. **Release Drafter & Publisher** (`.github/workflows/release-drafter.yml`)
-2. **Tag-based Release** (`.github/workflows/release.yml`) 
-3. **PR Labeler** (`.github/workflows/pr-labeler.yml`)
-
 ## Workflow Architecture
 
 ### 1. Release Drafter & Publisher Workflow
@@ -116,8 +108,6 @@ The release process now follows the sophisticated patterns from Liquibase's Pro 
 │   └── pr-labeler.yml           # PR auto-labeling
 ├── release-drafter.yml          # Release drafter config
 └── labeler.yml                  # PR labeler config
-scripts/
-└── validate-workflows.sh        # Workflow validation
 ```
 
 ## Security Features
@@ -178,37 +168,6 @@ feature:
 - Verify that `dist/` files are built correctly
 - Check GitHub App token permissions
 - Ensure the release exists and is accessible
-
-### Validation
-
-Run the validation script to check workflow health:
-
-```bash
-./scripts/validate-workflows.sh
-```
-
-This script verifies:
-- Workflow file syntax
-- Required secrets configuration
-- Build artifact structure
-- Configuration file consistency
-
-## Migration Notes
-
-### From Previous Workflows
-
-The new system replaces:
-- Simple release workflows with hardcoded notes
-- Manual changelog management
-- Basic single-job release processes
-
-### Benefits
-
-- **Dynamic Content**: Changelogs generated from actual commits
-- **Multi-Platform Testing**: Catches platform-specific issues
-- **Professional Summaries**: Rich build reports and status tracking
-- **Better Security**: GitHub App tokens with proper scoping
-- **Improved Reliability**: Intelligent fallback mechanisms
 
 ## Example Workflow Run
 
