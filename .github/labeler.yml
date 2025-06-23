@@ -1,19 +1,15 @@
-# Configuration for PR labeler
+# Configuration for PR labeler v5
 # Add labels to PRs based on file changes and branch patterns
 
 # Documentation changes
 documentation:
-  - '*.md'
-  - 'docs/**/*'
-  - 'README*'
-  - 'CHANGELOG*'
-  - 'CONTRIBUTING*'
-  - 'LICENSE*'
+  - changed-files:
+    - any-glob-to-any-file: ['*.md', 'docs/**/*', 'README*', 'CHANGELOG*', 'CONTRIBUTING*', 'LICENSE*']
 
 # Feature development
 feature:
-  - 'src/**/*'
-  - 'lib/**/*'
+  - changed-files:
+    - any-glob-to-any-file: ['src/**/*', 'lib/**/*']
   - head-branch: ['^feature', '^feat']
 
 # Bug fixes
@@ -22,38 +18,23 @@ bug:
 
 # Tests
 test:
-  - '**/*test*'
-  - '**/*spec*'
-  - '__tests__/**/*'
-  - 'test/**/*'
-  - 'tests/**/*'
+  - changed-files:
+    - any-glob-to-any-file: ['**/*test*', '**/*spec*', '__tests__/**/*', 'test/**/*', 'tests/**/*']
 
 # Dependencies
 dependencies:
-  - 'package.json'
-  - 'package-lock.json'
-  - 'yarn.lock'
-  - 'npm-shrinkwrap.json'
+  - changed-files:
+    - any-glob-to-any-file: ['package.json', 'package-lock.json', 'yarn.lock', 'npm-shrinkwrap.json']
 
 # CI/CD and automation
 ci:
-  - '.github/**/*'
-  - '*.yml'
-  - '*.yaml'
-  - '.gitignore'
-  - '.dockerignore'
+  - changed-files:
+    - any-glob-to-any-file: ['.github/**/*', '*.yml', '*.yaml', '.gitignore', '.dockerignore']
 
 # Build and tooling
 build:
-  - 'webpack.config.js'
-  - 'rollup.config.js'
-  - 'tsconfig.json'
-  - 'jest.config.js'
-  - 'eslint.config.js'
-  - '.prettierrc*'
-  - '.editorconfig'
-  - 'dist/**/*'
-  - 'build/**/*'
+  - changed-files:
+    - any-glob-to-any-file: ['webpack.config.js', 'rollup.config.js', 'tsconfig.json', 'jest.config.js', 'eslint.config.js', '.prettierrc*', '.editorconfig', 'dist/**/*', 'build/**/*']
 
 # Maintenance/chores
 chore:
@@ -61,7 +42,5 @@ chore:
 
 # Configuration files
 config:
-  - '*.config.js'
-  - '*.config.ts'
-  - '.env*'
-  - '*.json'
+  - changed-files:
+    - any-glob-to-any-file: ['*.config.js', '*.config.ts', '.env*', '*.json']
