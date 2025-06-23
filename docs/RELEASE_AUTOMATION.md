@@ -20,6 +20,8 @@ This document explains how the improved release automation works for the setup-l
 - Multi-platform testing for reliability
 - Dynamic changelog generation from commit history
 - Intelligent draft release management
+- **Automatic artifact upload** (dist/index.js, dist/index.js.map)
+- **Build verification** for GitHub Actions compatibility
 - GitHub App token security
 - Professional build summaries
 
@@ -67,8 +69,10 @@ This document explains how the improved release automation works for the setup-l
 
 3. **The workflow will:**
    - Run multi-platform tests
+   - Build and verify distribution files (CommonJS compatibility)
    - Generate dynamic changelog
    - Create/update draft release
+   - **Upload distribution artifacts** (dist/index.js, dist/index.js.map)
    - Publish if requested
 
 #### Option 2: Tag-based Release

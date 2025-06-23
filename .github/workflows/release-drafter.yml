@@ -202,6 +202,55 @@ jobs:
       - name: Package action
         run: npm run package
 
+      - name: Verify build output for GitHub Actions
+        run: |
+          echo "=== Verifying GitHub Actions build output ==="
+          
+          # Check required files exist
+          if [ ! -f "dist/index.js" ]; then
+            echo "❌ dist/index.js not found!"
+            exit 1
+          fi
+          echo "✅ dist/index.js found"
+          
+          if [ ! -f "dist/index.js.map" ]; then
+            echo "❌ dist/index.js.map not found!"
+            exit 1
+          fi
+          echo "✅ dist/index.js.map found"
+          
+          # Verify the built file is CommonJS compatible (no ES module imports)
+          if grep -E -q '^import\s+.*\s+from\s+["'"'"'].*["'"'"'];?$' dist/index.js; then
+            echo "❌ dist/index.js contains ES6 imports - GitHub Actions require CommonJS!"
+            echo "Found ES6 imports:"
+            grep -E '^import\s+.*\s+from\s+["'"'"'].*["'"'"'];?$' dist/index.js | head -5
+            exit 1
+          fi
+          echo "✅ No ES6 imports found in dist/index.js"
+          
+          # Verify it uses require() statements (CommonJS)
+          if ! grep -q "require(" dist/index.js; then
+            echo "⚠️  Warning: No require() statements found - this may not be CommonJS"
+          else
+            echo "✅ CommonJS require() statements found"
+          fi
+          
+          # Check that no dist/package.json exists (which would cause ES module issues)
+          if [ -f "dist/package.json" ]; then
+            echo "❌ dist/package.json exists and may cause ES module conflicts!"
+            echo "Contents:"
+            cat dist/package.json
+            exit 1
+          fi
+          echo "✅ No problematic dist/package.json found"
+          
+          # Show basic file info
+          echo "=== Build output summary ==="
+          ls -la dist/
+          echo "dist/index.js size: $(wc -c < dist/index.js) bytes"
+          
+          echo "✅ Build output verified successfully for GitHub Actions"
+
       - name: Download build artifacts from Ubuntu
         uses: actions/download-artifact@v4
         with:
@@ -371,10 +420,64 @@ jobs:
           tag: "v${{ env.VERSION }}"
           name: "Setup Liquibase v${{ env.VERSION }}"
           bodyFile: "/tmp/changelog_entry.md"
+          artifacts: "dist/index.js,dist/index.js.map"
           makeLatest: true
           draft: ${{ github.event.inputs.publish_release != 'true' }}
           prerelease: false
           token: ${{ steps.get-token.outputs.token }}
+
+      - name: Upload Assets to Draft Release
+        if: steps.find-draft.outputs.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+        run: |
+          echo "Uploading assets to draft release: ${{ steps.find-draft.outputs.tag_name }}"
+          
+          # Verify that distribution files exist
+          if [ ! -f "dist/index.js" ]; then
+            echo "❌ dist/index.js not found!"
+            exit 1
+          fi
+          
+          if [ ! -f "dist/index.js.map" ]; then
+            echo "❌ dist/index.js.map not found!"
+            exit 1
+          fi
+          
+          echo "✅ Distribution files verified"
+          
+          # Upload build artifacts to the draft release
+          gh release upload "${{ steps.find-draft.outputs.tag_name }}" \
+            dist/index.js \
+            dist/index.js.map \
+            --clobber
+          
+          echo "✅ Assets uploaded successfully to draft release"
+
+      - name: Upload Assets to New Release
+        if: steps.find-draft.outputs.outcome == 'create_new'
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+        run: |
+          echo "Will upload assets after new release is created..."
+          
+          # Verify that distribution files exist
+          if [ ! -f "dist/index.js" ]; then
+            echo "❌ dist/index.js not found!"
+            exit 1
+          fi
+          
+          if [ ! -f "dist/index.js.map" ]; then
+            echo "❌ dist/index.js.map not found!"
+            exit 1
+          fi
+          
+          echo "✅ Distribution files verified and ready for upload"
+          gh release upload "${{ steps.create-release.outputs.tag }}" \
+            dist/index.js \
+            dist/index.js.map \
+            --clobber
+          echo "✅ Assets uploaded successfully to new release"
 
       - name: Commit and push changelog
         env:
@@ -444,6 +547,7 @@ jobs:
           | Artifact Type | Status |
           |---------------|--------|
           | **Action Build** | ✅ dist/ and lib/ updated |
+          | **Distribution Files** | ✅ dist/index.js and dist/index.js.map uploaded |
           | **Changelog** | ✅ CHANGELOG.md updated with v${{ env.VERSION }} |
           | **Release Notes** | ✅ Dynamic changelog from commit history |
 
@@ -461,3 +565,4 @@ jobs:
           echo "- Method: $RELEASE_METHOD"
           echo "- Status: $RELEASE_STATUS"
           echo "- URL: $RELEASE_URL"
+          
