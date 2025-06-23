@@ -35,6 +35,7 @@ This document explains how the improved release automation works for the setup-l
 - Publishes draft releases that match the tag
 - Handles fallback release creation if no draft exists
 - Updates CHANGELOG.md with release notes
+- **Commits changes to main branch** (handles detached HEAD state)
 
 **Smart Release Logic:**
 ```yaml
@@ -43,7 +44,13 @@ This document explains how the improved release automation works for the setup-l
 2. If found: Upload assets and publish the draft
 3. If already published: Add/update assets
 4. If no release exists: Create new release with generated notes
+5. Commit dist/ and CHANGELOG.md updates to main branch
 ```
+
+**Important Notes:**
+- Tag pushes create a detached HEAD state
+- All commits (dist files, changelog) are pushed to the main branch
+- Uses `[skip ci]` to prevent infinite workflow loops
 
 ### 3. PR Labeler Workflow
 
@@ -172,6 +179,16 @@ feature:
 - Verify that `dist/` files are built correctly
 - Check GitHub App token permissions
 - Ensure the release exists and is accessible
+
+**Tag Push Failures (Detached HEAD):**
+- Error: `! [rejected] HEAD -> v1-beta (already exists)`
+- **Solution**: The workflow now automatically switches to main branch for commits
+- All dist/ and CHANGELOG.md updates are committed to main branch, not the tag
+- Uses `[skip ci]` to prevent infinite workflow loops
+
+**Git Push Conflicts:**
+- The workflow includes retry mechanisms with automatic rebasing
+- If conflicts persist, manually resolve and re-run the workflow
 
 ## Example Workflow Run
 

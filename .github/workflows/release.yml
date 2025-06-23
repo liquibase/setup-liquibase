@@ -158,12 +158,38 @@ jobs:
           if git diff --quiet dist/; then
             echo "No changes in dist/ - skipping commit"
           else
-            echo "Changes detected in dist/ - committing for release"
-            git add dist/
-            git commit -m "🚀 Add built distribution files for release ${{ github.ref_name }}"
+            echo "Changes detected in dist/ - committing to main branch"
             
-            # Push the commit (but don't force update the tag yet)
-            git push origin HEAD:${{ github.ref_name }}
+            # We're in a detached HEAD state due to tag checkout
+            # Need to switch to main branch to commit dist updates
+            MAIN_BRANCH=$(git remote show origin | grep "HEAD branch" | cut -d' ' -f5)
+            if [ -z "$MAIN_BRANCH" ]; then
+              MAIN_BRANCH="main"  # fallback
+            fi
+            echo "Detected main branch: $MAIN_BRANCH"
+            
+            # Fetch and checkout main branch
+            git fetch origin "$MAIN_BRANCH"
+            git checkout "$MAIN_BRANCH"
+            
+            # Pull latest changes to avoid conflicts
+            git pull origin "$MAIN_BRANCH" --rebase || true
+            
+            # Re-add and commit the dist files (they should still be modified)
+            git add dist/
+            git commit -m "🚀 Add built distribution files for release ${{ github.ref_name }} [skip ci]"
+            
+            # Push to main branch with retry mechanism
+            for i in {1..3}; do
+              if git push origin "$MAIN_BRANCH"; then
+                echo "✅ Successfully pushed dist updates to $MAIN_BRANCH"
+                break
+              else
+                echo "Push attempt $i failed, retrying..."
+                git pull origin "$MAIN_BRANCH" --rebase
+                sleep 2
+              fi
+            done
           fi
           
           echo "✅ Release preparation completed"
@@ -426,9 +452,38 @@ jobs:
           if git diff --exit-code CHANGELOG.md; then
             echo "No changes to CHANGELOG.md"
           else
+            echo "Changes detected in CHANGELOG.md, committing to main branch..."
+            
+            # We're in a detached HEAD state due to tag checkout
+            # Need to switch to main branch to commit changelog updates
+            MAIN_BRANCH=$(git remote show origin | grep "HEAD branch" | cut -d' ' -f5)
+            if [ -z "$MAIN_BRANCH" ]; then
+              MAIN_BRANCH="main"  # fallback
+            fi
+            echo "Detected main branch: $MAIN_BRANCH"
+            
+            # Fetch and checkout main branch
+            git fetch origin "$MAIN_BRANCH"
+            git checkout "$MAIN_BRANCH"
+            
+            # Pull latest changes to avoid conflicts
+            git pull origin "$MAIN_BRANCH" --rebase || true
+            
+            # Re-add and commit the changelog (it should still be modified)
             git add CHANGELOG.md
-            git commit -m "docs: update changelog for $RELEASE_TAG"
-            git push origin HEAD:${{ github.ref_name }}
+            git commit -m "docs: update changelog for $RELEASE_TAG [skip ci]"
+            
+            # Push to main branch with retry mechanism
+            for i in {1..3}; do
+              if git push origin "$MAIN_BRANCH"; then
+                echo "✅ Successfully pushed changelog updates to $MAIN_BRANCH"
+                break
+              else
+                echo "Push attempt $i failed, retrying..."
+                git pull origin "$MAIN_BRANCH" --rebase
+                sleep 2
+              fi
+            done
           fi
           
           # Clean up
