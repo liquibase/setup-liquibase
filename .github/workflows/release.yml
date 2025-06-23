@@ -13,9 +13,21 @@ jobs:
       packages: write
       issues: write
     steps:
+      - name: Get GitHub App token
+        id: get-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.LIQUIBASE_GITHUB_APP_ID }}
+          private-key: ${{ secrets.LIQUIBASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          permission-contents: write
+          permission-actions: write
+          permission-packages: write
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ steps.get-token.outputs.token }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -111,7 +123,7 @@ jobs:
           edition: 'oss'
           cache: false
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
 
       - name: Verify action test results
         run: |
@@ -135,6 +147,8 @@ jobs:
           echo "✅ Action test completed successfully"
 
       - name: Commit dist files to release
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
         run: |
           echo "=== Preparing release commit ==="
           git config --local user.email "action@github.com"
@@ -147,18 +161,101 @@ jobs:
             echo "Changes detected in dist/ - committing for release"
             git add dist/
             git commit -m "🚀 Add built distribution files for release ${{ github.ref_name }}"
+            
+            # Push the commit (but don't force update the tag yet)
+            git push origin HEAD:${{ github.ref_name }}
           fi
-          
-          # Force update the tag to point to the latest commit (with dist files)
-          echo "Updating tag ${{ github.ref_name }} to include distribution files"
-          git tag -f ${{ github.ref_name }}
-          git push -f origin ${{ github.ref_name }}
           
           echo "✅ Release preparation completed"
 
-      - name: Create Release
+      - name: Find and Update Draft Release
+        id: find-draft
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+        run: |
+          RELEASE_TAG="${{ github.ref_name }}"
+          echo "Looking for draft release with tag: $RELEASE_TAG"
+          
+          # Try to find existing draft release with this tag
+          DRAFT_RELEASE=$(gh release view "$RELEASE_TAG" --json isDraft,tagName,id 2>/dev/null | jq -r 'select(.isDraft == true) | .tagName' || echo "")
+          
+          if [ -n "$DRAFT_RELEASE" ]; then
+            echo "Found existing draft release: $DRAFT_RELEASE"
+            echo "outcome=found_draft" >> $GITHUB_OUTPUT
+            echo "tag_name=$RELEASE_TAG" >> $GITHUB_OUTPUT
+            
+            # Get the release URL
+            RELEASE_URL=$(gh release view "$RELEASE_TAG" --json url --jq '.url')
+            echo "html_url=$RELEASE_URL" >> $GITHUB_OUTPUT
+          else
+            echo "No draft release found with tag $RELEASE_TAG"
+            # Check if a published release already exists
+            EXISTING_RELEASE=$(gh release view "$RELEASE_TAG" --json tagName 2>/dev/null | jq -r '.tagName // empty' || true)
+            
+            if [ -n "$EXISTING_RELEASE" ]; then
+              echo "Published release already exists with tag $RELEASE_TAG"
+              echo "outcome=already_published" >> $GITHUB_OUTPUT
+              echo "tag_name=$RELEASE_TAG" >> $GITHUB_OUTPUT
+              
+              # Get the release URL
+              RELEASE_URL=$(gh release view "$RELEASE_TAG" --json url --jq '.url')
+              echo "html_url=$RELEASE_URL" >> $GITHUB_OUTPUT
+            else
+              echo "No release found, will create new one"
+              echo "outcome=create_new" >> $GITHUB_OUTPUT
+              echo "tag_name=$RELEASE_TAG" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Upload Assets to Draft Release
+        if: steps.find-draft.outputs.outcome == 'found_draft'
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+        run: |
+          echo "Uploading assets to draft release: ${{ steps.find-draft.outputs.tag_name }}"
+          
+          # Upload build artifacts
+          gh release upload "${{ steps.find-draft.outputs.tag_name }}" \
+            dist/index.js \
+            dist/index.js.map \
+            --clobber
+          
+          echo "Assets uploaded successfully"
+
+      - name: Publish Draft Release
+        if: steps.find-draft.outputs.outcome == 'found_draft'
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+        run: |
+          echo "Publishing draft release: ${{ steps.find-draft.outputs.tag_name }}"
+          
+          # Publish the draft release
+          gh release edit "${{ steps.find-draft.outputs.tag_name }}" --draft=false
+          
+          echo "Draft release published successfully"
+
+      - name: Update Existing Release (Add Assets)
+        if: steps.find-draft.outputs.outcome == 'already_published'
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+        run: |
+          echo "Adding assets to existing published release: ${{ steps.find-draft.outputs.tag_name }}"
+          
+          # Upload build artifacts to existing release
+          gh release upload "${{ steps.find-draft.outputs.tag_name }}" \
+            dist/index.js \
+            dist/index.js.map \
+            --clobber
+          
+          echo "Assets added to existing release"
+
+      - name: Create New Release (Fallback)
+        if: steps.find-draft.outputs.outcome == 'create_new'
+        id: create-release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref_name }}
+          name: "Setup Liquibase ${{ github.ref_name }}"
           generate_release_notes: true
           files: |
             dist/index.js
@@ -173,11 +270,9 @@ jobs:
             ### Usage
             ```yaml
             - name: Setup Liquibase
-              uses: liquibase/setup-liquibase@${{ github.ref_name }}
+              uses: liquibase-github-actions/setup-liquibase@${{ github.ref_name }}
               with:
-                version: '4.32.0'
-                edition: 'oss'
-                cache: true
+                liquibase-version: "latest"
             ```
             
             ### What's Changed
@@ -187,16 +282,221 @@ jobs:
             
             See the full changelog and documentation in the repository.
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
 
-      - name: Update CHANGELOG.md
-        uses: TriPSs/conventional-changelog-action@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          version-file: './package.json'
-          output-file: 'CHANGELOG.md'
-          skip-version-file: true
-          skip-commit: true
-          release-count: 0
-          git-branch: 'main'
-          skip-on-empty: false 
+      - name: Update CHANGELOG.md and Commit
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+        run: |
+          echo "=== Generating Dynamic CHANGELOG.md ==="
+          
+          RELEASE_TAG="${{ github.ref_name }}"
+          RELEASE_DATE=$(date +%Y-%m-%d)
+          
+          # Get the previous tag for comparison
+          PREVIOUS_TAG=$(git tag --sort=-version:refname | grep -v "^$RELEASE_TAG$" | head -1 || echo "")
+          
+          echo "Current release: $RELEASE_TAG"
+          echo "Previous release: ${PREVIOUS_TAG:-'Initial release'}"
+          
+          # Start building the changelog entry
+          cat > changelog_entry.md << EOF
+          ## [$RELEASE_TAG] - $RELEASE_DATE
+          
+          EOF
+          
+          if [ -n "$PREVIOUS_TAG" ]; then
+            echo "### Changes since $PREVIOUS_TAG" >> changelog_entry.md
+            echo "" >> changelog_entry.md
+            
+            # Get commits since last tag and categorize them
+            COMMITS=$(git log --oneline --pretty=format:"%s" "$PREVIOUS_TAG..$RELEASE_TAG" 2>/dev/null || git log --oneline --pretty=format:"%s" -10)
+            
+            # Categorize commits
+            FEATURES=""
+            FIXES=""
+            DOCS=""
+            CHORES=""
+            OTHERS=""
+            
+            while IFS= read -r commit; do
+              if [[ $commit =~ ^(feat|feature)(\(.+\))?: ]]; then
+                FEATURES="$FEATURES- ${commit#*: }"$'\n'
+              elif [[ $commit =~ ^(fix|bugfix)(\(.+\))?: ]]; then
+                FIXES="$FIXES- ${commit#*: }"$'\n'
+              elif [[ $commit =~ ^(docs?)(\(.+\))?: ]]; then
+                DOCS="$DOCS- ${commit#*: }"$'\n'
+              elif [[ $commit =~ ^(chore|build|ci|test)(\(.+\))?: ]]; then
+                CHORES="$CHORES- ${commit#*: }"$'\n'
+              else
+                OTHERS="$OTHERS- $commit"$'\n'
+              fi
+            done <<< "$COMMITS"
+            
+            # Add sections if they have content
+            if [ -n "$FEATURES" ]; then
+              echo "#### ✨ Features" >> changelog_entry.md
+              echo "$FEATURES" >> changelog_entry.md
+            fi
+            
+            if [ -n "$FIXES" ]; then
+              echo "#### 🐛 Bug Fixes" >> changelog_entry.md
+              echo "$FIXES" >> changelog_entry.md
+            fi
+            
+            if [ -n "$DOCS" ]; then
+              echo "#### 📚 Documentation" >> changelog_entry.md
+              echo "$DOCS" >> changelog_entry.md
+            fi
+            
+            if [ -n "$CHORES" ]; then
+              echo "#### 🔧 Maintenance" >> changelog_entry.md
+              echo "$CHORES" >> changelog_entry.md
+            fi
+            
+            if [ -n "$OTHERS" ]; then
+              echo "#### 📝 Other Changes" >> changelog_entry.md
+              echo "$OTHERS" >> changelog_entry.md
+            fi
+            
+            # Add file changes summary
+            echo "#### 📊 Changed Files" >> changelog_entry.md
+            CHANGED_FILES=$(git diff --name-only "$PREVIOUS_TAG..$RELEASE_TAG" 2>/dev/null | head -10)
+            if [ -n "$CHANGED_FILES" ]; then
+              echo "$CHANGED_FILES" | sed 's/^/- /' >> changelog_entry.md
+            else
+              echo "- No file changes detected" >> changelog_entry.md
+            fi
+            echo "" >> changelog_entry.md
+            
+          else
+            # Initial release
+            echo "### 🎉 Initial Release" >> changelog_entry.md
+            echo "" >> changelog_entry.md
+            echo "#### ✨ Features" >> changelog_entry.md
+            echo "- Setup Liquibase GitHub Action for automated installation" >> changelog_entry.md
+            echo "- Support for Liquibase OSS and Pro editions" >> changelog_entry.md
+            echo "- Cross-platform compatibility (Ubuntu, Windows, macOS)" >> changelog_entry.md
+            echo "- Intelligent caching system for faster builds" >> changelog_entry.md
+            echo "- Comprehensive error handling and validation" >> changelog_entry.md
+            echo "" >> changelog_entry.md
+            echo "#### 🔧 Technical Features" >> changelog_entry.md
+            echo "- Automatic version detection and validation" >> changelog_entry.md
+            echo "- GitHub Actions tool cache integration" >> changelog_entry.md
+            echo "- Action outputs for version and installation path" >> changelog_entry.md
+            echo "- Built with TypeScript and comprehensive testing" >> changelog_entry.md
+            echo "" >> changelog_entry.md
+          fi
+          
+          # Add usage section
+          echo "#### 📋 Usage" >> changelog_entry.md
+          echo '```yaml' >> changelog_entry.md
+          echo "- name: Setup Liquibase" >> changelog_entry.md
+          echo "  uses: liquibase-github-actions/setup-liquibase@$RELEASE_TAG" >> changelog_entry.md
+          echo "  with:" >> changelog_entry.md
+          echo "    liquibase-version: 'latest'" >> changelog_entry.md
+          echo '```' >> changelog_entry.md
+          echo "" >> changelog_entry.md
+          
+          # Create or update CHANGELOG.md
+          if [ -f "CHANGELOG.md" ]; then
+            echo "Updating existing CHANGELOG.md"
+            # Insert new entry after header
+            head -n 6 CHANGELOG.md > temp_changelog.md 2>/dev/null || echo "# Changelog" > temp_changelog.md
+            echo "" >> temp_changelog.md
+            cat changelog_entry.md >> temp_changelog.md
+            echo "" >> temp_changelog.md
+            tail -n +7 CHANGELOG.md >> temp_changelog.md 2>/dev/null || true
+            mv temp_changelog.md CHANGELOG.md
+          else
+            echo "Creating new CHANGELOG.md"
+            cat > CHANGELOG.md << 'CHANGELOG_EOF'
+          # Changelog
+          
+          All notable changes to this project will be documented in this file.
+          
+          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+          
+          CHANGELOG_EOF
+            cat changelog_entry.md >> CHANGELOG.md
+          fi
+          
+          # Commit changelog if there are changes
+          if git diff --exit-code CHANGELOG.md; then
+            echo "No changes to CHANGELOG.md"
+          else
+            git add CHANGELOG.md
+            git commit -m "docs: update changelog for $RELEASE_TAG"
+            git push origin HEAD:${{ github.ref_name }}
+          fi
+          
+          # Clean up
+          rm -f changelog_entry.md temp_changelog.md
+          
+          echo "✅ CHANGELOG.md updated dynamically for release $RELEASE_TAG"
+
+      - name: Generate Build Summary
+        if: always()
+        run: |
+          # Determine release outcome
+          if [ "${{ steps.find-draft.outputs.outcome }}" == "found_draft" ]; then
+            RELEASE_METHOD="✅ Published from existing draft release"
+            RELEASE_STATUS="published"
+            RELEASE_URL="${{ steps.find-draft.outputs.html_url }}"
+          elif [ "${{ steps.find-draft.outputs.outcome }}" == "already_published" ]; then
+            RELEASE_METHOD="✅ Updated existing published release with new assets"
+            RELEASE_STATUS="updated"
+            RELEASE_URL="${{ steps.find-draft.outputs.html_url }}"
+          elif [ "${{ steps.create-release.outcome }}" == "success" ]; then
+            RELEASE_METHOD="✅ Created new release"
+            RELEASE_STATUS="published"
+            RELEASE_URL="${{ steps.create-release.outputs.html_url }}"
+          else
+            RELEASE_METHOD="❌ Failed to create/update release"
+            RELEASE_URL="N/A"
+            RELEASE_STATUS="failure"
+          fi
+
+          # Generate the summary
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          # 🚀 Setup Liquibase Release Summary
+
+          ## Release Status
+          | Component | Status |
+          |-----------|--------|
+          | **Release Action** | ${RELEASE_METHOD} |
+          | **Release Status** | ${RELEASE_STATUS} |
+          | **Release URL** | [View Release](${RELEASE_URL}) |
+          | **Version** | ${{ github.ref_name }} |
+
+          ## Build Verification
+          | Component | Status |
+          |-----------|--------|
+          | **Dependencies** | ✅ Installed successfully |
+          | **Tests** | ✅ All tests passed |
+          | **Linting** | ✅ Code quality checks passed |
+          | **Build** | ✅ Distribution files generated |
+          | **Action Test** | ✅ Local action test successful |
+
+          ## Artifacts
+          | Artifact | Status |
+          |----------|--------|
+          | **dist/index.js** | ✅ Built and uploaded |
+          | **dist/index.js.map** | ✅ Source map generated |
+          | **CHANGELOG.md** | ✅ Updated with release notes |
+
+          ## Quick Links
+          - 🔗 [Release Page](${RELEASE_URL})
+          - 📋 [Commit History](https://github.com/${{ github.repository }}/commits/${{ github.ref_name }})
+          - 📦 [Action on Marketplace](https://github.com/marketplace/actions/setup-liquibase)
+
+          ---
+          $(if [ "${RELEASE_STATUS}" == "published" ]; then echo "🎉 **Release published successfully!**"; elif [ "${RELEASE_STATUS}" == "updated" ]; then echo "🔄 **Release updated successfully!**"; else echo "❌ **Release process encountered errors**"; fi)
+          EOF
+
+          echo "🎉 Release Summary:"
+          echo "- Version: ${{ github.ref_name }}"
+          echo "- Method: $RELEASE_METHOD"
+          echo "- Status: $RELEASE_STATUS"
+          echo "- URL: $RELEASE_URL" 

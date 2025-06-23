@@ -1,0 +1,154 @@
+name-template: 'Setup Liquibase v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+filter-by-commitish: true
+commitish: main
+exclude-labels:
+  - 'skip-changelog'
+  - 'no-changelog'
+categories:
+  - title: ':green_book: Notable Changes'
+    labels:
+      - 'notable'
+      - 'highlight'
+  - title: '🚀 New Features'
+    labels:
+      - 'feature'
+      - 'enhancement'
+      - 'feat'
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'bug'
+      - 'bugfix'
+      - 'fix'
+  - title: '💥 Breaking Changes'
+    labels:
+      - 'breaking'
+      - 'breaking-change'
+      - 'major'
+  - title: '� Documentation'
+    labels:
+      - 'documentation'
+      - 'docs'
+  - title: '🔧 Maintenance & Dependencies'
+    collapse-after: 5
+    labels:
+      - 'chore'
+      - 'maintenance'
+      - 'dependencies'
+      - 'build'
+      - 'ci'
+  - title: '⚡ Performance'
+    labels:
+      - 'performance'
+      - 'perf'
+  - title: '🧪 Tests'
+    labels:
+      - 'test'
+      - 'tests'
+      - 'testing'
+  - title: '🔒 Security'
+    labels:
+      - 'security'
+  - title: '👏 New Contributors'
+    labels:
+      - 'first-contribution'
+      - 'new-contributor'
+
+change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+change-title-escapes: '\<*_&' # You can add # and @ to disable mentions, and add ` to disable code blocks.
+
+version-resolver:
+  major:
+    labels:
+      - 'major'
+      - 'breaking'
+      - 'breaking-change'
+  minor:
+    labels:
+      - 'minor'
+      - 'feature'
+      - 'enhancement'
+      - 'feat'
+  patch:
+    labels:
+      - 'patch'
+      - 'fix'
+      - 'bugfix'
+      - 'bug'
+      - 'chore'
+      - 'docs'
+      - 'documentation'
+      - 'dependencies'
+  default: patch
+
+autolabeler:
+  - label: 'documentation'
+    files:
+      - '*.md'
+      - 'docs/**/*'
+  - label: 'bug'
+    branch:
+      - '/fix\/.+/'
+      - '/bugfix\/.+/'
+    title:
+      - '/fix/i'
+      - '/bug/i'
+  - label: 'feature'
+    branch:
+      - '/feature\/.+/'
+      - '/feat\/.+/'
+    title:
+      - '/feat/i'
+      - '/feature/i'
+  - label: 'chore'
+    branch:
+      - '/chore\/.+/'
+    title:
+      - '/chore/i'
+  - label: 'dependencies'
+    files:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'yarn.lock'
+  - label: 'ci'
+    files:
+      - '.github/**/*'
+  - label: 'test'
+    files:
+      - '**/*test*'
+      - '**/*spec*'
+      - '__tests__/**/*'
+  - label: 'build'
+    files:
+      - 'webpack.config.js'
+      - 'rollup.config.js'
+      - 'tsconfig.json'
+      - 'build/**/*'
+      - 'dist/**/*'
+      - 'lib/**/*'
+
+template: |
+  ## 🚀 GitHub Action Release
+
+  This release contains the built distribution files required for the GitHub Action to work.
+
+  ### Usage Example
+  ```yaml
+  steps:
+    - name: Setup Liquibase
+      uses: liquibase-github-actions/setup-liquibase@$RESOLVED_VERSION
+      with:
+        liquibase-version: "latest"
+  ```
+
+  ### What's Changed
+  $CHANGES
+
+  ### Build Information
+  - **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_VERSION
+  - **GitHub Actions**: https://github.com/$OWNER/$REPOSITORY/actions
+  - **Marketplace**: https://github.com/marketplace/actions/setup-liquibase
+
+  ---
+
+  *This release was automatically generated and includes all merged pull requests since the previous release.*
