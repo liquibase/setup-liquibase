@@ -71,9 +71,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ```yaml
 steps:
   - name: Setup Liquibase
-    uses: liquibase-github-actions/setup-liquibase@v1-beta
+    uses: liquibase/setup-liquibase@v1-beta
     with:
-      liquibase-version: "latest"
+      version: '4.32.0'
+      edition: 'oss'
 ```
 
 ---

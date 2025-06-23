@@ -336,9 +336,10 @@ jobs:
           echo '```yaml' >> /tmp/changelog_entry.md
           echo 'steps:' >> /tmp/changelog_entry.md
           echo '  - name: Setup Liquibase' >> /tmp/changelog_entry.md
-          echo '    uses: liquibase-github-actions/setup-liquibase@v${{ env.VERSION }}' >> /tmp/changelog_entry.md
+          echo '    uses: liquibase/setup-liquibase@v${{ env.VERSION }}' >> /tmp/changelog_entry.md
           echo '    with:' >> /tmp/changelog_entry.md
-          echo '      liquibase-version: "latest"' >> /tmp/changelog_entry.md
+          echo '      version: '"'"'4.32.0'"'"'' >> /tmp/changelog_entry.md
+          echo '      edition: '"'"'oss'"'"'' >> /tmp/changelog_entry.md
           echo '```' >> /tmp/changelog_entry.md
           
           # Add build info
@@ -655,7 +656,7 @@ jobs:
             git push origin "$MAJOR_TAG" --force
             
             echo "✅ Updated $MAJOR_TAG tag to point to $FULL_TAG"
-            echo "Users can now reference this action with: uses: liquibase-github-actions/setup-liquibase@$MAJOR_TAG"
+            echo "Users can now reference this action with: uses: liquibase/setup-liquibase@$MAJOR_TAG"
           else
             echo "❌ Release $FULL_TAG not found, skipping major tag update"
             exit 1
