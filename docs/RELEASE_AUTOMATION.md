@@ -1,10 +1,10 @@
-# Release Automation Guide
+# 🚀 Release Automation Guide
 
 This document explains how the improved release automation works for the setup-liquibase GitHub Action.
 
-## Workflow Architecture
+## 🏗️ Workflow Architecture
 
-### 1. Release Drafter & Publisher Workflow
+### 1. 📝 Release Drafter & Publisher Workflow
 
 **Triggers:**
 - Push to `main`/`master` (creates/updates draft releases)
@@ -25,45 +25,44 @@ This document explains how the improved release automation works for the setup-l
 - GitHub App token security
 - Professional build summaries
 
-### 2. Tag-based Release Workflow
+### 2. 🏷️ Release Assets Builder Workflow
 
 **Triggers:**
-- Push to tags matching `v*` pattern
+- Release published events
 
 **Purpose:**
-- Builds and uploads distribution files to existing draft releases
-- Publishes draft releases that match the tag
-- Handles fallback release creation if no draft exists
+- Builds and uploads distribution files when a release is manually published
 - Updates CHANGELOG.md with release notes
-- **Commits changes to main branch** (handles detached HEAD state)
+- **Commits changes to main branch** (no detached HEAD issues)
+- Verifies GitHub Actions compatibility
 
 **Smart Release Logic:**
 ```yaml
 # The workflow will:
-1. Look for existing draft release with the tag
-2. If found: Upload assets and publish the draft
-3. If already published: Add/update assets
-4. If no release exists: Create new release with generated notes
-5. Commit dist/ and CHANGELOG.md updates to main branch
+1. Triggered when someone publishes a release in GitHub UI
+2. Build and verify distribution files (CommonJS compatibility)
+3. Upload assets (dist/index.js, dist/index.js.map) to the published release
+4. Update CHANGELOG.md with categorized commit history
+5. Commit updates to main branch
 ```
 
 **Important Notes:**
-- Tag pushes create a detached HEAD state
-- All commits (dist files, changelog) are pushed to the main branch
-- Uses `[skip ci]` to prevent infinite workflow loops
+- Runs on the commit that the release points to (no detached HEAD)
+- Cleaner git operations compared to tag-triggered workflows
+- Works perfectly with draft releases created by Release Drafter
 
-### 3. PR Labeler Workflow
+### 3. 🏷️ PR Labeler Workflow
 
 **Purpose:**
 - Automatically labels PRs based on file changes and branch patterns
 - Feeds into release-drafter categorization
 - Ensures consistent release note generation
 
-## Usage Instructions
+## 📋 Usage Instructions
 
 ### Creating a Release
 
-#### Option 1: Manual Release (Recommended)
+#### Option 1: 🎯 Manual Release (Recommended)
 
 1. **Trigger via GitHub UI:**
    ```
@@ -82,21 +81,27 @@ This document explains how the improved release automation works for the setup-l
    - **Upload distribution artifacts** (dist/index.js, dist/index.js.map)
    - Publish if requested
 
-#### Option 2: Tag-based Release
+#### Option 2: 📝 Draft + Publish Release
 
-1. **Create and push a tag:**
+1. **Create a draft release:**
+   - Use the Release Drafter workflow (manual dispatch)
+   - OR let it auto-create from merged PRs
+
+2. **Review and publish:**
    ```bash
-   git tag v1.2.3
-   git push origin v1.2.3
+   # Go to GitHub Releases page
+   # Find your draft release
+   # Edit release notes if needed
+   # Click "Publish release"
    ```
 
-2. **The workflow will:**
+3. **The workflow will:**
    - Build distribution files
-   - Find existing draft release for `v1.2.3`
-   - Upload assets and publish the release
+   - Upload assets to the published release
    - Update CHANGELOG.md
+   - Commit changes to main branch
 
-### Draft Release Management
+### 📝 Draft Release Management
 
 **Automatic Draft Creation:**
 - Every merged PR to `main`/`master` updates the draft release
@@ -106,28 +111,28 @@ This document explains how the improved release automation works for the setup-l
 **Manual Draft Publishing:**
 1. Go to GitHub Releases
 2. Find the draft release
-3. Edit and publish manually, OR
-4. Use the Release Drafter workflow with "Publish" option
+3. Edit and publish manually → **This triggers the Release Assets Builder workflow**
+4. OR use the Release Drafter workflow with "Publish" option
 
-## File Structure
+## 📁 File Structure
 
 ```
 .github/
 ├── workflows/
 │   ├── release-drafter.yml      # Main release automation
-│   ├── release.yml              # Tag-triggered builds
+│   ├── release.yml              # Release assets builder (on publish)
 │   └── pr-labeler.yml           # PR auto-labeling
 ├── release-drafter.yml          # Release drafter config
 └── labeler.yml                  # PR labeler config
 ```
 
-## Security Features
+## 🔒 Security Features
 
 - **GitHub App Tokens**: All workflows use secure app tokens instead of PATs
 - **Proper Permissions**: Minimal required permissions for each job
 - **Token Scoping**: Different permission sets for different operations
 
-## Configuration
+## ⚙️ Configuration
 
 ### Release Drafter Config (`.github/release-drafter.yml`)
 
@@ -153,7 +158,7 @@ feature:
   - head-branch: ['^feature', '^feat']
 ```
 
-## Best Practices
+## ✅ Best Practices
 
 1. **Use Conventional Commits**: `feat:`, `fix:`, `docs:`, `chore:`
 2. **Label PRs Appropriately**: Helps with release categorization
@@ -161,7 +166,7 @@ feature:
 4. **Review Draft Releases**: Check generated notes before publishing
 5. **Use Semantic Versioning**: `major.minor.patch` format
 
-## Troubleshooting
+## 🚨 Troubleshooting
 
 ### Common Issues
 
@@ -181,16 +186,44 @@ feature:
 - Ensure the release exists and is accessible
 
 **Tag Push Failures (Detached HEAD):**
-- Error: `! [rejected] HEAD -> v1-beta (already exists)`
-- **Solution**: The workflow now automatically switches to main branch for commits
-- All dist/ and CHANGELOG.md updates are committed to main branch, not the tag
-- Uses `[skip ci]` to prevent infinite workflow loops
+- **Not applicable**: The Release Assets Builder workflow doesn't use tag triggers
+- Uses `release: published` event which avoids detached HEAD issues
+- All commits go directly to main branch without git conflicts
 
 **Git Push Conflicts:**
 - The workflow includes retry mechanisms with automatic rebasing
 - If conflicts persist, manually resolve and re-run the workflow
 
-## Example Workflow Run
+## 🔄 Recommended Release Process
+
+The two workflows work together to provide a complete release automation system:
+
+### 🎯 **Optimal Workflow:**
+
+1. **Development Phase:**
+   - Create feature branches and PRs
+   - PR Labeler automatically categorizes changes
+   - Release Drafter accumulates changes in draft releases
+
+2. **Pre-Release Phase:**
+   - Use Release Drafter workflow (manual dispatch) to:
+     - Run multi-platform tests
+     - Generate dynamic changelog
+     - Create/update draft release with artifacts
+   
+3. **Release Phase:**
+   - Review the draft release in GitHub UI
+   - Edit release notes if needed
+   - **Publish the release** → Triggers Release Assets Builder
+   - Assets are uploaded and CHANGELOG.md is updated
+
+### ✅ **Benefits of This Approach:**
+- **Quality Control**: Manual review before publishing
+- **No Git Conflicts**: Clean release process without detached HEAD issues
+- **Complete Automation**: Once published, everything is handled automatically
+- **Flexibility**: Can create releases via manual dispatch OR draft + publish
+
+## 🔄 Example Workflow Run
 
 ```
 1. Developer merges PR with label "feature"
@@ -205,11 +238,10 @@ feature:
    → Draft release updated with latest changes
    → Release published (if requested)
 
-4. OR: Push tag v1.2.3
-   → Tag-based workflow finds draft release
-   → Builds distribution files
-   → Uploads assets to existing draft
-   → Publishes the release
+4. OR: Publish a draft release
+   → Release Assets Builder workflow triggered
+   → Builds and uploads distribution files to the published release
+   → Updates CHANGELOG.md and commits to main branch
 ```
 
 This system provides enterprise-grade release automation while maintaining simplicity for developers.
