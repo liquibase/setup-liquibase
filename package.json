@@ -5,8 +5,9 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "ncc build src/index.ts -o dist --source-map --license licenses.txt",
-    "test": "node --max-old-space-size=4096 --expose-gc ./node_modules/.bin/jest",
-    "test:ci": "node --max-old-space-size=4096 --expose-gc ./node_modules/.bin/jest --ci --maxWorkers=2 --forceExit --no-coverage",
+    "test": "jest --maxWorkers=1",
+    "test:ci": "jest --ci --maxWorkers=1 --forceExit --no-coverage",
+    "test:memory": "cross-env NODE_OPTIONS=\"--max-old-space-size=4096\" jest --maxWorkers=1",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write src/**/*.ts",
     "package": "npm run build && npm test"
@@ -39,6 +40,7 @@
     "@typescript-eslint/eslint-plugin": "^8.34.0",
     "@typescript-eslint/parser": "^8.34.1",
     "@vercel/ncc": "^0.38.1",
+    "cross-env": "^7.0.3",
     "eslint": "^9.29.0",
     "eslint-plugin-jest": "^28.14.0",
     "jest": "^30.0.2",

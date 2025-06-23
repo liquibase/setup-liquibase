@@ -1,0 +1,67 @@
+# Configuration for PR labeler
+# Add labels to PRs based on file changes and branch patterns
+
+# Documentation changes
+documentation:
+  - '*.md'
+  - 'docs/**/*'
+  - 'README*'
+  - 'CHANGELOG*'
+  - 'CONTRIBUTING*'
+  - 'LICENSE*'
+
+# Feature development
+feature:
+  - 'src/**/*'
+  - 'lib/**/*'
+  - head-branch: ['^feature', '^feat']
+
+# Bug fixes
+bug:
+  - head-branch: ['^fix', '^bugfix', '^hotfix']
+
+# Tests
+test:
+  - '**/*test*'
+  - '**/*spec*'
+  - '__tests__/**/*'
+  - 'test/**/*'
+  - 'tests/**/*'
+
+# Dependencies
+dependencies:
+  - 'package.json'
+  - 'package-lock.json'
+  - 'yarn.lock'
+  - 'npm-shrinkwrap.json'
+
+# CI/CD and automation
+ci:
+  - '.github/**/*'
+  - '*.yml'
+  - '*.yaml'
+  - '.gitignore'
+  - '.dockerignore'
+
+# Build and tooling
+build:
+  - 'webpack.config.js'
+  - 'rollup.config.js'
+  - 'tsconfig.json'
+  - 'jest.config.js'
+  - 'eslint.config.js'
+  - '.prettierrc*'
+  - '.editorconfig'
+  - 'dist/**/*'
+  - 'build/**/*'
+
+# Maintenance/chores
+chore:
+  - head-branch: ['^chore', '^maintenance']
+
+# Configuration files
+config:
+  - '*.config.js'
+  - '*.config.ts'
+  - '.env*'
+  - '*.json'
