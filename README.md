@@ -81,15 +81,6 @@ steps:
     LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
 - run: liquibase update --changelog-file=changelog.xml --url=jdbc:h2:mem:test
 ```
-- uses: actions/checkout@v4
-- uses: liquibase/setup-liquibase@v1
-  with:
-    version: '4.32.0'
-    edition: 'pro'
-  env:
-    LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_PRO_LICENSE_KEY }}
-- run: liquibase update --changelog-file=changelog.xml --url=jdbc:h2:mem:test
-```
 
 ### With Caching
 
