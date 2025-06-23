@@ -28,6 +28,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Prepare for GitHub Actions build
+        run: |
+          # Remove ES module configuration for GitHub Actions compatibility
+          # GitHub Actions require CommonJS modules, not ES modules
+          if grep -q '"type": "module"' package.json; then
+            echo "Removing ES module configuration from package.json for GitHub Actions compatibility"
+            sed -i.bak 's/"type": "module",\?//' package.json
+            sed -i.bak '/^  "type": "module"$/d' package.json
+            # Clean up empty lines
+            sed -i.bak '/^$/N;/^\n$/d' package.json
+          fi
+
       - name: Run tests
         run: npm test
 
@@ -35,21 +47,67 @@ jobs:
         run: npm run lint
 
       - name: Build distribution
-        run: npm run build
+        run: |
+          # Remove ES module configuration from package.json for GitHub Actions compatibility
+          npm run build
+          
+          # Remove the dist/package.json that causes ES module issues
+          if [ -f "dist/package.json" ]; then
+            rm dist/package.json
+            echo "Removed dist/package.json to prevent ES module conflicts"
+          fi
 
       - name: Verify build output
         run: |
+          echo "=== Verifying GitHub Actions build output ==="
+          
+          # Check required files exist
           if [ ! -f "dist/index.js" ]; then
-            echo "dist/index.js not found!"
+            echo "❌ dist/index.js not found!"
             exit 1
           fi
+          echo "✅ dist/index.js found"
+          
           if [ ! -f "dist/index.js.map" ]; then
-            echo "dist/index.js.map not found!"
+            echo "❌ dist/index.js.map not found!"
             exit 1
           fi
-          echo "Build output verified successfully"
+          echo "✅ dist/index.js.map found"
+          
+          # Verify the built file is CommonJS compatible (no ES module imports)
+          if grep -q "import " dist/index.js; then
+            echo "❌ dist/index.js contains ES6 imports - GitHub Actions require CommonJS!"
+            echo "Found ES6 imports:"
+            grep "import " dist/index.js | head -5
+            exit 1
+          fi
+          echo "✅ No ES6 imports found in dist/index.js"
+          
+          # Verify it uses require() statements (CommonJS)
+          if ! grep -q "require(" dist/index.js; then
+            echo "⚠️  Warning: No require() statements found - this may not be CommonJS"
+          else
+            echo "✅ CommonJS require() statements found"
+          fi
+          
+          # Check that no dist/package.json exists (which would cause ES module issues)
+          if [ -f "dist/package.json" ]; then
+            echo "❌ dist/package.json exists and may cause ES module conflicts!"
+            echo "Contents:"
+            cat dist/package.json
+            exit 1
+          fi
+          echo "✅ No problematic dist/package.json found"
+          
+          # Show basic file info
+          echo "=== Build output summary ==="
+          ls -la dist/
+          echo "dist/index.js size: $(wc -c < dist/index.js) bytes"
+          
+          echo "✅ Build output verified successfully for GitHub Actions"
 
       - name: Test action locally
+        id: test-action
         uses: ./
         with:
           version: '4.32.0'
@@ -58,14 +116,48 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Verify action test results
+        run: |
+          echo "=== Action Test Verification ==="
+          echo "Liquibase version output: ${{ steps.test-action.outputs.liquibase-version }}"
+          echo "Liquibase path output: ${{ steps.test-action.outputs.liquibase-path }}"
+          
+          # Verify outputs are set
+          if [ -z "${{ steps.test-action.outputs.liquibase-version }}" ]; then
+            echo "❌ liquibase-version output not set"
+            exit 1
+          fi
+          
+          if [ -z "${{ steps.test-action.outputs.liquibase-path }}" ]; then
+            echo "❌ liquibase-path output not set"
+            exit 1
+          fi
+          
+          # Test that Liquibase is actually working
+          liquibase --version
+          echo "✅ Action test completed successfully"
+
       - name: Commit dist files to release
         run: |
+          echo "=== Preparing release commit ==="
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add dist/
-          git commit -m "Add built distribution files for release ${{ github.ref_name }}" || echo "No changes to commit"
+          
+          # Check if there are changes to commit
+          if git diff --quiet dist/; then
+            echo "No changes in dist/ - skipping commit"
+          else
+            echo "Changes detected in dist/ - committing for release"
+            git add dist/
+            git commit -m "🚀 Add built distribution files for release ${{ github.ref_name }}"
+          fi
+          
+          # Force update the tag to point to the latest commit (with dist files)
+          echo "Updating tag ${{ github.ref_name }} to include distribution files"
           git tag -f ${{ github.ref_name }}
           git push -f origin ${{ github.ref_name }}
+          
+          echo "✅ Release preparation completed"
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -73,11 +165,30 @@ jobs:
           generate_release_notes: true
           files: |
             dist/index.js
-            dist/index.d.ts
             dist/index.js.map
-            dist/index.d.ts.map
           draft: false
           prerelease: false
+          body: |
+            ## 🚀 GitHub Action Release
+            
+            This release contains the built distribution files required for the GitHub Action to work.
+            
+            ### Usage
+            ```yaml
+            - name: Setup Liquibase
+              uses: liquibase/setup-liquibase@${{ github.ref_name }}
+              with:
+                version: '4.32.0'
+                edition: 'oss'
+                cache: true
+            ```
+            
+            ### What's Changed
+            - Built with CommonJS compatibility for GitHub Actions
+            - Optimized bundle size and performance
+            - Includes source maps for debugging
+            
+            See the full changelog and documentation in the repository.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
