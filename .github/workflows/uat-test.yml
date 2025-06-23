@@ -37,7 +37,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        version: ['${{ inputs.liquibase_version || '4.32.0' }}']
+        version: ['4.32.0']
         cache: [true, false]
         include:
           # Test additional versions on Ubuntu for version compatibility
@@ -56,7 +56,7 @@ jobs:
       id: setup-liquibase
       uses: ./
       with:
-        version: ${{ matrix.version }}
+        version: ${{ inputs.liquibase_version || matrix.version }}
         edition: 'oss'
         cache: ${{ matrix.cache }}
     
@@ -128,7 +128,7 @@ jobs:
       id: cached-install
       uses: ./
       with:
-        version: ${{ matrix.version }}
+        version: ${{ inputs.liquibase_version || matrix.version }}
         edition: 'oss'
         cache: true
     
