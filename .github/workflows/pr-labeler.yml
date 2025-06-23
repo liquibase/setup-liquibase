@@ -19,7 +19,9 @@ jobs:
           app-id: ${{ secrets.LIQUIBASE_GITHUB_APP_ID }}
           private-key: ${{ secrets.LIQUIBASE_GITHUB_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
-          permission-contents: read
+          permission-contents: write
+          permission-actions: write
+          permission-packages: write
           permission-pull-requests: write
 
       - name: Checkout code
