@@ -447,37 +447,48 @@ jobs:
           echo "✅ Distribution files verified"
           
           # Upload build artifacts to the draft release
-          gh release upload "${{ steps.find-draft.outputs.tag_name }}" \
+          echo "Uploading artifacts to draft release ${{ steps.find-draft.outputs.tag_name }}..."
+          if gh release upload "${{ steps.find-draft.outputs.tag_name }}" \
             dist/index.js \
             dist/index.js.map \
-            --clobber
-          
-          echo "✅ Assets uploaded successfully to draft release"
+            --clobber; then
+            echo "✅ Assets uploaded successfully to draft release"
+          else
+            echo "❌ Failed to upload assets to draft release"
+            echo "Attempting to list current release assets..."
+            gh release view "${{ steps.find-draft.outputs.tag_name }}" --json assets --jq '.assets[].name' || true
+            exit 1
+          fi
 
       - name: Upload Assets to New Release
-        if: steps.find-draft.outputs.outcome == 'create_new'
+        if: steps.find-draft.outputs.outcome == 'create_new' && steps.create-release.outcome == 'success'
         env:
           GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
         run: |
-          echo "Will upload assets after new release is created..."
+          echo "Verifying assets were uploaded to new release..."
           
-          # Verify that distribution files exist
-          if [ ! -f "dist/index.js" ]; then
-            echo "❌ dist/index.js not found!"
-            exit 1
+          # The ncipollo/release-action should have already uploaded the artifacts
+          # This step is mainly for verification and fallback
+          RELEASE_TAG="v${{ env.VERSION }}"
+          
+          # Check if assets exist on the release
+          ASSETS=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' || echo "")
+          
+          if echo "$ASSETS" | grep -q "index.js"; then
+            echo "✅ index.js found in release assets"
+          else
+            echo "⚠️  index.js not found, uploading manually..."
+            gh release upload "$RELEASE_TAG" dist/index.js --clobber
           fi
           
-          if [ ! -f "dist/index.js.map" ]; then
-            echo "❌ dist/index.js.map not found!"
-            exit 1
+          if echo "$ASSETS" | grep -q "index.js.map"; then
+            echo "✅ index.js.map found in release assets"
+          else
+            echo "⚠️  index.js.map not found, uploading manually..."
+            gh release upload "$RELEASE_TAG" dist/index.js.map --clobber
           fi
           
-          echo "✅ Distribution files verified and ready for upload"
-          gh release upload "${{ steps.create-release.outputs.tag }}" \
-            dist/index.js \
-            dist/index.js.map \
-            --clobber
-          echo "✅ Assets uploaded successfully to new release"
+          echo "✅ Asset verification completed for new release"
 
       - name: Commit and push changelog
         env:
@@ -489,11 +500,38 @@ jobs:
           if git diff --exit-code CHANGELOG.md; then
             echo "No changes to CHANGELOG.md"
           else
+            echo "Changes detected in CHANGELOG.md, committing..."
+            
+            # Pull latest changes to avoid non-fast-forward issues
+            git pull origin ${{ github.ref_name }} --rebase || true
+            
+            # Add files that exist
             git add CHANGELOG.md
-            git add dist/ || true
-            git add lib/ || true
+            
+            # Only add dist/ if it exists and has changes
+            if [ -d "dist/" ]; then
+              git add dist/ || echo "No changes in dist/ to add"
+            fi
+            
+            # Only add lib/ if it exists and has changes
+            if [ -d "lib/" ]; then
+              git add lib/ || echo "No changes in lib/ to add"
+            fi
+            
+            # Commit and push
             git commit -m "chore: update changelog for v${{ env.VERSION }}"
-            git push
+            
+            # Push with retry mechanism
+            for i in {1..3}; do
+              if git push origin ${{ github.ref_name }}; then
+                echo "✅ Successfully pushed changelog updates"
+                break
+              else
+                echo "Push attempt $i failed, retrying..."
+                git pull origin ${{ github.ref_name }} --rebase
+                sleep 2
+              fi
+            done
           fi
 
       - name: Generate Build Summary
