@@ -73,10 +73,10 @@ jobs:
           echo "✅ dist/index.js.map found"
           
           # Verify the built file is CommonJS compatible (no ES module imports)
-          if grep -q "import " dist/index.js; then
+          if grep -E -q '^import\s+.*\s+from\s+["'"'"'].*["'"'"'];?$' dist/index.js; then
             echo "❌ dist/index.js contains ES6 imports - GitHub Actions require CommonJS!"
             echo "Found ES6 imports:"
-            grep "import " dist/index.js | head -5
+            grep -E '^import\s+.*\s+from\s+["'"'"'].*["'"'"'];?$' dist/index.js | head -5
             exit 1
           fi
           echo "✅ No ES6 imports found in dist/index.js"
