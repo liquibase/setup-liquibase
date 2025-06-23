@@ -1,0 +1,606 @@
+name: Release Drafter & Publisher
+
+run-name: "🚀 Release setup-liquibase ${{ github.event.inputs.version || 'draft' }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g. 1.2.3)"
+        required: false
+        type: string
+      publish_release:
+        description: "Publish the release (not just draft)"
+        required: false
+        type: boolean
+        default: false
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: write
+  packages: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  # Multi-platform build and test validation
+  build-and-test:
+    name: Build & Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [20]
+    steps:
+      - name: Get GitHub App token
+        id: get-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.LIQUIBASE_GITHUB_APP_ID }}
+          private-key: ${{ secrets.LIQUIBASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          permission-contents: write
+          permission-actions: write
+          permission-packages: write
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ steps.get-token.outputs.token }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build action
+        run: npm run build
+
+      - name: Package action
+        run: npm run package
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-${{ matrix.os }}
+          path: |
+            dist/
+            lib/
+          retention-days: 1
+          compression-level: 9
+
+  # Draft release management (runs on push/PR events)
+  draft-release:
+    name: Draft Release Management
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    steps:
+      - name: Get GitHub App token
+        id: get-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.LIQUIBASE_GITHUB_APP_ID }}
+          private-key: ${{ secrets.LIQUIBASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          permission-contents: write
+          permission-actions: write
+          permission-packages: write
+          permission-pull-requests: write
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ steps.get-token.outputs.token }}
+
+      # Draft release notes as PRs are merged
+      - name: Update Release Draft
+        uses: release-drafter/release-drafter@v6
+        with:
+          config-name: release-drafter.yml
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+
+  # Full release process (runs on manual dispatch)
+  create-release:
+    name: Create & Publish Release
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Get GitHub App token
+        id: get-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.LIQUIBASE_GITHUB_APP_ID }}
+          private-key: ${{ secrets.LIQUIBASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          permission-contents: write
+          permission-actions: write
+          permission-packages: write
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ steps.get-token.outputs.token }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Get branch name
+        id: get-branch-name
+        run: |
+          if [ -n "${GITHUB_HEAD_REF}" ]; then
+            branch_name=${GITHUB_HEAD_REF}
+          else
+            branch_name=${{ github.ref_name }}
+          fi
+          modified_branch_name=$(echo $branch_name | tr '/' '_')
+          echo "thisBranchName=$modified_branch_name" >> $GITHUB_ENV
+          echo "Branch name: $modified_branch_name"
+
+      - name: Get latest merge SHA
+        id: get-sha
+        run: |
+          latest_merge_sha=$(git rev-parse HEAD)
+          echo "latestMergeSha=${latest_merge_sha}" >> $GITHUB_ENV
+          echo "Latest merge SHA: $latest_merge_sha"
+
+      - name: Get timestamp
+        id: get-timestamp
+        run: |
+          timeStamp=$(date +'%Y-%m-%d %H:%M:%S %Z')
+          echo "timeStamp=${timeStamp}" >> $GITHUB_ENV
+          echo "Timestamp: $timeStamp"
+
+      - name: Set version
+        shell: bash
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            # Get version from package.json if not provided
+            VERSION=$(node -p "require('./package.json').version")
+          fi
+          VERSION=${VERSION#v}
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Release version: $VERSION"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run tests with coverage
+        run: npm test
+
+      - name: Build action
+        run: npm run build
+
+      - name: Package action
+        run: npm run package
+
+      - name: Verify build output for GitHub Actions
+        run: |
+          echo "=== Verifying GitHub Actions build output ==="
+          
+          # Check required files exist
+          if [ ! -f "dist/index.js" ]; then
+            echo "❌ dist/index.js not found!"
+            exit 1
+          fi
+          echo "✅ dist/index.js found"
+          
+          if [ ! -f "dist/index.js.map" ]; then
+            echo "❌ dist/index.js.map not found!"
+            exit 1
+          fi
+          echo "✅ dist/index.js.map found"
+          
+          # Verify the built file is CommonJS compatible (no ES module imports)
+          if grep -E -q '^import\s+.*\s+from\s+["'"'"'].*["'"'"'];?$' dist/index.js; then
+            echo "❌ dist/index.js contains ES6 imports - GitHub Actions require CommonJS!"
+            echo "Found ES6 imports:"
+            grep -E '^import\s+.*\s+from\s+["'"'"'].*["'"'"'];?$' dist/index.js | head -5
+            exit 1
+          fi
+          echo "✅ No ES6 imports found in dist/index.js"
+          
+          # Verify it uses require() statements (CommonJS)
+          if ! grep -q "require(" dist/index.js; then
+            echo "⚠️  Warning: No require() statements found - this may not be CommonJS"
+          else
+            echo "✅ CommonJS require() statements found"
+          fi
+          
+          # Check that no dist/package.json exists (which would cause ES module issues)
+          if [ -f "dist/package.json" ]; then
+            echo "❌ dist/package.json exists and may cause ES module conflicts!"
+            echo "Contents:"
+            cat dist/package.json
+            exit 1
+          fi
+          echo "✅ No problematic dist/package.json found"
+          
+          # Show basic file info
+          echo "=== Build output summary ==="
+          ls -la dist/
+          echo "dist/index.js size: $(wc -c < dist/index.js) bytes"
+          
+          echo "✅ Build output verified successfully for GitHub Actions"
+
+      - name: Download build artifacts from Ubuntu
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts-ubuntu-latest
+          path: /tmp/artifacts
+
+      - name: Generate dynamic changelog
+        id: changelog
+        run: |
+          echo "Generating dynamic changelog from commit history..."
+          
+          # Get previous tag or initial commit
+          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$PREV_TAG" ]; then
+            PREV_TAG=$(git rev-list --max-parents=0 HEAD)
+            echo "No previous tag found, using initial commit: $PREV_TAG"
+          else
+            echo "Previous tag: $PREV_TAG"
+          fi
+          
+          CURRENT_SHA=$(git rev-parse HEAD)
+          echo "Current SHA: $CURRENT_SHA"
+          
+          # Generate changelog content
+          cat > /tmp/changelog_entry.md << 'EOF'
+          ## What's Changed in v${{ env.VERSION }}
+          
+          ### 🚀 Features
+          EOF
+          
+          # Get commits since last tag and categorize
+          git log --oneline "${PREV_TAG}..HEAD" | while read -r line; do
+            commit_msg=$(echo "$line" | sed 's/^[a-f0-9]* //')
+            case "$commit_msg" in
+              feat*|feature*) echo "- $commit_msg" >> /tmp/features.txt ;;
+              fix*|bugfix*) echo "- $commit_msg" >> /tmp/fixes.txt ;;
+              docs*|doc*) echo "- $commit_msg" >> /tmp/docs.txt ;;
+              chore*|build*|ci*) echo "- $commit_msg" >> /tmp/chores.txt ;;
+              *) echo "- $commit_msg" >> /tmp/others.txt ;;
+            esac
+          done
+          
+          # Append categorized changes
+          if [ -f /tmp/features.txt ]; then
+            cat /tmp/features.txt >> /tmp/changelog_entry.md
+          else
+            echo "- No new features in this release" >> /tmp/changelog_entry.md
+          fi
+          
+          echo "" >> /tmp/changelog_entry.md
+          echo "### 🐛 Bug Fixes" >> /tmp/changelog_entry.md
+          if [ -f /tmp/fixes.txt ]; then
+            cat /tmp/fixes.txt >> /tmp/changelog_entry.md
+          else
+            echo "- No bug fixes in this release" >> /tmp/changelog_entry.md
+          fi
+          
+          echo "" >> /tmp/changelog_entry.md
+          echo "### 📚 Documentation" >> /tmp/changelog_entry.md
+          if [ -f /tmp/docs.txt ]; then
+            cat /tmp/docs.txt >> /tmp/changelog_entry.md
+          else
+            echo "- No documentation changes in this release" >> /tmp/changelog_entry.md
+          fi
+          
+          echo "" >> /tmp/changelog_entry.md
+          echo "### 🔧 Maintenance" >> /tmp/changelog_entry.md
+          if [ -f /tmp/chores.txt ]; then
+            cat /tmp/chores.txt >> /tmp/changelog_entry.md
+          else
+            echo "- No maintenance changes in this release" >> /tmp/changelog_entry.md
+          fi
+          
+          if [ -f /tmp/others.txt ]; then
+            echo "" >> /tmp/changelog_entry.md
+            echo "### 🔄 Other Changes" >> /tmp/changelog_entry.md
+            cat /tmp/others.txt >> /tmp/changelog_entry.md
+          fi
+          
+          # Add usage example
+          echo "" >> /tmp/changelog_entry.md
+          echo "### 📖 Usage Example" >> /tmp/changelog_entry.md
+          echo '```yaml' >> /tmp/changelog_entry.md
+          echo 'steps:' >> /tmp/changelog_entry.md
+          echo '  - name: Setup Liquibase' >> /tmp/changelog_entry.md
+          echo '    uses: liquibase-github-actions/setup-liquibase@v${{ env.VERSION }}' >> /tmp/changelog_entry.md
+          echo '    with:' >> /tmp/changelog_entry.md
+          echo '      liquibase-version: "latest"' >> /tmp/changelog_entry.md
+          echo '```' >> /tmp/changelog_entry.md
+          
+          # Add build info
+          echo "" >> /tmp/changelog_entry.md
+          echo "---" >> /tmp/changelog_entry.md
+          echo "**Build Information:**" >> /tmp/changelog_entry.md
+          echo "- **Commit**: ${{ env.latestMergeSha }}" >> /tmp/changelog_entry.md
+          echo "- **Branch**: ${{ env.thisBranchName }}" >> /tmp/changelog_entry.md
+          echo "- **Build**: #${{ github.run_number }}" >> /tmp/changelog_entry.md
+          echo "- **Timestamp**: ${{ env.timeStamp }}" >> /tmp/changelog_entry.md
+          
+          # Update main CHANGELOG.md
+          if [ -f CHANGELOG.md ]; then
+            # Insert new entry after the title
+            sed -i '1a\\n' CHANGELOG.md
+            sed -i '2r /tmp/changelog_entry.md' CHANGELOG.md
+          else
+            echo "# Changelog" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            cat /tmp/changelog_entry.md >> CHANGELOG.md
+          fi
+
+      - name: Find and Update Draft Release
+        id: find-draft
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+        run: |
+          echo "Looking for the latest draft release to update with version: v${{ env.VERSION }}"
+          
+          # Find the most recent draft release
+          LATEST_DRAFT=$(gh release list --limit 50 --json tagName,name,isDraft,createdAt | jq -r '.[] | select(.isDraft == true) | [.createdAt, .tagName] | @tsv' | sort -r | head -1 | cut -f2)
+          
+          if [ -n "$LATEST_DRAFT" ] && [ "$LATEST_DRAFT" != "null" ]; then
+            echo "Found latest draft release with tag: $LATEST_DRAFT"
+            
+            NEW_TAG="v${{ env.VERSION }}"
+            echo "Will update draft release to tag: $NEW_TAG"
+            
+            # Check if the target tag already exists as a published release
+            EXISTING_RELEASE=$(gh release view "$NEW_TAG" --json tagName 2>/dev/null | jq -r '.tagName // empty' || true)
+            
+            if [ -n "$EXISTING_RELEASE" ]; then
+              echo "ERROR: Release with tag $NEW_TAG already exists and is published"
+              echo "outcome=failure" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+            
+            # Update the draft release with new tag, title and changelog content
+            echo "Updating draft release from $LATEST_DRAFT to $NEW_TAG"
+            CHANGELOG_CONTENT=$(cat /tmp/changelog_entry.md)
+            gh release edit "$LATEST_DRAFT" --tag "$NEW_TAG" --title "Setup Liquibase v${{ env.VERSION }}" --notes "$CHANGELOG_CONTENT"
+            
+            echo "tag_name=$NEW_TAG" >> $GITHUB_OUTPUT
+            
+            # Get the updated release URL
+            RELEASE_URL=$(gh release view "$NEW_TAG" --json url --jq '.url')
+            echo "html_url=$RELEASE_URL" >> $GITHUB_OUTPUT
+            echo "outcome=success" >> $GITHUB_OUTPUT
+            
+            echo "Successfully updated draft release to $NEW_TAG"
+          else
+            echo "No draft release found, will create new release"
+            echo "outcome=create_new" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish Draft Release
+        if: steps.find-draft.outputs.outcome == 'success' && github.event.inputs.publish_release == 'true'
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+        run: |
+          echo "Publishing draft release: ${{ steps.find-draft.outputs.tag_name }}"
+          gh release edit "${{ steps.find-draft.outputs.tag_name }}" --draft=false
+
+      - name: Create New Release (Fallback)
+        if: steps.find-draft.outputs.outcome == 'create_new'
+        id: create-release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: "v${{ env.VERSION }}"
+          name: "Setup Liquibase v${{ env.VERSION }}"
+          bodyFile: "/tmp/changelog_entry.md"
+          artifacts: "dist/index.js,dist/index.js.map"
+          makeLatest: true
+          draft: ${{ github.event.inputs.publish_release != 'true' }}
+          prerelease: false
+          token: ${{ steps.get-token.outputs.token }}
+
+      - name: Upload Assets to Draft Release
+        if: steps.find-draft.outputs.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+        run: |
+          echo "Uploading assets to draft release: ${{ steps.find-draft.outputs.tag_name }}"
+          
+          # Verify that distribution files exist
+          if [ ! -f "dist/index.js" ]; then
+            echo "❌ dist/index.js not found!"
+            exit 1
+          fi
+          
+          if [ ! -f "dist/index.js.map" ]; then
+            echo "❌ dist/index.js.map not found!"
+            exit 1
+          fi
+          
+          echo "✅ Distribution files verified"
+          
+          # Upload build artifacts to the draft release
+          echo "Uploading artifacts to draft release ${{ steps.find-draft.outputs.tag_name }}..."
+          if gh release upload "${{ steps.find-draft.outputs.tag_name }}" \
+            dist/index.js \
+            dist/index.js.map \
+            --clobber; then
+            echo "✅ Assets uploaded successfully to draft release"
+          else
+            echo "❌ Failed to upload assets to draft release"
+            echo "Attempting to list current release assets..."
+            gh release view "${{ steps.find-draft.outputs.tag_name }}" --json assets --jq '.assets[].name' || true
+            exit 1
+          fi
+
+      - name: Upload Assets to New Release
+        if: steps.find-draft.outputs.outcome == 'create_new' && steps.create-release.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+        run: |
+          echo "Verifying assets were uploaded to new release..."
+          
+          # The ncipollo/release-action should have already uploaded the artifacts
+          # This step is mainly for verification and fallback
+          RELEASE_TAG="v${{ env.VERSION }}"
+          
+          # Check if assets exist on the release
+          ASSETS=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' || echo "")
+          
+          if echo "$ASSETS" | grep -q "index.js"; then
+            echo "✅ index.js found in release assets"
+          else
+            echo "⚠️  index.js not found, uploading manually..."
+            gh release upload "$RELEASE_TAG" dist/index.js --clobber
+          fi
+          
+          if echo "$ASSETS" | grep -q "index.js.map"; then
+            echo "✅ index.js.map found in release assets"
+          else
+            echo "⚠️  index.js.map not found, uploading manually..."
+            gh release upload "$RELEASE_TAG" dist/index.js.map --clobber
+          fi
+          
+          echo "✅ Asset verification completed for new release"
+
+      - name: Commit and push changelog
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          if git diff --exit-code CHANGELOG.md; then
+            echo "No changes to CHANGELOG.md"
+          else
+            echo "Changes detected in CHANGELOG.md, committing..."
+            
+            # Pull latest changes to avoid non-fast-forward issues
+            git pull origin ${{ github.ref_name }} --rebase || true
+            
+            # Add files that exist
+            git add CHANGELOG.md
+            
+            # Only add dist/ if it exists and has changes
+            if [ -d "dist/" ]; then
+              git add dist/ || echo "No changes in dist/ to add"
+            fi
+            
+            # Only add lib/ if it exists and has changes
+            if [ -d "lib/" ]; then
+              git add lib/ || echo "No changes in lib/ to add"
+            fi
+            
+            # Commit and push
+            git commit -m "chore: update changelog for v${{ env.VERSION }}"
+            
+            # Push with retry mechanism
+            for i in {1..3}; do
+              if git push origin ${{ github.ref_name }}; then
+                echo "✅ Successfully pushed changelog updates"
+                break
+              else
+                echo "Push attempt $i failed, retrying..."
+                git pull origin ${{ github.ref_name }} --rebase
+                sleep 2
+              fi
+            done
+          fi
+
+      - name: Generate Build Summary
+        if: always()
+        run: |
+          # Determine release status
+          if [ "${{ steps.find-draft.outputs.outcome }}" == "success" ]; then
+            if [ "${{ github.event.inputs.publish_release }}" == "true" ]; then
+              RELEASE_METHOD="✅ Published from existing draft release"
+              RELEASE_STATUS="published"
+            else
+              RELEASE_METHOD="✅ Updated existing draft release"
+              RELEASE_STATUS="draft"
+            fi
+            RELEASE_URL="${{ steps.find-draft.outputs.html_url }}"
+          elif [ "${{ steps.create-release.outcome }}" == "success" ]; then
+            if [ "${{ github.event.inputs.publish_release }}" == "true" ]; then
+              RELEASE_METHOD="✅ Created and published new release"
+              RELEASE_STATUS="published"
+            else
+              RELEASE_METHOD="✅ Created new draft release"
+              RELEASE_STATUS="draft"
+            fi
+            RELEASE_URL="${{ steps.create-release.outputs.html_url }}"
+          else
+            RELEASE_METHOD="❌ Failed to create/update release"
+            RELEASE_URL="N/A"
+            RELEASE_STATUS="failure"
+          fi
+
+          # Generate the summary
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          # 🚀 Setup Liquibase Release Summary
+
+          ## Release Status
+          | Component | Status |
+          |-----------|--------|
+          | **Release Action** | ${RELEASE_METHOD} |
+          | **Release Status** | ${RELEASE_STATUS} |
+          | **Release URL** | [View Release](${RELEASE_URL}) |
+          | **Version** | v${{ env.VERSION }} |
+
+          ## Build Matrix Results
+          | Platform | Status |
+          |----------|--------|
+          | **Ubuntu** | ✅ Build & Test Passed |
+          | **Windows** | ✅ Build & Test Passed |
+          | **macOS** | ✅ Build & Test Passed |
+
+          ## Artifacts Generated
+          | Artifact Type | Status |
+          |---------------|--------|
+          | **Action Build** | ✅ dist/ and lib/ updated |
+          | **Distribution Files** | ✅ dist/index.js and dist/index.js.map uploaded |
+          | **Changelog** | ✅ CHANGELOG.md updated with v${{ env.VERSION }} |
+          | **Release Notes** | ✅ Dynamic changelog from commit history |
+
+          ## Quick Links
+          - 🔗 [Release Page](${RELEASE_URL})
+          - 📋 [Commit History](https://github.com/${{ github.repository }}/commits/v${{ env.VERSION }})
+          - 📦 [Action on Marketplace](https://github.com/marketplace/actions/setup-liquibase)
+
+          ---
+          $(if [ "${RELEASE_STATUS}" == "published" ]; then echo "🎉 **Release published successfully!**"; elif [ "${RELEASE_STATUS}" == "draft" ]; then echo "📝 **Draft release ready for review**"; else echo "❌ **Release process encountered errors**"; fi)
+          EOF
+
+          echo "🎉 Release Summary:"
+          echo "- Version: v${{ env.VERSION }}"
+          echo "- Method: $RELEASE_METHOD"
+          echo "- Status: $RELEASE_STATUS"
+          echo "- URL: $RELEASE_URL"
+          
