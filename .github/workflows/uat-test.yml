@@ -37,7 +37,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        version: ['4.32.0']
+        version: ${{ inputs.liquibase_version || '4.32.0' }}
         cache: [true, false]
         include:
           # Test additional versions on Ubuntu for version compatibility
@@ -191,7 +191,7 @@ jobs:
       id: setup-integration
       uses: ./
       with:
-        version: '${{ inputs.liquibase_version || '4.32.0' }}'
+        version: ${{ inputs.liquibase_version || '4.32.0' }}
         edition: 'oss'
         cache: true
     
@@ -372,7 +372,7 @@ jobs:
       continue-on-error: true
       id: invalid-edition
       with:
-        version: '${{ inputs.liquibase_version || '4.32.0' }}'
+        version: ${{ inputs.liquibase_version || '4.32.0' }}
         edition: 'invalid-edition'
     
     - name: Verify Invalid Edition Failed
@@ -420,7 +420,7 @@ jobs:
       continue-on-error: true
       id: pro-no-license
       with:
-        version: '${{ inputs.liquibase_version || '4.32.0' }}'
+        version: ${{ inputs.liquibase_version || '4.32.0' }}
         edition: 'pro'
     
     - name: Verify Pro Without License Failed
@@ -476,7 +476,7 @@ jobs:
       id: setup-pro
       uses: ./
       with:
-        version: '${{ inputs.liquibase_version || '4.32.0' }}'
+        version: ${{ inputs.liquibase_version || '4.32.0' }}
         edition: 'pro'
         cache: true
       env:
@@ -548,7 +548,7 @@ jobs:
       id: fresh-install
       uses: ./
       with:
-        version: '${{ inputs.liquibase_version || '4.32.0' }}'
+        version: ${{ inputs.liquibase_version || '4.32.0' }}
         edition: 'oss'
         cache: false
     
@@ -564,7 +564,7 @@ jobs:
       id: cached-install
       uses: ./
       with:
-        version: '${{ inputs.liquibase_version || '4.32.0' }}'
+        version: ${{ inputs.liquibase_version || '4.32.0' }}
         edition: 'oss'
         cache: true
     
