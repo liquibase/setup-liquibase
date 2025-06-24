@@ -146,7 +146,7 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
   
   // Configure Pro license if this is a Pro installation
   if (edition === 'pro' && licenseKey) {
-    await configureLiquibasePro(toolPath, licenseKey);
+    configureLiquibaseProEnvironment(licenseKey);
   }
   
   // Verify that the installation was successful
@@ -240,24 +240,22 @@ async function extractLiquibase(downloadPath: string): Promise<string> {
 }
 
 /**
- * Configures Liquibase Pro by creating a properties file with the license key
+ * Configures Liquibase Pro by setting the license key as an environment variable
+ * This is more secure than writing to a properties file on disk
  * 
- * @param toolPath - Directory where Liquibase is installed
  * @param licenseKey - Pro license key to configure
  */
-async function configureLiquibasePro(toolPath: string, licenseKey: string): Promise<void> {
+function configureLiquibaseProEnvironment(licenseKey: string): void {
   try {
     // Validate license key format (basic validation)
     if (!licenseKey.trim()) {
       throw new Error('License key cannot be empty');
     }
     
-    // Create liquibase.properties file in the installation directory
-    const propertiesPath = path.join(toolPath, 'liquibase.properties');
-    const propertiesContent = `liquibase.licenseKey=${licenseKey.trim()}\n`;
-    
-    await fs.promises.writeFile(propertiesPath, propertiesContent);
-    core.info('Configured Liquibase Pro license key');
+    // Set the license key as an environment variable that Liquibase will read
+    // This is more secure than writing to a properties file
+    process.env.LIQUIBASE_LICENSE_KEY = licenseKey.trim();
+    core.info('Configured Liquibase Pro license key via environment variable');
   } catch (error) {
     throw new Error(`Failed to configure Liquibase Pro license: ${error instanceof Error ? error.message : String(error)}`);
   }
