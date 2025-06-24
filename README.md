@@ -8,6 +8,7 @@ This action provides the following functionality for GitHub Actions users:
 - Add Liquibase to the PATH
 - Cache downloaded Liquibase versions for improved performance
 - Cross-platform support (Linux, Windows, macOS)
+- Automatic security validation and integrity checks
 
 ## Quick Start
 
