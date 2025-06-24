@@ -12,5 +12,5 @@ coverage/
 .cursorrules
 .cursor/
 
-# Local development documentation 
-# CLAUDE.md - now included for DevOps team sharing
+# Local development documentation (keep locally but exclude from public repo)
+CLAUDE.md
