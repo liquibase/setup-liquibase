@@ -1,7 +1,7 @@
 {
   "name": "setup-liquibase",
   "version": "1.0.0",
-  "description": "Set up your GitHub Actions workflow with a specific version of Liquibase",
+  "description": "Set up your GitHub Actions workflow with a specific version of Liquibase - Enhanced with security improvements and external contributor support",
   "main": "dist/index.js",
   "scripts": {
     "build": "ncc build src/index.ts -o dist --source-map --license licenses.txt",

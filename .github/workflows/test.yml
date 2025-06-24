@@ -1,5 +1,6 @@
 # CI/CD workflow for setup-liquibase GitHub Action
-# Fast feedback loop for code quality and basic functionality validation
+# Fast feedback loop for code quality and basic functionality validation  
+# Enhanced for external contributor security testing
 name: Continuous Integration
 
 # Trigger workflow on pushes to main branch and all pull requests

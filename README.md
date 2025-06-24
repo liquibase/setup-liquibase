@@ -9,6 +9,11 @@ This action provides the following functionality for GitHub Actions users:
 - Cache downloaded Liquibase versions for improved performance
 - Cross-platform support (Linux, Windows, macOS)
 
+## 🔒 Security Features
+- Secure external contributor workflow support
+- No elevated permissions for external PRs  
+- Safe automation with security isolation
+
 ## Quick Start
 
 ```yaml
