@@ -1,5 +1,52 @@
 # Changelog
 
+## What's Changed in v1-beta
+
+### 🚀 Features
+- feat: Simplify release automation to single workflow
+- feat: Update release automation to handle published releases and improve documentation
+
+### 🐛 Bug Fixes
+- fix: Remove redundant 'Setup Liquibase' prefix from release names
+- fix: Correct organization name and usage examples in release templates
+- fix: Remove duplicate code block in README Pro edition example
+- fix: Update dependabot.yml to resolve labeling conflicts (#26)
+- fix: Add missing permissions for issues in PR labeler workflow
+
+### 📚 Documentation
+- docs: Add CLAUDE.md for DevOps team knowledge sharing
+- docs: Clean up documentation structure and fix CHANGELOG
+
+### 🔧 Maintenance
+- chore: update changelog for v1-beta
+
+### 🔄 Other Changes
+- npm(deps-dev): bump @typescript-eslint/eslint-plugin (#22)
+- npm(deps-dev): bump prettier from 3.5.3 to 3.6.0 (#23)
+- npm(deps-dev): bump eslint-plugin-jest from 28.14.0 to 29.0.1 (#24)
+- Merge pull request #21 from liquibase/dependabot/npm_and_yarn/types/node-24.0.3
+- Merge branch 'main' into dependabot/npm_and_yarn/types/node-24.0.3
+- refactor: Update labeler configuration to use changed-files structure for better clarity
+- npm(deps-dev): bump @types/node from 24.0.1 to 24.0.3
+
+### 📖 Usage Example
+```yaml
+steps:
+  - name: Setup Liquibase
+    uses: liquibase/setup-liquibase@v1-beta
+    with:
+      version: '4.32.0'
+      edition: 'oss'
+```
+
+---
+**Build Information:**
+- **Commit**: f4f5a76c929528207c09e003b1346f68f53fc58c
+- **Branch**: DAT-20276-release-simplification
+- **Build**: #58
+- **Timestamp**: 2025-06-24 08:03:57 UTC
+
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
