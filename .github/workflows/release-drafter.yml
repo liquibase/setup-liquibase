@@ -1,6 +1,6 @@
 name: Release Drafter & Publisher
 
-run-name: "🚀 Release setup-liquibase ${{ github.event.inputs.version || 'draft' }}"
+run-name: "🚀 ${{ github.event_name == 'pull_request' && 'Labeling PR & Updating Draft' || github.event_name == 'push' && 'Updating Release Draft' || 'Release setup-liquibase' }} ${{ github.event.inputs.version || '' }}"
 
 on:
   workflow_dispatch:
