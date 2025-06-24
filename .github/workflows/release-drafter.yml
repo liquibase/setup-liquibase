@@ -20,8 +20,6 @@ on:
       - master
   pull_request:
     types: [opened, synchronize, reopened, closed]
-  pull_request_target:
-    types: [opened, synchronize, reopened, closed]
 
 permissions:
   contents: write
@@ -92,7 +90,7 @@ jobs:
     name: Draft Release Management
     runs-on: ubuntu-latest
     needs: [build-and-test]
-    if: github.event_name == 'push' || github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     steps:
       - name: Get GitHub App token
         id: get-token
