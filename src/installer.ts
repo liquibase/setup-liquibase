@@ -252,6 +252,9 @@ function configureLiquibaseProEnvironment(licenseKey: string): void {
       throw new Error('License key cannot be empty');
     }
     
+    // Mask the license key in GitHub Actions logs to prevent accidental exposure
+    core.setSecret(licenseKey.trim());
+    
     // Set the license key as an environment variable that Liquibase will read
     // This is more secure than writing to a properties file
     process.env.LIQUIBASE_LICENSE_KEY = licenseKey.trim();
