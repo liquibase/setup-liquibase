@@ -103,6 +103,7 @@ jobs:
           permission-actions: write
           permission-packages: write
           permission-pull-requests: write
+          permission-issues: write
 
       - name: Checkout code
         uses: actions/checkout@v4
