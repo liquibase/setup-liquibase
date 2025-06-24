@@ -1,4 +1,4 @@
-name-template: 'Setup Liquibase v$RESOLVED_VERSION'
+name-template: 'v$RESOLVED_VERSION'
 tag-template: 'v$RESOLVED_VERSION'
 filter-by-commitish: true
 commitish: main
@@ -139,9 +139,10 @@ template: |
   ```yaml
   steps:
     - name: Setup Liquibase
-      uses: liquibase-github-actions/setup-liquibase@$RESOLVED_VERSION
+      uses: liquibase/setup-liquibase@$RESOLVED_VERSION
       with:
-        liquibase-version: "latest"
+        version: '4.32.0'
+        edition: 'oss'
   ```
 
   ### Build Information

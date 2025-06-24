@@ -4,7 +4,7 @@ This document explains how the release automation works for the setup-liquibase 
 
 ## Workflow Architecture
 
-### 1. Release Drafter & Publisher Workflow
+### Single Release Workflow: Release Drafter & Publisher
 
 **Triggers:**
 - Push to `main`/`master` (creates/updates draft releases)
@@ -15,35 +15,17 @@ This document explains how the release automation works for the setup-liquibase 
 - **build-and-test**: Multi-platform build matrix (Ubuntu, Windows, macOS)
 - **draft-release**: Updates draft releases from PR merges
 - **create-release**: Creates/publishes releases (manual dispatch only)
+- **update-major-tag**: Updates major version tags (v1 → v1.x.x) after release
 
 **Key Features:**
 - Multi-platform testing for reliability
 - Dynamic changelog generation from commit history
 - Intelligent draft release management
+- Automatic major version tag updates
 - GitHub App token security
 - Professional build summaries
 
-### 2. Tag-based Release Workflow
-
-**Triggers:**
-- Push to tags matching `v*` pattern
-
-**Purpose:**
-- Builds and uploads distribution files to existing draft releases
-- Publishes draft releases that match the tag
-- Handles fallback release creation if no draft exists
-- Updates CHANGELOG.md with release notes
-
-**Smart Release Logic:**
-```yaml
-# The workflow will:
-1. Look for existing draft release with the tag
-2. If found: Upload assets and publish the draft
-3. If already published: Add/update assets
-4. If no release exists: Create new release with generated notes
-```
-
-### 3. PR Labeler Workflow
+### Supporting Workflow: PR Labeler
 
 **Purpose:**
 - Automatically labels PRs based on file changes and branch patterns
@@ -53,8 +35,6 @@ This document explains how the release automation works for the setup-liquibase 
 ## Usage Instructions
 
 ### Creating a Release
-
-#### Option 1: Manual Release (Recommended)
 
 1. **Trigger via GitHub UI:**
    ```
@@ -70,20 +50,7 @@ This document explains how the release automation works for the setup-liquibase 
    - Generate dynamic changelog
    - Create/update draft release
    - Publish if requested
-
-#### Option 2: Tag-based Release
-
-1. **Create and push a tag:**
-   ```bash
-   git tag v1.2.3
-   git push origin v1.2.3
-   ```
-
-2. **The workflow will:**
-   - Build distribution files
-   - Find existing draft release for `v1.2.3`
-   - Upload assets and publish the release
-   - Update CHANGELOG.md
+   - Update major version tag (v1 → v1.2.3)
 
 ### Draft Release Management
 
@@ -103,8 +70,7 @@ This document explains how the release automation works for the setup-liquibase 
 ```
 .github/
 ├── workflows/
-│   ├── release-drafter.yml      # Main release automation
-│   ├── release.yml              # Tag-triggered builds
+│   ├── release-drafter.yml      # Single release automation workflow
 │   └── pr-labeler.yml           # PR auto-labeling
 ├── release-drafter.yml          # Release drafter config
 └── labeler.yml                  # PR labeler config
@@ -183,12 +149,7 @@ feature:
    → Dynamic changelog generated
    → Draft release updated with latest changes
    → Release published (if requested)
-
-4. OR: Push tag v1.2.3
-   → Tag-based workflow finds draft release
-   → Builds distribution files
-   → Uploads assets to existing draft
-   → Publishes the release
+   → Major version tag updated (v1 → v1.2.3)
 ```
 
-This system provides enterprise-grade release automation while maintaining simplicity for developers.
+This simplified system provides enterprise-grade release automation while maintaining simplicity for developers and following GitHub Actions best practices.
