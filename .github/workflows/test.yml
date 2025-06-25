@@ -9,6 +9,10 @@ on:
   pull_request:
     branches: [main]
 
+# Minimal permissions for security
+permissions:
+  contents: read
+
 jobs:
   # Job: Code quality checks and build validation
   code-quality-and-build:

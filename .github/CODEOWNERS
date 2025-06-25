@@ -1,0 +1,8 @@
+# GitHub Actions workflows
+.github/workflows/ @liquibase/devops-team
+
+# Action configuration
+action.yml @liquibase/devops-team
+
+# Core source code
+src/ @liquibase/devops-team
