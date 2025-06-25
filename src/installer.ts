@@ -283,18 +283,35 @@ async function validateInstallation(liquibasePath: string): Promise<void> {
     // Run 'liquibase --version' to verify the installation works
     let output = '';
     
-    await exec.exec(executable, ['--version'], {
+    // Add timeout wrapper to prevent hanging on Pro license validation issues
+    const execPromise = exec.exec(executable, ['--version'], {
       silent: true,
+      env: {
+        ...process.env,
+        // Explicitly pass the license key environment variable for Pro edition validation
+        ...(process.env.LIQUIBASE_LICENSE_KEY && { LIQUIBASE_LICENSE_KEY: process.env.LIQUIBASE_LICENSE_KEY })
+      },
       listeners: {
         stdout: (data: Buffer) => {
           output += data.toString();
         },
         stderr: (data: Buffer) => {
-          // Log stderr but don't fail if there's only warnings
-          core.debug(`Liquibase stderr: ${data.toString()}`);
+          const stderrOutput = data.toString();
+          core.debug(`Liquibase stderr: ${stderrOutput}`);
+          
+          // Check for specific Pro license issues that might cause hangs
+          if (stderrOutput.includes('ClassNotFoundException: liquibase.integration.commandline.LiquibaseLauncher')) {
+            core.warning('Liquibase Pro installation may have classpath issues - this is often caused by download corruption or Java environment problems');
+          }
         }
       }
     });
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Liquibase validation timed out after 15 seconds')), 15000);
+    });
+
+    await Promise.race([execPromise, timeoutPromise]);
     
     // Check if version output contains expected content
     if (!output.toLowerCase().includes('liquibase')) {
