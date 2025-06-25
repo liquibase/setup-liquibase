@@ -27,6 +27,10 @@ on:
     # Run weekly on Sundays at 2 AM UTC for regular health checks
     - cron: '0 2 * * 0'
 
+# Minimal permissions for security
+permissions:
+  contents: read
+
 jobs:
   # Cross-platform tests - installation, compatibility, and caching across all platforms
   cross-platform-tests:
