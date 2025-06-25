@@ -218,6 +218,91 @@ jobs:
       run: liquibase checks run --changelog-file=changelog.xml
 ```
 
+### Using Liquibase Flow Files (Pro Edition)
+
+Flow files enable portable, platform-independent Liquibase workflows. Best practice is to store Flow files in centralized locations like template repositories or S3 for version control, reusability, and governance.
+
+#### Example 1: Flow Files from Template Repository
+
+```yaml
+name: Database Deployment with Template Flow
+on: [push]
+
+jobs:
+  deploy-with-flow:
+    runs-on: ubuntu-latest
+    env:
+      LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
+    steps:
+    - uses: actions/checkout@v4
+    
+    # Checkout template repository containing Flow files
+    - uses: actions/checkout@v4
+      with:
+        repository: my-org/liquibase-flow-templates
+        path: flow-templates
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - uses: liquibase/setup-liquibase@v1
+      with:
+        version: '4.32.0'
+        edition: 'pro'
+        cache: true
+    
+    - name: Execute Flow from Template
+      run: |
+        liquibase flow \
+          --flow-file=flow-templates/flows/production-deployment.flowfile.yaml \
+          --search-path=flow-templates/resources,. \
+          --url=jdbc:postgresql://localhost/mydb \
+          --username=dbuser \
+          --password=${{ secrets.DB_PASSWORD }}
+```
+
+#### Example 2: Flow Files from S3
+
+```yaml
+name: Database Deployment with S3 Flow
+on: [push]
+
+jobs:
+  deploy-with-s3-flow:
+    runs-on: ubuntu-latest
+    env:
+      LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: us-east-1
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: liquibase/setup-liquibase@v1
+      with:
+        version: '4.32.0'
+        edition: 'pro'
+        cache: true
+    
+    - name: Execute Flow from S3
+      run: |
+        liquibase flow \
+          --flow-file=s3://my-bucket/liquibase/flows/production-deployment.flowfile.yaml \
+          --search-path=s3://my-bucket/liquibase/resources,. \
+          --url=jdbc:postgresql://localhost/mydb \
+          --username=dbuser \
+          --password=${{ secrets.DB_PASSWORD }}
+    
+    # Alternative: Using environment variable for search path
+    - name: Execute Flow with Environment Variable
+      env:
+        LIQUIBASE_SEARCH_PATH: s3://my-bucket/liquibase/resources,.
+      run: |
+        liquibase flow \
+          --flow-file=s3://my-bucket/liquibase/flows/staging-deployment.flowfile.yaml \
+          --url=jdbc:postgresql://localhost/mydb \
+          --username=dbuser \
+          --password=${{ secrets.DB_PASSWORD }}
+```
+
 ### Matrix Testing Across Versions
 
 ```yaml
