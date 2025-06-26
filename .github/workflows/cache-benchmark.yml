@@ -71,7 +71,13 @@ jobs:
     - name: "Iteration 1: No Cache Baseline"
       id: iter1
       run: |
-        START_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+          START_MS=$(date +%s)000  # macOS doesn't support %3N, use seconds + 000
+        elif command -v date >/dev/null 2>&1 && date +%s%3N >/dev/null 2>&1; then
+          START_MS=$(date +%s%3N)
+        else
+          START_MS=$(($(date +%s) * 1000))  # fallback
+        fi
         echo "start_time=${START_MS}" >> $GITHUB_OUTPUT
       shell: bash
     
@@ -86,7 +92,13 @@ jobs:
     
     - name: Record Iteration 1 Time
       run: |
-        END_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+          END_MS=$(date +%s)000  # macOS doesn't support %3N, use seconds + 000
+        elif command -v date >/dev/null 2>&1 && date +%s%3N >/dev/null 2>&1; then
+          END_MS=$(date +%s%3N)
+        else
+          END_MS=$(($(date +%s) * 1000))  # fallback
+        fi
         DURATION=$((END_MS - ${{ steps.iter1.outputs.start_time }}))
         echo "iter1_duration_ms=${DURATION}" >> $GITHUB_ENV
         echo "Iteration 1 (No Cache): ${DURATION}ms"
@@ -95,7 +107,13 @@ jobs:
     - name: "Iteration 2: No Cache Baseline"
       id: iter2
       run: |
-        START_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+          START_MS=$(date +%s)000  # macOS doesn't support %3N, use seconds + 000
+        elif command -v date >/dev/null 2>&1 && date +%s%3N >/dev/null 2>&1; then
+          START_MS=$(date +%s%3N)
+        else
+          START_MS=$(($(date +%s) * 1000))  # fallback
+        fi
         echo "start_time=${START_MS}" >> $GITHUB_OUTPUT
       shell: bash
     
@@ -110,7 +128,13 @@ jobs:
     
     - name: Record Iteration 2 Time
       run: |
-        END_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+          END_MS=$(date +%s)000  # macOS doesn't support %3N, use seconds + 000
+        elif command -v date >/dev/null 2>&1 && date +%s%3N >/dev/null 2>&1; then
+          END_MS=$(date +%s%3N)
+        else
+          END_MS=$(($(date +%s) * 1000))  # fallback
+        fi
         DURATION=$((END_MS - ${{ steps.iter2.outputs.start_time }}))
         echo "iter2_duration_ms=${DURATION}" >> $GITHUB_ENV
         echo "Iteration 2 (No Cache): ${DURATION}ms"
@@ -119,7 +143,13 @@ jobs:
     - name: "Iteration 3: No Cache Baseline"
       id: iter3
       run: |
-        START_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+          START_MS=$(date +%s)000  # macOS doesn't support %3N, use seconds + 000
+        elif command -v date >/dev/null 2>&1 && date +%s%3N >/dev/null 2>&1; then
+          START_MS=$(date +%s%3N)
+        else
+          START_MS=$(($(date +%s) * 1000))  # fallback
+        fi
         echo "start_time=${START_MS}" >> $GITHUB_OUTPUT
       shell: bash
     
@@ -134,7 +164,13 @@ jobs:
     
     - name: Record Iteration 3 Time
       run: |
-        END_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+          END_MS=$(date +%s)000  # macOS doesn't support %3N, use seconds + 000
+        elif command -v date >/dev/null 2>&1 && date +%s%3N >/dev/null 2>&1; then
+          END_MS=$(date +%s%3N)
+        else
+          END_MS=$(($(date +%s) * 1000))  # fallback
+        fi
         DURATION=$((END_MS - ${{ steps.iter3.outputs.start_time }}))
         echo "iter3_duration_ms=${DURATION}" >> $GITHUB_ENV
         echo "Iteration 3 (No Cache): ${DURATION}ms"
@@ -191,7 +227,13 @@ jobs:
     - name: "Cache Miss Test"
       id: cache_miss
       run: |
-        START_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+          START_MS=$(date +%s)000  # macOS doesn't support %3N, use seconds + 000
+        elif command -v date >/dev/null 2>&1 && date +%s%3N >/dev/null 2>&1; then
+          START_MS=$(date +%s%3N)
+        else
+          START_MS=$(($(date +%s) * 1000))  # fallback
+        fi
         echo "start_time=${START_MS}" >> $GITHUB_OUTPUT
       shell: bash
     
@@ -206,7 +248,13 @@ jobs:
     
     - name: Record Cache Miss Time
       run: |
-        END_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+          END_MS=$(date +%s)000  # macOS doesn't support %3N, use seconds + 000
+        elif command -v date >/dev/null 2>&1 && date +%s%3N >/dev/null 2>&1; then
+          END_MS=$(date +%s%3N)
+        else
+          END_MS=$(($(date +%s) * 1000))  # fallback
+        fi
         DURATION=$((END_MS - ${{ steps.cache_miss.outputs.start_time }}))
         echo "cache_miss_duration_ms=${DURATION}" >> $GITHUB_ENV
         echo "Cache Miss: ${DURATION}ms"
@@ -216,7 +264,13 @@ jobs:
     - name: "Cache Hit Test 1"
       id: cache_hit1
       run: |
-        START_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+          START_MS=$(date +%s)000  # macOS doesn't support %3N, use seconds + 000
+        elif command -v date >/dev/null 2>&1 && date +%s%3N >/dev/null 2>&1; then
+          START_MS=$(date +%s%3N)
+        else
+          START_MS=$(($(date +%s) * 1000))  # fallback
+        fi
         echo "start_time=${START_MS}" >> $GITHUB_OUTPUT
       shell: bash
     
@@ -231,7 +285,13 @@ jobs:
     
     - name: Record Cache Hit 1 Time
       run: |
-        END_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+          END_MS=$(date +%s)000  # macOS doesn't support %3N, use seconds + 000
+        elif command -v date >/dev/null 2>&1 && date +%s%3N >/dev/null 2>&1; then
+          END_MS=$(date +%s%3N)
+        else
+          END_MS=$(($(date +%s) * 1000))  # fallback
+        fi
         DURATION=$((END_MS - ${{ steps.cache_hit1.outputs.start_time }}))
         echo "cache_hit1_duration_ms=${DURATION}" >> $GITHUB_ENV
         echo "Cache Hit 1: ${DURATION}ms"
@@ -241,7 +301,13 @@ jobs:
     - name: "Cache Hit Test 2"
       id: cache_hit2
       run: |
-        START_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+          START_MS=$(date +%s)000  # macOS doesn't support %3N, use seconds + 000
+        elif command -v date >/dev/null 2>&1 && date +%s%3N >/dev/null 2>&1; then
+          START_MS=$(date +%s%3N)
+        else
+          START_MS=$(($(date +%s) * 1000))  # fallback
+        fi
         echo "start_time=${START_MS}" >> $GITHUB_OUTPUT
       shell: bash
     
@@ -256,7 +322,13 @@ jobs:
     
     - name: Record Cache Hit 2 Time
       run: |
-        END_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+          END_MS=$(date +%s)000  # macOS doesn't support %3N, use seconds + 000
+        elif command -v date >/dev/null 2>&1 && date +%s%3N >/dev/null 2>&1; then
+          END_MS=$(date +%s%3N)
+        else
+          END_MS=$(($(date +%s) * 1000))  # fallback
+        fi
         DURATION=$((END_MS - ${{ steps.cache_hit2.outputs.start_time }}))
         echo "cache_hit2_duration_ms=${DURATION}" >> $GITHUB_ENV
         echo "Cache Hit 2: ${DURATION}ms"
@@ -389,7 +461,13 @@ jobs:
     - name: Pro No-Cache Test
       id: pro_no_cache
       run: |
-        START_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+          START_MS=$(date +%s)000  # macOS doesn't support %3N, use seconds + 000
+        elif command -v date >/dev/null 2>&1 && date +%s%3N >/dev/null 2>&1; then
+          START_MS=$(date +%s%3N)
+        else
+          START_MS=$(($(date +%s) * 1000))  # fallback
+        fi
         echo "start_time=${START_MS}" >> $GITHUB_OUTPUT
       shell: bash
     
@@ -404,7 +482,13 @@ jobs:
     
     - name: Record Pro No-Cache Time
       run: |
-        END_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+          END_MS=$(date +%s)000  # macOS doesn't support %3N, use seconds + 000
+        elif command -v date >/dev/null 2>&1 && date +%s%3N >/dev/null 2>&1; then
+          END_MS=$(date +%s%3N)
+        else
+          END_MS=$(($(date +%s) * 1000))  # fallback
+        fi
         DURATION=$((END_MS - ${{ steps.pro_no_cache.outputs.start_time }}))
         echo "Pro No-Cache: ${DURATION}ms" >> $GITHUB_STEP_SUMMARY
         echo "pro_no_cache_ms=${DURATION}" >> $GITHUB_ENV
@@ -414,7 +498,13 @@ jobs:
     - name: Pro Cache Miss Test
       id: pro_cache_miss
       run: |
-        START_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+          START_MS=$(date +%s)000  # macOS doesn't support %3N, use seconds + 000
+        elif command -v date >/dev/null 2>&1 && date +%s%3N >/dev/null 2>&1; then
+          START_MS=$(date +%s%3N)
+        else
+          START_MS=$(($(date +%s) * 1000))  # fallback
+        fi
         echo "start_time=${START_MS}" >> $GITHUB_OUTPUT
       shell: bash
     
@@ -429,7 +519,13 @@ jobs:
     
     - name: Record Pro Cache Miss Time
       run: |
-        END_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+          END_MS=$(date +%s)000  # macOS doesn't support %3N, use seconds + 000
+        elif command -v date >/dev/null 2>&1 && date +%s%3N >/dev/null 2>&1; then
+          END_MS=$(date +%s%3N)
+        else
+          END_MS=$(($(date +%s) * 1000))  # fallback
+        fi
         DURATION=$((END_MS - ${{ steps.pro_cache_miss.outputs.start_time }}))
         echo "Pro Cache Miss: ${DURATION}ms" >> $GITHUB_STEP_SUMMARY
         echo "pro_cache_miss_ms=${DURATION}" >> $GITHUB_ENV
@@ -439,7 +535,13 @@ jobs:
     - name: Pro Cache Hit Test
       id: pro_cache_hit
       run: |
-        START_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+          START_MS=$(date +%s)000  # macOS doesn't support %3N, use seconds + 000
+        elif command -v date >/dev/null 2>&1 && date +%s%3N >/dev/null 2>&1; then
+          START_MS=$(date +%s%3N)
+        else
+          START_MS=$(($(date +%s) * 1000))  # fallback
+        fi
         echo "start_time=${START_MS}" >> $GITHUB_OUTPUT
       shell: bash
     
@@ -454,7 +556,13 @@ jobs:
     
     - name: Record Pro Cache Hit Time and Analysis
       run: |
-        END_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+          END_MS=$(date +%s)000  # macOS doesn't support %3N, use seconds + 000
+        elif command -v date >/dev/null 2>&1 && date +%s%3N >/dev/null 2>&1; then
+          END_MS=$(date +%s%3N)
+        else
+          END_MS=$(($(date +%s) * 1000))  # fallback
+        fi
         DURATION=$((END_MS - ${{ steps.pro_cache_hit.outputs.start_time }}))
         
         # Calculate improvements

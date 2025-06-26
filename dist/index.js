@@ -31349,7 +31349,7 @@ async function validateInstallation(liquibasePath) {
             }
         });
         const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Liquibase validation timed out after 15 seconds')), 15000);
+            setTimeout(() => reject(new Error('Liquibase validation timed out after 30 seconds')), 30000);
         });
         await Promise.race([execPromise, timeoutPromise]);
         // Check if version output contains expected content
