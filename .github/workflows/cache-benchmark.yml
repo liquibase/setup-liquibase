@@ -297,11 +297,11 @@ jobs:
         echo "4. **Test with Pro edition** if OSS shows benefits" >> $GITHUB_STEP_SUMMARY
         echo "5. **Make implementation decision** based on data" >> $GITHUB_STEP_SUMMARY
 
-  # Job 4: Pro Edition Testing (if license available)
+  # Job 4: Pro Edition Testing (optional - requires license)
   benchmark-pro-edition:
     name: "Pro Edition Test (${{ matrix.os }})"
     runs-on: ${{ matrix.os }}
-    if: vars.LIQUIBASE_LICENSE_KEY != '' || secrets.LIQUIBASE_LICENSE_KEY != ''
+    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
@@ -324,7 +324,19 @@ jobs:
       env:
         NODE_OPTIONS: --max-old-space-size=4096
     
+    - name: Check Pro License Availability
+      id: license_check
+      run: |
+        if [ -z "${{ secrets.LIQUIBASE_LICENSE_KEY }}" ]; then
+          echo "⚠️ No Liquibase Pro license available - skipping Pro tests" >> $GITHUB_STEP_SUMMARY
+          echo "available=false" >> $GITHUB_OUTPUT
+        else
+          echo "✅ Liquibase Pro license available - running Pro tests" >> $GITHUB_STEP_SUMMARY
+          echo "available=true" >> $GITHUB_OUTPUT
+        fi
+    
     - name: Pro Edition Cache Performance Test
+      if: steps.license_check.outputs.available == 'true'
       run: |
         echo "## Pro Edition Extended Testing (${{ matrix.os }})" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
@@ -334,6 +346,7 @@ jobs:
     
     # No cache test
     - name: Pro No-Cache Test
+      if: steps.license_check.outputs.available == 'true'
       id: pro_no_cache
       run: |
         START_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
@@ -341,6 +354,7 @@ jobs:
       shell: bash
     
     - name: Setup Liquibase Pro (No Cache)
+      if: steps.license_check.outputs.available == 'true'
       uses: ./
       with:
         version: ${{ inputs.version || '4.32.0' }}
@@ -350,6 +364,7 @@ jobs:
         LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
     
     - name: Record Pro No-Cache Time
+      if: steps.license_check.outputs.available == 'true'
       run: |
         END_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
         DURATION=$((END_MS - ${{ steps.pro_no_cache.outputs.start_time }}))
@@ -359,6 +374,7 @@ jobs:
     
     # Cache miss test
     - name: Pro Cache Miss Test
+      if: steps.license_check.outputs.available == 'true'
       id: pro_cache_miss
       run: |
         START_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
@@ -366,6 +382,7 @@ jobs:
       shell: bash
     
     - name: Setup Liquibase Pro (Cache Miss)
+      if: steps.license_check.outputs.available == 'true'
       uses: ./
       with:
         version: ${{ inputs.version || '4.32.0' }}
@@ -375,6 +392,7 @@ jobs:
         LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
     
     - name: Record Pro Cache Miss Time
+      if: steps.license_check.outputs.available == 'true'
       run: |
         END_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
         DURATION=$((END_MS - ${{ steps.pro_cache_miss.outputs.start_time }}))
@@ -384,6 +402,7 @@ jobs:
     
     # Cache hit test
     - name: Pro Cache Hit Test
+      if: steps.license_check.outputs.available == 'true'
       id: pro_cache_hit
       run: |
         START_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
@@ -391,6 +410,7 @@ jobs:
       shell: bash
     
     - name: Setup Liquibase Pro (Cache Hit)
+      if: steps.license_check.outputs.available == 'true'
       uses: ./
       with:
         version: ${{ inputs.version || '4.32.0' }}
@@ -400,6 +420,7 @@ jobs:
         LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
     
     - name: Record Pro Cache Hit Time and Analysis
+      if: steps.license_check.outputs.available == 'true'
       run: |
         END_MS=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
         DURATION=$((END_MS - ${{ steps.pro_cache_hit.outputs.start_time }}))
