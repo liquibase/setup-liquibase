@@ -1,0 +1,474 @@
+# Cache Performance Benchmark Workflow
+# Tests the actual performance impact of caching in setup-liquibase action
+# Measures true cache hit vs cache miss vs no-cache scenarios
+
+name: Cache Performance Benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      editions:
+        description: 'Editions to test (comma-separated)'
+        required: false
+        default: 'oss,pro'
+        type: string
+      iterations:
+        description: 'Number of iterations per scenario'
+        required: false
+        default: '3'
+        type: string
+      version:
+        description: 'Liquibase version to test'
+        required: false
+        default: '4.32.0'
+        type: string
+
+# Only allow one benchmark run at a time to avoid cache pollution
+concurrency:
+  group: cache-benchmark
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Job 1: Baseline performance without caching
+  benchmark-no-cache:
+    name: "Baseline: No Cache (${{ matrix.os }}, ${{ matrix.edition }})"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        edition: ${{ fromJson(format('["{0}"]', join(fromJson(format('["{0}"]', inputs.editions || 'oss,pro')), '", "'))) }}
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js Environment
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: Build Action
+      run: |
+        npm ci
+        npm run build
+      env:
+        NODE_OPTIONS: --max-old-space-size=4096
+    
+    # Clear any existing cache to ensure clean baseline
+    - name: Clear Existing Cache
+      continue-on-error: true
+      run: |
+        echo "Clearing any existing tool cache for clean baseline"
+        # GitHub Actions doesn't provide direct cache clearing, but we'll document this
+        echo "Baseline test - no caching enabled"
+    
+    # Perform multiple iterations for statistical significance
+    - name: "Iteration 1: No Cache Baseline"
+      id: iter1
+      run: |
+        START_MS=$(date +%s%3N)
+        echo "start_time=${START_MS}" >> $GITHUB_OUTPUT
+      shell: bash
+    
+    - name: Setup Liquibase (No Cache) - Iteration 1
+      uses: ./
+      with:
+        version: ${{ inputs.version || '4.32.0' }}
+        edition: ${{ matrix.edition }}
+        cache: false
+      env:
+        LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
+    
+    - name: Record Iteration 1 Time
+      run: |
+        END_MS=$(date +%s%3N)
+        DURATION=$((END_MS - ${{ steps.iter1.outputs.start_time }}))
+        echo "iter1_duration_ms=${DURATION}" >> $GITHUB_ENV
+        echo "Iteration 1 (No Cache): ${DURATION}ms"
+      shell: bash
+    
+    - name: "Iteration 2: No Cache Baseline"
+      id: iter2
+      run: |
+        START_MS=$(date +%s%3N)
+        echo "start_time=${START_MS}" >> $GITHUB_OUTPUT
+      shell: bash
+    
+    - name: Setup Liquibase (No Cache) - Iteration 2
+      uses: ./
+      with:
+        version: ${{ inputs.version || '4.32.0' }}
+        edition: ${{ matrix.edition }}
+        cache: false
+      env:
+        LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
+    
+    - name: Record Iteration 2 Time
+      run: |
+        END_MS=$(date +%s%3N)
+        DURATION=$((END_MS - ${{ steps.iter2.outputs.start_time }}))
+        echo "iter2_duration_ms=${DURATION}" >> $GITHUB_ENV
+        echo "Iteration 2 (No Cache): ${DURATION}ms"
+      shell: bash
+    
+    - name: "Iteration 3: No Cache Baseline"
+      id: iter3
+      run: |
+        START_MS=$(date +%s%3N)
+        echo "start_time=${START_MS}" >> $GITHUB_OUTPUT
+      shell: bash
+    
+    - name: Setup Liquibase (No Cache) - Iteration 3
+      uses: ./
+      with:
+        version: ${{ inputs.version || '4.32.0' }}
+        edition: ${{ matrix.edition }}
+        cache: false
+      env:
+        LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
+    
+    - name: Record Iteration 3 Time
+      run: |
+        END_MS=$(date +%s%3N)
+        DURATION=$((END_MS - ${{ steps.iter3.outputs.start_time }}))
+        echo "iter3_duration_ms=${DURATION}" >> $GITHUB_ENV
+        echo "Iteration 3 (No Cache): ${DURATION}ms"
+      shell: bash
+    
+    - name: Calculate No-Cache Statistics
+      run: |
+        # Calculate average and standard deviation
+        TOTAL=$((iter1_duration_ms + iter2_duration_ms + iter3_duration_ms))
+        AVG=$((TOTAL / 3))
+        
+        echo "## No-Cache Baseline Results (${{ matrix.os }}, ${{ matrix.edition }})" >> $GITHUB_STEP_SUMMARY
+        echo "- Iteration 1: ${iter1_duration_ms}ms" >> $GITHUB_STEP_SUMMARY
+        echo "- Iteration 2: ${iter2_duration_ms}ms" >> $GITHUB_STEP_SUMMARY
+        echo "- Iteration 3: ${iter3_duration_ms}ms" >> $GITHUB_STEP_SUMMARY
+        echo "- **Average: ${AVG}ms**" >> $GITHUB_STEP_SUMMARY
+        echo ""
+        
+        # Export for cross-job comparison
+        echo "no_cache_avg_ms=${AVG}" >> $GITHUB_ENV
+        echo "no_cache_iter1=${iter1_duration_ms}" >> $GITHUB_ENV
+        echo "no_cache_iter2=${iter2_duration_ms}" >> $GITHUB_ENV
+        echo "no_cache_iter3=${iter3_duration_ms}" >> $GITHUB_ENV
+      shell: bash
+
+  # Job 2: Cache performance (cache miss then cache hit)
+  benchmark-with-cache:
+    name: "Cache Test (${{ matrix.os }}, ${{ matrix.edition }})"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        edition: ${{ fromJson(format('["{0}"]', join(fromJson(format('["{0}"]', inputs.editions || 'oss,pro')), '", "'))) }}
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js Environment
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: Build Action
+      run: |
+        npm ci
+        npm run build
+      env:
+        NODE_OPTIONS: --max-old-space-size=4096
+    
+    # First run: Cache Miss (should populate cache)
+    - name: "Cache Miss Test"
+      id: cache_miss
+      run: |
+        START_MS=$(date +%s%3N)
+        echo "start_time=${START_MS}" >> $GITHUB_OUTPUT
+      shell: bash
+    
+    - name: Setup Liquibase (Cache Miss)
+      uses: ./
+      with:
+        version: ${{ inputs.version || '4.32.0' }}
+        edition: ${{ matrix.edition }}
+        cache: true
+      env:
+        LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
+    
+    - name: Record Cache Miss Time
+      run: |
+        END_MS=$(date +%s%3N)
+        DURATION=$((END_MS - ${{ steps.cache_miss.outputs.start_time }}))
+        echo "cache_miss_duration_ms=${DURATION}" >> $GITHUB_ENV
+        echo "Cache Miss: ${DURATION}ms"
+      shell: bash
+    
+    # Second run: Cache Hit (should use cached version)
+    - name: "Cache Hit Test 1"
+      id: cache_hit1
+      run: |
+        START_MS=$(date +%s%3N)
+        echo "start_time=${START_MS}" >> $GITHUB_OUTPUT
+      shell: bash
+    
+    - name: Setup Liquibase (Cache Hit 1)
+      uses: ./
+      with:
+        version: ${{ inputs.version || '4.32.0' }}
+        edition: ${{ matrix.edition }}
+        cache: true
+      env:
+        LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
+    
+    - name: Record Cache Hit 1 Time
+      run: |
+        END_MS=$(date +%s%3N)
+        DURATION=$((END_MS - ${{ steps.cache_hit1.outputs.start_time }}))
+        echo "cache_hit1_duration_ms=${DURATION}" >> $GITHUB_ENV
+        echo "Cache Hit 1: ${DURATION}ms"
+      shell: bash
+    
+    # Third run: Another Cache Hit for consistency
+    - name: "Cache Hit Test 2"
+      id: cache_hit2
+      run: |
+        START_MS=$(date +%s%3N)
+        echo "start_time=${START_MS}" >> $GITHUB_OUTPUT
+      shell: bash
+    
+    - name: Setup Liquibase (Cache Hit 2)
+      uses: ./
+      with:
+        version: ${{ inputs.version || '4.32.0' }}
+        edition: ${{ matrix.edition }}
+        cache: true
+      env:
+        LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
+    
+    - name: Record Cache Hit 2 Time
+      run: |
+        END_MS=$(date +%s%3N)
+        DURATION=$((END_MS - ${{ steps.cache_hit2.outputs.start_time }}))
+        echo "cache_hit2_duration_ms=${DURATION}" >> $GITHUB_ENV
+        echo "Cache Hit 2: ${DURATION}ms"
+      shell: bash
+    
+    - name: Calculate Cache Performance Statistics
+      run: |
+        # Calculate cache hit average
+        CACHE_HIT_TOTAL=$((cache_hit1_duration_ms + cache_hit2_duration_ms))
+        CACHE_HIT_AVG=$((CACHE_HIT_TOTAL / 2))
+        
+        echo "## Cache Performance Results (${{ matrix.os }}, ${{ matrix.edition }})" >> $GITHUB_STEP_SUMMARY
+        echo "- **Cache Miss**: ${cache_miss_duration_ms}ms" >> $GITHUB_STEP_SUMMARY
+        echo "- **Cache Hit 1**: ${cache_hit1_duration_ms}ms" >> $GITHUB_STEP_SUMMARY
+        echo "- **Cache Hit 2**: ${cache_hit2_duration_ms}ms" >> $GITHUB_STEP_SUMMARY
+        echo "- **Cache Hit Average**: ${CACHE_HIT_AVG}ms" >> $GITHUB_STEP_SUMMARY
+        echo ""
+        
+        # Export for analysis
+        echo "cache_miss_ms=${cache_miss_duration_ms}" >> $GITHUB_ENV
+        echo "cache_hit_avg_ms=${CACHE_HIT_AVG}" >> $GITHUB_ENV
+        echo "cache_hit1_ms=${cache_hit1_duration_ms}" >> $GITHUB_ENV
+        echo "cache_hit2_ms=${cache_hit2_duration_ms}" >> $GITHUB_ENV
+      shell: bash
+
+  # Job 3: Analysis and Recommendations
+  analyze-results:
+    name: "Analysis & Recommendations"
+    runs-on: ubuntu-latest
+    needs: [benchmark-no-cache, benchmark-with-cache]
+    if: always()
+    
+    steps:
+    - name: Generate Performance Analysis
+      run: |
+        echo "# 🚀 Liquibase Setup Cache Performance Benchmark Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Test Configuration:**" >> $GITHUB_STEP_SUMMARY
+        echo "- Liquibase Version: ${{ inputs.version || '4.32.0' }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Editions Tested: ${{ inputs.editions || 'oss,pro' }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Iterations per Scenario: ${{ inputs.iterations || '3' }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Test Date: $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "## 📊 Performance Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Platform | Edition | No Cache Avg | Cache Miss | Cache Hit Avg | Improvement |" >> $GITHUB_STEP_SUMMARY
+        echo "|----------|---------|---------------|------------|---------------|-------------|" >> $GITHUB_STEP_SUMMARY
+        
+        # Note: In a real implementation, we'd need to collect results from previous jobs
+        # For now, we'll provide analysis framework
+        echo "| Ubuntu | OSS | TBD | TBD | TBD | TBD |" >> $GITHUB_STEP_SUMMARY
+        echo "| Ubuntu | Pro | TBD | TBD | TBD | TBD |" >> $GITHUB_STEP_SUMMARY
+        echo "| Windows | OSS | TBD | TBD | TBD | TBD |" >> $GITHUB_STEP_SUMMARY
+        echo "| Windows | Pro | TBD | TBD | TBD | TBD |" >> $GITHUB_STEP_SUMMARY
+        echo "| macOS | OSS | TBD | TBD | TBD | TBD |" >> $GITHUB_STEP_SUMMARY
+        echo "| macOS | Pro | TBD | TBD | TBD | TBD |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "## 🔍 Key Insights" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Cache Miss vs No Cache" >> $GITHUB_STEP_SUMMARY
+        echo "- Cache miss should be similar to no-cache (both download)" >> $GITHUB_STEP_SUMMARY
+        echo "- If cache miss is slower, caching has overhead" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Cache Hit vs No Cache" >> $GITHUB_STEP_SUMMARY
+        echo "- This is the true performance benefit of caching" >> $GITHUB_STEP_SUMMARY
+        echo "- Measures time saved by avoiding download + extraction" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "## 📈 Recommendations" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**If cache hit is significantly faster (>30% improvement):**" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Keep caching enabled by default" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Consider optimizing cache key strategy" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**If cache hit shows minimal improvement (<15%):**" >> $GITHUB_STEP_SUMMARY
+        echo "- ❓ Consider making caching opt-in rather than default" >> $GITHUB_STEP_SUMMARY
+        echo "- ❓ Evaluate if complexity is worth the minimal gain" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**If cache miss is slower than no-cache:**" >> $GITHUB_STEP_SUMMARY
+        echo "- ⚠️ Cache overhead may outweigh benefits" >> $GITHUB_STEP_SUMMARY
+        echo "- ⚠️ Consider removing caching entirely" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "## 🔗 Next Steps" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "1. **Review detailed results** in individual job summaries" >> $GITHUB_STEP_SUMMARY
+        echo "2. **Calculate statistical significance** of differences" >> $GITHUB_STEP_SUMMARY
+        echo "3. **Test with Pro edition** (larger file, may show more benefit)" >> $GITHUB_STEP_SUMMARY
+        echo "4. **Consider alternative caching strategies** based on results" >> $GITHUB_STEP_SUMMARY
+        echo "5. **Update action implementation** based on findings" >> $GITHUB_STEP_SUMMARY
+
+  # Job 4: Extended Testing (Pro Edition with License)
+  benchmark-pro-edition:
+    name: "Pro Edition Benchmark (${{ matrix.os }})"
+    runs-on: ${{ matrix.os }}
+    if: contains(inputs.editions, 'pro') && secrets.LIQUIBASE_LICENSE_KEY != ''
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js Environment
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: Build Action
+      run: |
+        npm ci
+        npm run build
+      env:
+        NODE_OPTIONS: --max-old-space-size=4096
+    
+    - name: Pro Edition Cache Performance Test
+      run: |
+        echo "## Pro Edition Extended Testing (${{ matrix.os }})" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Testing Liquibase Pro edition (~100MB download) for cache performance" >> $GITHUB_STEP_SUMMARY
+        echo "Larger file size should show more pronounced caching benefits" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+    
+    # No cache test
+    - name: Pro No-Cache Test
+      id: pro_no_cache
+      run: |
+        START_MS=$(date +%s%3N)
+        echo "start_time=${START_MS}" >> $GITHUB_OUTPUT
+      shell: bash
+    
+    - name: Setup Liquibase Pro (No Cache)
+      uses: ./
+      with:
+        version: ${{ inputs.version || '4.32.0' }}
+        edition: 'pro'
+        cache: false
+      env:
+        LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
+    
+    - name: Record Pro No-Cache Time
+      run: |
+        END_MS=$(date +%s%3N)
+        DURATION=$((END_MS - ${{ steps.pro_no_cache.outputs.start_time }}))
+        echo "Pro No-Cache: ${DURATION}ms" >> $GITHUB_STEP_SUMMARY
+        echo "pro_no_cache_ms=${DURATION}" >> $GITHUB_ENV
+      shell: bash
+    
+    # Cache miss test
+    - name: Pro Cache Miss Test
+      id: pro_cache_miss
+      run: |
+        START_MS=$(date +%s%3N)
+        echo "start_time=${START_MS}" >> $GITHUB_OUTPUT
+      shell: bash
+    
+    - name: Setup Liquibase Pro (Cache Miss)
+      uses: ./
+      with:
+        version: ${{ inputs.version || '4.32.0' }}
+        edition: 'pro'
+        cache: true
+      env:
+        LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
+    
+    - name: Record Pro Cache Miss Time
+      run: |
+        END_MS=$(date +%s%3N)
+        DURATION=$((END_MS - ${{ steps.pro_cache_miss.outputs.start_time }}))
+        echo "Pro Cache Miss: ${DURATION}ms" >> $GITHUB_STEP_SUMMARY
+        echo "pro_cache_miss_ms=${DURATION}" >> $GITHUB_ENV
+      shell: bash
+    
+    # Cache hit test
+    - name: Pro Cache Hit Test
+      id: pro_cache_hit
+      run: |
+        START_MS=$(date +%s%3N)
+        echo "start_time=${START_MS}" >> $GITHUB_OUTPUT
+      shell: bash
+    
+    - name: Setup Liquibase Pro (Cache Hit)
+      uses: ./
+      with:
+        version: ${{ inputs.version || '4.32.0' }}
+        edition: 'pro'
+        cache: true
+      env:
+        LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
+    
+    - name: Record Pro Cache Hit Time and Analysis
+      run: |
+        END_MS=$(date +%s%3N)
+        DURATION=$((END_MS - ${{ steps.pro_cache_hit.outputs.start_time }}))
+        
+        # Calculate improvements
+        if [ $pro_no_cache_ms -gt 0 ]; then
+          CACHE_IMPROVEMENT=$(( (pro_no_cache_ms - DURATION) * 100 / pro_no_cache_ms ))
+        else
+          CACHE_IMPROVEMENT=0
+        fi
+        
+        echo "Pro Cache Hit: ${DURATION}ms" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Pro Edition Results (${{ matrix.os }}):**" >> $GITHUB_STEP_SUMMARY
+        echo "- No Cache: ${pro_no_cache_ms}ms" >> $GITHUB_STEP_SUMMARY
+        echo "- Cache Miss: ${pro_cache_miss_ms}ms" >> $GITHUB_STEP_SUMMARY
+        echo "- Cache Hit: ${DURATION}ms" >> $GITHUB_STEP_SUMMARY
+        echo "- **Improvement: ${CACHE_IMPROVEMENT}%**" >> $GITHUB_STEP_SUMMARY
+      shell: bash
