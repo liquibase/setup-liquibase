@@ -315,10 +315,10 @@ jobs:
           --username=dbuser \
           --password=${{ secrets.DB_PASSWORD }}
     
-    # Using environment variable for search path
+    # Alternative: Using environment variable for search path
     - name: Execute Flow with Environment Variable
       env:
-        LIQUIBASE_SEARCH_PATH: s3://my-bucket/liquibase/resources
+        LIQUIBASE_SEARCH_PATH: s3://my-bucket/liquibase/resources,.
       run: |
         liquibase flow \
           --flow-file=s3://my-bucket/liquibase/flows/staging-deployment.flowfile.yaml \
