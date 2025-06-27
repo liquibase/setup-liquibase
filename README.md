@@ -253,7 +253,7 @@ jobs:
     
     - name: Execute Flow from Template
       run: |
-        liquibase --search-path=flow-templates/resources flow \
+        liquibase --search-path=flow-templates/resources,. flow \
           --flow-file=flow-templates/flows/production-deployment.flowfile.yaml \
           --url=jdbc:postgresql://localhost/mydb \
           --username=dbuser \
