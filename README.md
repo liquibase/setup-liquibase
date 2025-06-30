@@ -222,6 +222,8 @@ jobs:
 
 Flow files enable portable, platform-independent Liquibase workflows. Best practice is to store Flow files in centralized locations like template repositories or S3 for version control, reusability, and governance.
 
+**Important**: The `--search-path` parameter is a global flag and must be specified before the command (e.g., `liquibase --search-path=... flow`). This parameter affects `--flow-file` and `--changelog-file` path resolution, but does not affect `--defaults-file` which requires an absolute path.
+
 #### Example 1: Flow Files from Template Repository
 
 ```yaml
@@ -251,15 +253,16 @@ jobs:
     
     - name: Execute Flow from Template
       run: |
-        liquibase flow \
+        liquibase --search-path=flow-templates/resources,. flow \
           --flow-file=flow-templates/flows/production-deployment.flowfile.yaml \
-          --search-path=flow-templates/resources,. \
           --url=jdbc:postgresql://localhost/mydb \
           --username=dbuser \
           --password=${{ secrets.DB_PASSWORD }}
 ```
 
 #### Example 2: Flow Files from S3
+
+**Note**: S3 integration requires the `liquibase-aws-extension` JAR file to be available in Liquibase's classpath. Download the extension from [Maven Central](https://mvnrepository.com/artifact/org.liquibase.ext/liquibase-aws-extension) and include it using the `--classpath` parameter. Extensions can be also installed using [lpm](https://github.com/liquibase/liquibase-package-manager)
 
 ```yaml
 name: Database Deployment with S3 Flow
@@ -282,11 +285,32 @@ jobs:
         edition: 'pro'
         cache: true
     
-    - name: Execute Flow from S3
+    - name: Download AWS Extension (Direct JAR)
       run: |
-        liquibase flow \
+        wget -O liquibase-aws-extension.jar https://repo1.maven.org/maven2/org/liquibase/ext/liquibase-aws-extension/1.0.1/liquibase-aws-extension-1.0.1.jar
+        
+    - name: Execute Flow from S3 (Direct JAR)
+      run: |
+        liquibase --classpath=liquibase-aws-extension.jar --search-path=s3://my-bucket/liquibase/resources,. flow \
           --flow-file=s3://my-bucket/liquibase/flows/production-deployment.flowfile.yaml \
-          --search-path=s3://my-bucket/liquibase/resources,. \
+          --url=jdbc:postgresql://localhost/mydb \
+          --username=dbuser \
+          --password=${{ secrets.DB_PASSWORD }}
+          
+    # Alternative: Using extensions installed via Package Manager
+    - name: Install AWS Extension via Package Manager
+      run: |
+        # Install the Liquibase Package Manager
+        wget -O lpm.zip https://github.com/liquibase/liquibase-package-manager/releases/download/v0.2.9/lpm-0.2.9-linux.zip
+        unzip lpm.zip
+        # Install the AWS extension
+        ./lpm add liquibase-aws-extension
+        
+    # Alternative: Using extensions installed via Package Manager
+    - name: Execute Flow from S3 (Package Manager)
+      run: |
+        liquibase --search-path=s3://my-bucket/liquibase/resources,. flow \
+          --flow-file=s3://my-bucket/liquibase/flows/production-deployment.flowfile.yaml \
           --url=jdbc:postgresql://localhost/mydb \
           --username=dbuser \
           --password=${{ secrets.DB_PASSWORD }}
