@@ -134,7 +134,10 @@ describe('setupLiquibase validation', () => {
     expect(result.path).toBeTruthy();
   }, 60000); // Increased timeout to 60 seconds
 
-  it('should accept valid Pro configuration', async () => {
+  // Conditionally run Pro edition test based on license key availability
+  const itConditional = (process.env.LIQUIBASE_LICENSE_KEY || process.env.CI) ? it : it.skip;
+  
+  itConditional('should accept valid Pro configuration', async () => {
     const options = {
       version: '4.32.0',
       edition: 'pro' as const,
@@ -143,12 +146,6 @@ describe('setupLiquibase validation', () => {
 
     // Should pass validation and complete successfully in CI environment
     // Note: Pro edition requires LIQUIBASE_LICENSE_KEY environment variable for runtime validation
-    // Skip this test locally if no Pro license key is available
-    if (!process.env.LIQUIBASE_LICENSE_KEY && !process.env.CI) {
-      console.log('Skipping Pro edition test - no license key available locally');
-      return;
-    }
-
     const result = await setupLiquibase(options);
     expect(result).toBeDefined();
     expect(result.version).toBe('4.32.0');
