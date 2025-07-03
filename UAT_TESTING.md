@@ -154,22 +154,22 @@ runs-on: ${{ matrix.os }}
     fi
 ```
 
-#### Missing License Test
+#### Pro Edition Installation Test
 ```yaml
-- name: Test Pro Without License (Should Fail)
+- name: Test Pro Installation (Should Succeed)
   uses: liquibase/setup-liquibase@v1-beta
-  continue-on-error: true
-  id: pro-no-license
+  id: pro-install
   with:
     version: '4.32.0'
     edition: 'pro'
 
-- name: Verify Failure
+- name: Verify Installation Success
   run: |
-    if [ "${{ steps.pro-no-license.outcome }}" == "success" ]; then
-      echo "ERROR: Pro without license should have failed!"
+    if [ "${{ steps.pro-install.outcome }}" != "success" ]; then
+      echo "ERROR: Pro installation should succeed without license key!"
       exit 1
     fi
+    echo "✅ Pro edition installed successfully (license validation at runtime)"
 ```
 
 ### 5. Performance Tests
@@ -195,7 +195,7 @@ runs-on: ${{ matrix.os }}
 
 ### Basic Functionality ✅
 - [ ] OSS edition installs successfully
-- [ ] Pro edition installs with valid license
+- [ ] Pro edition installs successfully (license validation at runtime)
 - [ ] Action outputs are set correctly (liquibase-version, liquibase-path)
 - [ ] Liquibase binary is added to PATH
 - [ ] `liquibase --version` command works
@@ -217,7 +217,7 @@ runs-on: ${{ matrix.os }}
 
 ### Error Handling ✅
 - [ ] Invalid versions are rejected
-- [ ] Pro edition without license fails appropriately
+- [ ] Pro edition installation succeeds without license (separation of concerns)
 - [ ] Network failures are handled gracefully
 - [ ] Clear error messages are provided
 
@@ -309,7 +309,7 @@ For external contributors testing this action:
 - ✅ **Integration Tests**: Database operations with H2 (no license required)
 - ✅ **Error Handling Tests**: Complete validation of error scenarios
 - ✅ **Performance Tests**: Caching and performance validation
-- ⏩ **Pro Edition Tests**: Will be skipped (license not available to external contributors)
+- ⏩ **Pro Edition Tests**: Installation tests run successfully (runtime license validation not tested)
 
 **This is expected behavior** - OSS tests provide comprehensive validation of 95%+ of the action's functionality. See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development guidance.
 
