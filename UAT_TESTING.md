@@ -311,7 +311,7 @@ For external contributors testing this action:
 - ✅ **Performance Tests**: Caching and performance validation
 - ⏩ **Pro Edition Tests**: Installation tests run successfully (runtime license validation not tested)
 
-**This is expected behavior** - OSS tests provide comprehensive validation of 95%+ of the action's functionality. See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development guidance.
+**This is expected behavior** - OSS tests provide comprehensive validation of 95%+ of the action's functionality. See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for detailed development guidance.
 
 ## Troubleshooting Common Issues
 

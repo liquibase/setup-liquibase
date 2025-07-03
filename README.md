@@ -398,7 +398,7 @@ Note: The legacy actions (like `liquibase-github-actions/update`) are specialize
 
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! Please see our [Contributing Guide](.github/CONTRIBUTING.md) for details.
 
 ## License
 
