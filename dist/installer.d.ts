@@ -6,7 +6,6 @@
  * - Version resolution and management
  * - Cross-platform support (Linux, Windows, macOS)
  * - Caching for improved performance
- * - License configuration for Pro edition
  * - Installation validation
  */
 /**
@@ -17,8 +16,6 @@ export interface LiquibaseSetupOptions {
     version: string;
     /** Edition to install: 'oss' for Open Source, 'pro' for Professional */
     edition: 'oss' | 'pro';
-    /** License key for Pro edition from LIQUIBASE_LICENSE_KEY environment variable */
-    licenseKey?: string;
     /** Whether to cache the downloaded installation */
     cache: boolean;
 }
@@ -35,13 +32,12 @@ export interface LiquibaseSetupResult {
  * Main function to set up Liquibase in the GitHub Actions environment
  *
  * This function coordinates the entire installation process:
- * 1. Validates Pro edition requirements
+ * 1. Validates version and edition requirements
  * 2. Resolves the exact version to install
  * 3. Checks for cached installations
  * 4. Downloads and extracts Liquibase if needed
- * 5. Configures Pro license if applicable
- * 6. Validates the installation
- * 7. Adds Liquibase to the system PATH
+ * 5. Validates the installation
+ * 6. Adds Liquibase to the system PATH
  *
  * @param options - Configuration for the Liquibase setup
  * @returns Promise resolving to the setup result with version and path

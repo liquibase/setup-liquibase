@@ -68,7 +68,7 @@ steps:
 - run: liquibase update --changelog-file=changelog.xml --url=jdbc:h2:mem:test
 ```
 
-### Liquibase Pro with License Key (Environment Variable)
+### Liquibase Pro with License Key
 
 ```yaml
 steps:
@@ -77,9 +77,9 @@ steps:
   with:
     version: '4.32.0'
     edition: 'pro'
+- run: liquibase update --changelog-file=changelog.xml --url=jdbc:h2:mem:test
   env:
     LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
-- run: liquibase update --changelog-file=changelog.xml --url=jdbc:h2:mem:test
 ```
 
 ### With Caching
@@ -99,7 +99,7 @@ steps:
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `version` | Specific version of Liquibase to install (e.g., "4.32.0"). Must be 4.32.0 or higher. | Yes | |
-| `edition` | Edition to install: "oss" (Open Source) or "pro" (Professional). For Pro edition, set LIQUIBASE_LICENSE_KEY environment variable. | Yes | |
+| `edition` | Edition to install: "oss" (Open Source) or "pro" (Professional). For Pro edition, set LIQUIBASE_LICENSE_KEY environment variable when running Liquibase commands. | Yes | |
 | `cache` | Enable caching of downloaded Liquibase installations to improve workflow performance on subsequent runs | No | `false` |
 
 ## Outputs
@@ -142,17 +142,23 @@ The cache is unique per:
 
 ## Pro Edition Support
 
-The action supports both Liquibase OSS and Pro editions. The Pro edition requires a valid license key and must be explicitly specified using `edition: 'pro'`.
+The action supports both Liquibase OSS and Pro editions. The Pro edition can be installed by specifying `edition: 'pro'`. 
 
-The license key must be provided using the `LIQUIBASE_LICENSE_KEY` environment variable:
+For Pro edition, you must provide a valid license key using the `LIQUIBASE_LICENSE_KEY` environment variable. We recommend setting this at the **job level** for optimal security and simplicity:
 
 ```yaml
-- uses: liquibase/setup-liquibase@v1
-  with:
-    version: '4.32.0'
-    edition: 'pro'
-  env:
-    LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
+jobs:
+  pro-operations:
+    runs-on: ubuntu-latest
+    env:
+      LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
+    steps:
+    - uses: liquibase/setup-liquibase@v1
+      with:
+        version: '4.32.0'
+        edition: 'pro'
+    - run: liquibase update --changelog-file=changelog.xml
+    - run: liquibase checks run --changelog-file=changelog.xml
 ```
 
 ## Complete Workflow Examples

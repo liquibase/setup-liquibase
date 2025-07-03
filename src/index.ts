@@ -36,9 +36,6 @@ async function run(): Promise<void> {
     }
     const edition = editionInput as 'oss' | 'pro';
 
-    // Get license key from environment variable only
-    const licenseKey = process.env.LIQUIBASE_LICENSE_KEY;
-
     // Log the setup configuration for debugging purposes
     core.info(`Setting up Liquibase version ${version} (${edition} edition)`);
 
@@ -46,7 +43,6 @@ async function run(): Promise<void> {
     const result = await setupLiquibase({
       version,
       edition,
-      licenseKey,
       cache
     });
 

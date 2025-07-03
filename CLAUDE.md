@@ -46,7 +46,7 @@ Single GitHub Action that installs Liquibase (OSS or Pro) and adds it to PATH, a
    - Platform detection (Windows/Unix)
    - Download URL construction
    - Caching support via GitHub's tool-cache
-   - License key handling for Pro edition
+   - Pro edition installation support
 
 3. **Version Resolver** (`src/version-resolver.ts`)
    - Validates semantic versions
@@ -62,7 +62,7 @@ Single GitHub Action that installs Liquibase (OSS or Pro) and adds it to PATH, a
 
 - **Minimum Version**: 4.32.0 (enforced due to download endpoint compatibility)
 - **Editions**: 'oss' (Open Source) or 'pro' (Professional)
-- **Pro License**: Must be provided via `LIQUIBASE_LICENSE_KEY` environment variable
+- **Pro License**: Required at runtime via `LIQUIBASE_LICENSE_KEY` environment variable (not during installation)
 - **Caching**: Uses GitHub's tool-cache, keyed by version+edition
 - **Platforms**: Supports Linux (.tar.gz), Windows (.zip), and macOS (.tar.gz)
 - **Build Output**: TypeScript compiles to single `dist/index.js` with source maps

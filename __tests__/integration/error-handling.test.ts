@@ -111,32 +111,7 @@ describe('Error Handling Tests', () => {
       }
     });
 
-    it('should reject Pro edition without license key', async () => {
-      const options = {
-        version: '4.32.0',
-        edition: 'pro' as const,
-        cache: false
-      };
 
-      await expect(setupLiquibase(options)).rejects.toThrow(
-        'License key is required for Liquibase Pro edition. Provide it via the LIQUIBASE_LICENSE_KEY environment variable'
-      );
-    });
-
-    it('should reject Pro edition with empty license key', async () => {
-      const emptyLicenseKeys = ['', '   ', '\n', '\t', null, undefined];
-
-      for (const licenseKey of emptyLicenseKeys) {
-        const options = {
-          version: '4.32.0',
-          edition: 'pro' as const,
-          licenseKey: licenseKey as any,
-          cache: false
-        };
-
-        await expect(setupLiquibase(options)).rejects.toThrow();
-      }
-    }, 30000);
   });
 
   /**
@@ -410,10 +385,6 @@ describe('Error Handling Tests', () => {
           options: { version: '4.32.0', edition: 'invalid' as any, cache: false },
           expectedMessageParts: ['Invalid edition', 'oss', 'pro']
         },
-        {
-          options: { version: '4.32.0', edition: 'pro' as const, cache: false },
-          expectedMessageParts: ['License key', 'required', 'Pro edition']
-        }
       ];
 
       for (const testCase of testCases) {

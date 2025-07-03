@@ -418,21 +418,6 @@ jobs:
         fi
         echo "✅ Empty version correctly rejected"
     
-    - name: Test Pro Edition Without License (Should Fail)
-      uses: ./
-      continue-on-error: true
-      id: pro-no-license
-      with:
-        version: ${{ inputs.liquibase_version || '4.32.0' }}
-        edition: 'pro'
-    
-    - name: Verify Pro Without License Failed
-      run: |
-        if [ "${{ steps.pro-no-license.outcome }}" == "success" ]; then
-          echo "❌ ERROR: Pro without license test should have failed!"
-          exit 1
-        fi
-        echo "✅ Pro edition without license correctly rejected"
     
     - name: Edge Case Testing Summary
       run: |
