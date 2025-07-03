@@ -119,17 +119,6 @@ describe('setupLiquibase validation', () => {
     );
   });
 
-  it('should reject Pro edition without license key', async () => {
-    const options = {
-      version: '4.32.0',
-      edition: 'pro' as const,
-      cache: false
-    };
-
-    await expect(setupLiquibase(options)).rejects.toThrow(
-      'License key is required for Liquibase Pro edition. Provide it via the LIQUIBASE_LICENSE_KEY environment variable'
-    );
-  });
 
   it('should accept valid OSS configuration', async () => {
     const options = {
@@ -145,15 +134,21 @@ describe('setupLiquibase validation', () => {
     expect(result.path).toBeTruthy();
   }, 60000); // Increased timeout to 60 seconds
 
-  it('should accept valid Pro configuration with license', async () => {
+  it('should accept valid Pro configuration', async () => {
     const options = {
       version: '4.32.0',
       edition: 'pro' as const,
-      licenseKey: 'test-license-key',
       cache: false
     };
 
     // Should pass validation and complete successfully in CI environment
+    // Note: Pro edition requires LIQUIBASE_LICENSE_KEY environment variable for runtime validation
+    // Skip this test locally if no Pro license key is available
+    if (!process.env.LIQUIBASE_LICENSE_KEY && !process.env.CI) {
+      console.log('Skipping Pro edition test - no license key available locally');
+      return;
+    }
+
     const result = await setupLiquibase(options);
     expect(result).toBeDefined();
     expect(result.version).toBe('4.32.0');
@@ -216,33 +211,6 @@ describe('setupLiquibase validation', () => {
     }
   }, 30000);
 
-  it('should validate license key for Pro edition', async () => {
-    const testCases = [
-      { licenseKey: '', shouldFail: true, reason: 'empty license key' },
-      { licenseKey: '   ', shouldFail: true, reason: 'whitespace-only license key' },
-      { licenseKey: 'valid-license-key', shouldFail: false, reason: 'valid license key' }
-    ];
-
-    for (const testCase of testCases) {
-      const options = {
-        version: '4.32.0',
-        edition: 'pro' as const,
-        licenseKey: testCase.licenseKey,
-        cache: false
-      };
-
-      if (testCase.shouldFail && testCase.licenseKey) {
-        // Empty and whitespace keys should fail during Pro license configuration
-        await expect(setupLiquibase(options)).rejects.toThrow();
-      } else if (!testCase.shouldFail) {
-        // Valid license keys should complete successfully
-        const result = await setupLiquibase(options);
-        expect(result).toBeDefined();
-        expect(result.version).toBe('4.32.0');
-        expect(result.path).toBeTruthy();
-      }
-    }
-  }, 30000);
 });
 
 describe('Error handling scenarios', () => {

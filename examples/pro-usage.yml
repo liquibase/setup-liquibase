@@ -2,7 +2,7 @@ name: Pro Edition Usage
 on: [push]
 
 jobs:
-  test:
+  pro-operations:
     runs-on: ubuntu-latest
     env:
       LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}

@@ -6,7 +6,6 @@
  * - Version resolution and management
  * - Cross-platform support (Linux, Windows, macOS)
  * - Caching for improved performance
- * - License configuration for Pro edition
  * - Installation validation
  */
 
@@ -28,8 +27,6 @@ export interface LiquibaseSetupOptions {
   version: string;
   /** Edition to install: 'oss' for Open Source, 'pro' for Professional */
   edition: 'oss' | 'pro';
-  /** License key for Pro edition from LIQUIBASE_LICENSE_KEY environment variable */
-  licenseKey?: string;
   /** Whether to cache the downloaded installation */
   cache: boolean;
 }
@@ -48,19 +45,18 @@ export interface LiquibaseSetupResult {
  * Main function to set up Liquibase in the GitHub Actions environment
  * 
  * This function coordinates the entire installation process:
- * 1. Validates Pro edition requirements
+ * 1. Validates version and edition requirements
  * 2. Resolves the exact version to install
  * 3. Checks for cached installations
  * 4. Downloads and extracts Liquibase if needed
- * 5. Configures Pro license if applicable
- * 6. Validates the installation
- * 7. Adds Liquibase to the system PATH
+ * 5. Validates the installation
+ * 6. Adds Liquibase to the system PATH
  * 
  * @param options - Configuration for the Liquibase setup
  * @returns Promise resolving to the setup result with version and path
  */
 export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<LiquibaseSetupResult> {
-  const { version, edition, licenseKey, cache } = options;
+  const { version, edition, cache } = options;
   
   // Enhanced version validation
   if (!version) {
@@ -82,10 +78,6 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
     throw new Error(`Invalid edition: ${edition}. Must be either 'oss' or 'pro'`);
   }
   
-  // Enhanced Pro license validation
-  if (edition === 'pro' && !licenseKey) {
-    throw new Error('License key is required for Liquibase Pro edition. Provide it via the LIQUIBASE_LICENSE_KEY environment variable');
-  }
   
   // Use the specified version directly (no resolution needed since we only support specific versions)
   const resolvedVersion = version;
@@ -144,10 +136,6 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
   // Add the tool directory to the system PATH so 'liquibase' command is available
   core.addPath(toolPath);
   
-  // Configure Pro license if this is a Pro installation
-  if (edition === 'pro' && licenseKey) {
-    configureLiquibaseProEnvironment(licenseKey);
-  }
   
   // Verify that the installation was successful
   await validateInstallation(liquibaseBinPath);
@@ -239,30 +227,6 @@ async function extractLiquibase(downloadPath: string): Promise<string> {
   }
 }
 
-/**
- * Configures Liquibase Pro by setting the license key as an environment variable
- * This is more secure than writing to a properties file on disk
- * 
- * @param licenseKey - Pro license key to configure
- */
-function configureLiquibaseProEnvironment(licenseKey: string): void {
-  try {
-    // Validate license key format (basic validation)
-    if (!licenseKey.trim()) {
-      throw new Error('License key cannot be empty');
-    }
-    
-    // Mask the license key in GitHub Actions logs to prevent accidental exposure
-    core.setSecret(licenseKey.trim());
-    
-    // Set the license key as an environment variable that Liquibase will read
-    // This is more secure than writing to a properties file
-    process.env.LIQUIBASE_LICENSE_KEY = licenseKey.trim();
-    core.info('Configured Liquibase Pro license key via environment variable');
-  } catch (error) {
-    throw new Error(`Failed to configure Liquibase Pro license: ${error instanceof Error ? error.message : String(error)}`);
-  }
-}
 
 /**
  * Validates that Liquibase was installed correctly by running --version command
@@ -287,10 +251,8 @@ async function validateInstallation(liquibasePath: string): Promise<void> {
     const execPromise = exec.exec(executable, ['--version'], {
       silent: true,
       env: {
-        ...process.env,
-        // Explicitly pass the license key environment variable for Pro edition validation
-        ...(process.env.LIQUIBASE_LICENSE_KEY && { LIQUIBASE_LICENSE_KEY: process.env.LIQUIBASE_LICENSE_KEY })
-      },
+        ...process.env
+      } as { [key: string]: string },
       listeners: {
         stdout: (data: Buffer) => {
           output += data.toString();
@@ -299,9 +261,9 @@ async function validateInstallation(liquibasePath: string): Promise<void> {
           const stderrOutput = data.toString();
           core.debug(`Liquibase stderr: ${stderrOutput}`);
           
-          // Check for specific Pro license issues that might cause hangs
+          // Check for specific installation issues that might cause hangs
           if (stderrOutput.includes('ClassNotFoundException: liquibase.integration.commandline.LiquibaseLauncher')) {
-            core.warning('Liquibase Pro installation may have classpath issues - this is often caused by download corruption or Java environment problems');
+            core.warning('Liquibase installation may have classpath issues - this is often caused by download corruption or Java environment problems');
           }
         }
       }
