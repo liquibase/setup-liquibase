@@ -244,33 +244,38 @@ When reporting issues during UAT, please include:
 5. **Reproducible Test Case**: Minimal workflow that demonstrates the issue
 
 ### Issue Template
-```
+
+Copy and paste this template when reporting UAT issues:
+
+---
+
 ## UAT Issue Report
 
-**Platform**: ubuntu-latest / windows-latest / macos-latest
-**Liquibase Version**: 4.32.0
-**Edition**: oss / pro
-**Cache Enabled**: true / false
+**Platform**: ubuntu-latest / windows-latest / macos-latest  
+**Liquibase Version**: 4.32.0  
+**Edition**: oss / pro  
+**Cache Enabled**: true / false  
 
-**Expected Behavior**:
+**Expected Behavior**:  
 [Describe what should happen]
 
-**Actual Behavior**:
+**Actual Behavior**:  
 [Describe what actually happened]
 
-**Error Message**:
+**Error Message**:  
 ```
 [Paste error message here]
 ```
 
-**Test Workflow**:
+**Test Workflow**:  
 ```yaml
 [Paste minimal workflow that reproduces the issue]
 ```
 
-**Additional Context**:
+**Additional Context**:  
 [Any other relevant information]
-```
+
+---
 
 ## Success Criteria
 
