@@ -125,6 +125,35 @@ The minimum supported version is `4.32.0` to ensure compatibility with the offic
 
 The action automatically detects the platform and uses the appropriate archive format (`.zip` for Windows, `.tar.gz` for Linux/macOS).
 
+## Self-Hosted Runner Requirements
+
+**Self-hosted runners require Java 8+ to be installed** since Liquibase is a Java application. GitHub-hosted runners have Java pre-installed, but self-hosted runners may not.
+
+Add this step before setup-liquibase on self-hosted runners:
+
+```yaml
+jobs:
+  liquibase-job:
+    runs-on: [self-hosted, linux, x64]  # or your self-hosted runner labels
+    steps:
+    - uses: actions/checkout@v4
+    
+    # Required for self-hosted runners
+    - uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    
+    - uses: liquibase/setup-liquibase@v1
+      with:
+        version: '4.32.0'
+        edition: 'oss'
+    
+    - run: liquibase --version
+```
+
+**Note**: GitHub-hosted runners (ubuntu-latest, windows-latest, macos-latest) already have Java installed and do not need the setup-java step.
+
 ## Caching
 
 When `cache: true` is set, the action will cache the downloaded Liquibase installation. This can significantly improve workflow performance for subsequent runs.
@@ -366,6 +395,28 @@ jobs:
 - Store sensitive information like license keys in GitHub Secrets
 - Use `LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}` in the environment
 - Never commit license keys directly to your repository
+
+## Troubleshooting
+
+### Common Issues
+
+#### "The process '/tmp/liquibase-extract-xxx/liquibase' failed with exit code 1"
+
+This error typically occurs on self-hosted runners that don't have Java installed. Liquibase requires Java 8+ to run.
+
+**Solution**: Add a setup-java step before setup-liquibase (see [Self-Hosted Runner Requirements](#self-hosted-runner-requirements) above).
+
+#### "Cannot find java in your path"
+
+This error means Java is not installed or not available in the PATH environment variable.
+
+**Solution**: 
+- For GitHub-hosted runners: This shouldn't happen as Java is pre-installed
+- For self-hosted runners: Install Java or use the setup-java action as shown above
+
+#### Cache Issues
+
+If you encounter issues with caching, try disabling it temporarily by setting `cache: false` to isolate the problem.
 
 ## Migration from Legacy Actions
 
