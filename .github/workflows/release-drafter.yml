@@ -26,6 +26,7 @@ permissions:
   packages: write
   pull-requests: write
   actions: write
+  id-token: write
 
 jobs:
   # Multi-platform build and test validation

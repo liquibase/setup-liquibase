@@ -30,6 +30,7 @@ on:
 # Minimal permissions for security
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   # Cross-platform tests - installation, compatibility, and caching across all platforms
