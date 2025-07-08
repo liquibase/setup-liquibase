@@ -46,6 +46,20 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
     
+    - name: Configure AWS credentials for vault access
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.LIQUIBASE_VAULT_OIDC_ROLE_ARN }}
+        aws-region: us-east-1
+
+    - name: Get secrets from vault
+      id: vault-secrets
+      uses: aws-actions/aws-secretsmanager-get-secrets@v2
+      with:
+        secret-ids: |
+          ,/vault/liquibase
+        parse-json-secrets: true
+    
     - name: Setup Node.js Environment
       uses: actions/setup-node@v4
       with:
@@ -80,7 +94,7 @@ jobs:
         fi
         echo "start_time=${START_MS}" >> $GITHUB_OUTPUT
       shell: bash
-    
+
     - name: Setup Liquibase (No Cache) - Iteration 1
       uses: ./
       with:
@@ -88,7 +102,7 @@ jobs:
         edition: ${{ matrix.edition }}
         cache: false
       env:
-        LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
+        LIQUIBASE_LICENSE_KEY: ${{ env.PRO_LICENSE_KEY }}
     
     - name: Record Iteration 1 Time
       run: |
@@ -124,7 +138,7 @@ jobs:
         edition: ${{ matrix.edition }}
         cache: false
       env:
-        LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
+        LIQUIBASE_LICENSE_KEY: ${{ env.PRO_LICENSE_KEY }}
     
     - name: Record Iteration 2 Time
       run: |
@@ -160,7 +174,7 @@ jobs:
         edition: ${{ matrix.edition }}
         cache: false
       env:
-        LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
+        LIQUIBASE_LICENSE_KEY: ${{ env.PRO_LICENSE_KEY }}
     
     - name: Record Iteration 3 Time
       run: |
@@ -213,6 +227,20 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
     
+    - name: Configure AWS credentials for vault access
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.LIQUIBASE_VAULT_OIDC_ROLE_ARN }}
+        aws-region: us-east-1
+
+    - name: Get secrets from vault
+      id: vault-secrets
+      uses: aws-actions/aws-secretsmanager-get-secrets@v2
+      with:
+        secret-ids: |
+          ,/vault/liquibase
+        parse-json-secrets: true
+    
     - name: Setup Node.js Environment
       uses: actions/setup-node@v4
       with:
@@ -247,7 +275,7 @@ jobs:
         edition: ${{ matrix.edition }}
         cache: true
       env:
-        LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
+        LIQUIBASE_LICENSE_KEY: ${{ env.PRO_LICENSE_KEY }}
     
     - name: Record Cache Miss Time
       run: |
@@ -284,7 +312,7 @@ jobs:
         edition: ${{ matrix.edition }}
         cache: true
       env:
-        LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
+        LIQUIBASE_LICENSE_KEY: ${{ env.PRO_LICENSE_KEY }}
     
     - name: Record Cache Hit 1 Time
       run: |
@@ -321,7 +349,7 @@ jobs:
         edition: ${{ matrix.edition }}
         cache: true
       env:
-        LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
+        LIQUIBASE_LICENSE_KEY: ${{ env.PRO_LICENSE_KEY }}
     
     - name: Record Cache Hit 2 Time
       run: |
@@ -471,6 +499,20 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
     
+    - name: Configure AWS credentials for vault access
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.LIQUIBASE_VAULT_OIDC_ROLE_ARN }}
+        aws-region: us-east-1
+
+    - name: Get secrets from vault
+      id: vault-secrets
+      uses: aws-actions/aws-secretsmanager-get-secrets@v2
+      with:
+        secret-ids: |
+          ,/vault/liquibase
+        parse-json-secrets: true
+    
     - name: Setup Node.js Environment
       uses: actions/setup-node@v4
       with:
@@ -513,7 +555,7 @@ jobs:
         edition: 'pro'
         cache: false
       env:
-        LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
+        LIQUIBASE_LICENSE_KEY: ${{ env.PRO_LICENSE_KEY }}
     
     - name: Record Pro No-Cache Time
       run: |
@@ -550,7 +592,7 @@ jobs:
         edition: 'pro'
         cache: true
       env:
-        LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
+        LIQUIBASE_LICENSE_KEY: ${{ env.PRO_LICENSE_KEY }}
     
     - name: Record Pro Cache Miss Time
       run: |
@@ -587,7 +629,7 @@ jobs:
         edition: 'pro'
         cache: true
       env:
-        LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
+        LIQUIBASE_LICENSE_KEY: ${{ env.PRO_LICENSE_KEY }}
     
     - name: Record Pro Cache Hit Time and Analysis
       run: |
