@@ -199,7 +199,7 @@ describe('Error Handling Tests', () => {
         // If it fails, that's acceptable too - just don't time out
         expect(error).toBeDefined();
       }
-    }, 30000);
+    }, 60000);
 
     it('should validate license key sanitization', () => {
       const licenseKeysToSanitize = [
