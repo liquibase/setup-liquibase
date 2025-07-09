@@ -269,7 +269,7 @@ async function validateInstallation(liquibasePath: string): Promise<void> {
       return code;
     });
 
-    let timeoutHandle: NodeJS.Timeout;
+    let timeoutHandle: NodeJS.Timeout | undefined;
     const timeoutPromise = new Promise((_, reject) => {
       timeoutHandle = setTimeout(() => reject(new Error('Liquibase validation timed out after 30 seconds')), 30000);
     });
