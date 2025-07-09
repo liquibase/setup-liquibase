@@ -245,28 +245,28 @@ async function validateInstallation(liquibasePath: string): Promise<void> {
     }
     
     // Run 'liquibase --version' to verify the installation works
-    let output = '';
+    let stdoutOutput = '';
+    let stderrOutput = '';
+    let exitCode: number | null = null;
     
-    // Add timeout wrapper to prevent hanging on Pro license validation issues
+    // Add timeout wrapper to prevent hanging
     const execPromise = exec.exec(executable, ['--version'], {
       silent: true,
+      ignoreReturnCode: true, // Don't throw on non-zero exit codes, we'll handle them
       env: {
         ...process.env
       } as { [key: string]: string },
       listeners: {
         stdout: (data: Buffer) => {
-          output += data.toString();
+          stdoutOutput += data.toString();
         },
         stderr: (data: Buffer) => {
-          const stderrOutput = data.toString();
-          core.debug(`Liquibase stderr: ${stderrOutput}`);
-          
-          // Check for specific installation issues that might cause hangs
-          if (stderrOutput.includes('ClassNotFoundException: liquibase.integration.commandline.LiquibaseLauncher')) {
-            core.warning('Liquibase installation may have classpath issues - this is often caused by download corruption or Java environment problems');
-          }
+          stderrOutput += data.toString();
         }
       }
+    }).then((code) => {
+      exitCode = code;
+      return code;
     });
 
     const timeoutPromise = new Promise((_, reject) => {
@@ -275,14 +275,33 @@ async function validateInstallation(liquibasePath: string): Promise<void> {
 
     await Promise.race([execPromise, timeoutPromise]);
     
+    // If we got a non-zero exit code, include the actual error output
+    if (exitCode !== 0) {
+      let errorMessage = `Liquibase validation failed with exit code ${exitCode}`;
+      
+      if (stderrOutput.trim()) {
+        errorMessage += `\n\nLiquibase error output:\n${stderrOutput.trim()}`;
+      }
+      
+      if (stdoutOutput.trim()) {
+        errorMessage += `\n\nLiquibase stdout:\n${stdoutOutput.trim()}`;
+      }
+      
+      throw new Error(errorMessage);
+    }
+    
     // Check if version output contains expected content
-    if (!output.toLowerCase().includes('liquibase')) {
-      throw new Error(`Unexpected version output: ${output}`);
+    if (!stdoutOutput.toLowerCase().includes('liquibase')) {
+      throw new Error(`Unexpected version output: ${stdoutOutput}`);
     }
     
     core.info('Liquibase installation validated successfully');
-    core.debug(`Version output: ${output}`);
+    core.debug(`Version output: ${stdoutOutput}`);
   } catch (error) {
+    // Pass through our detailed error messages, or wrap generic ones
+    if (error instanceof Error && error.message.includes('Liquibase validation failed with exit code')) {
+      throw error; // Already has detailed error info
+    }
     throw new Error(`Failed to validate Liquibase installation: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
