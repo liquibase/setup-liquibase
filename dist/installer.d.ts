@@ -51,4 +51,4 @@ export declare function setupLiquibase(options: LiquibaseSetupOptions): Promise<
  * @param edition - Edition to download ('oss' or 'pro')
  * @returns Download URL for the specified version from official Liquibase endpoints
  */
-export declare function getDownloadUrl(version: string, edition: 'oss' | 'pro'): string;
+export declare function getDownloadUrl(version: string, edition: LiquibaseSetupOptions['edition']): string;

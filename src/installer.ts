@@ -73,8 +73,9 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
     throw new Error(`Version ${version} is not supported. Minimum supported version is ${MIN_SUPPORTED_VERSION}`);
   }
   
-  // Enhanced edition validation
-  if (!['oss', 'pro'].includes(edition)) {
+  // Enhanced edition validation with type guard
+  const validEditions: readonly LiquibaseSetupOptions['edition'][] = ['oss', 'pro'] as const;
+  if (!validEditions.includes(edition)) {
     throw new Error(`Invalid edition: ${edition}. Must be either 'oss' or 'pro'`);
   }
   
@@ -82,10 +83,6 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
   // Use the specified version directly (no resolution needed since we only support specific versions)
   const resolvedVersion = version;
   
-  // Validate the specified version meets minimum requirements
-  if (semver.lt(resolvedVersion, MIN_SUPPORTED_VERSION)) {
-    throw new Error(`Version ${resolvedVersion} is not supported. Minimum supported version is ${MIN_SUPPORTED_VERSION}`);
-  }
   
   // Create a unique tool name for caching that includes the edition
   const toolName = `liquibase-${edition}`;
@@ -155,7 +152,7 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
  * @param edition - Edition to download ('oss' or 'pro')
  * @returns Download URL for the specified version from official Liquibase endpoints
  */
-export function getDownloadUrl(version: string, edition: 'oss' | 'pro'): string {
+export function getDownloadUrl(version: string, edition: LiquibaseSetupOptions['edition']): string {
   const isWindows = process.platform === 'win32';
   
   if (edition === 'pro') {
@@ -270,8 +267,9 @@ async function validateInstallation(liquibasePath: string): Promise<void> {
     });
 
     let timeoutHandle: NodeJS.Timeout | undefined;
-    const timeoutPromise = new Promise((_, reject) => {
-      timeoutHandle = setTimeout(() => reject(new Error('Liquibase validation timed out after 30 seconds')), 30000);
+    const VALIDATION_TIMEOUT_MS = 30000;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutHandle = setTimeout(() => reject(new Error(`Liquibase validation timed out after ${VALIDATION_TIMEOUT_MS / 1000} seconds`)), VALIDATION_TIMEOUT_MS);
     });
 
     try {

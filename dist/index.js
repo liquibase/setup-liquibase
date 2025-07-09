@@ -31138,16 +31138,13 @@ async function setupLiquibase(options) {
     if (semver.lt(version, config_1.MIN_SUPPORTED_VERSION)) {
         throw new Error(`Version ${version} is not supported. Minimum supported version is ${config_1.MIN_SUPPORTED_VERSION}`);
     }
-    // Enhanced edition validation
-    if (!['oss', 'pro'].includes(edition)) {
+    // Enhanced edition validation with type guard
+    const validEditions = ['oss', 'pro'];
+    if (!validEditions.includes(edition)) {
         throw new Error(`Invalid edition: ${edition}. Must be either 'oss' or 'pro'`);
     }
     // Use the specified version directly (no resolution needed since we only support specific versions)
     const resolvedVersion = version;
-    // Validate the specified version meets minimum requirements
-    if (semver.lt(resolvedVersion, config_1.MIN_SUPPORTED_VERSION)) {
-        throw new Error(`Version ${resolvedVersion} is not supported. Minimum supported version is ${config_1.MIN_SUPPORTED_VERSION}`);
-    }
     // Create a unique tool name for caching that includes the edition
     const toolName = `liquibase-${edition}`;
     // Check if we already have this version cached
@@ -31311,10 +31308,20 @@ async function validateInstallation(liquibasePath) {
             exitCode = code;
             return code;
         });
+        let timeoutHandle;
+        const VALIDATION_TIMEOUT_MS = 30000;
         const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Liquibase validation timed out after 30 seconds')), 30000);
+            timeoutHandle = setTimeout(() => reject(new Error(`Liquibase validation timed out after ${VALIDATION_TIMEOUT_MS / 1000} seconds`)), VALIDATION_TIMEOUT_MS);
         });
-        await Promise.race([execPromise, timeoutPromise]);
+        try {
+            await Promise.race([execPromise, timeoutPromise]);
+        }
+        finally {
+            // Clean up the timeout to prevent open handles
+            if (timeoutHandle) {
+                clearTimeout(timeoutHandle);
+            }
+        }
         // If we got a non-zero exit code, include the actual error output
         if (exitCode !== 0) {
             let errorMessage = `Liquibase validation failed with exit code ${exitCode}`;
