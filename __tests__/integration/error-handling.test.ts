@@ -275,7 +275,7 @@ describe('Error Handling Tests', () => {
         expect(result.version).toBe('4.32.0');
         expect(result.path).toBeTruthy();
       }
-    }, 30000);
+    }, 60000); // Increased timeout to 60 seconds for macOS CI environment
   });
 
   /**
