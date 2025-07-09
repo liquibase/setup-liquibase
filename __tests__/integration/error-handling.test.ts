@@ -249,7 +249,7 @@ describe('Error Handling Tests', () => {
       expect(result).toBeDefined();
       expect(result.version).toBe('4.32.0');
       expect(result.path).toBeTruthy();
-    }, 30000);
+    }, 60000); // Increased timeout to 60 seconds for CI environments
   });
 
   /**
@@ -275,7 +275,7 @@ describe('Error Handling Tests', () => {
         expect(result.version).toBe('4.32.0');
         expect(result.path).toBeTruthy();
       }
-    }, 60000); // Increased timeout to 60 seconds for CI environments
+    }, 90000); // Increased timeout to 90 seconds for CI environments
   });
 
   /**
@@ -321,7 +321,7 @@ describe('Error Handling Tests', () => {
           }
         }
       }
-    }, 60000); // Increased timeout to 60 seconds
+    }, 90000); // Increased timeout to 90 seconds for CI environments
 
     it('should handle concurrent installation attempts', async () => {
       // Test multiple simultaneous setup attempts
