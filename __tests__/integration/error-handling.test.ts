@@ -199,7 +199,7 @@ describe('Error Handling Tests', () => {
         // If it fails, that's acceptable too - just don't time out
         expect(error).toBeDefined();
       }
-    }, 60000);
+    }, 60000); // Increased timeout to 60 seconds for CI environments
 
     it('should validate license key sanitization', () => {
       const licenseKeysToSanitize = [
@@ -275,7 +275,7 @@ describe('Error Handling Tests', () => {
         expect(result.version).toBe('4.32.0');
         expect(result.path).toBeTruthy();
       }
-    }, 60000); // Increased timeout to 60 seconds for macOS CI environment
+    }, 60000); // Increased timeout to 60 seconds for CI environments
   });
 
   /**
