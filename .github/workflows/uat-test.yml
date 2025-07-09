@@ -31,6 +31,11 @@ on:
 permissions:
   contents: read
 
+# Cancel in-progress runs when new runs are triggered
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # Cross-platform tests - installation, compatibility, and caching across all platforms
   cross-platform-tests:
