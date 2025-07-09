@@ -269,11 +269,19 @@ async function validateInstallation(liquibasePath: string): Promise<void> {
       return code;
     });
 
+    let timeoutHandle: NodeJS.Timeout;
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Liquibase validation timed out after 30 seconds')), 30000);
+      timeoutHandle = setTimeout(() => reject(new Error('Liquibase validation timed out after 30 seconds')), 30000);
     });
 
-    await Promise.race([execPromise, timeoutPromise]);
+    try {
+      await Promise.race([execPromise, timeoutPromise]);
+    } finally {
+      // Clean up the timeout to prevent open handles
+      if (timeoutHandle) {
+        clearTimeout(timeoutHandle);
+      }
+    }
     
     // If we got a non-zero exit code, include the actual error output
     if (exitCode !== 0) {
