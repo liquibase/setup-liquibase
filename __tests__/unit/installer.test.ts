@@ -75,7 +75,7 @@ describe('getDownloadUrl', () => {
   });
 });
 
-describe('LIQUIBASE_LOG_FILE validation', () => {
+describe('Liquibase file path validation', () => {
   const originalEnv = process.env.LIQUIBASE_LOG_FILE;
   
   afterEach(() => {
@@ -209,6 +209,56 @@ describe('LIQUIBASE_LOG_FILE validation', () => {
     if (fs.existsSync('./liquibase')) {
       fs.rmSync('./liquibase', { recursive: true });
     }
+  }, 30000);
+
+  it('should handle multiple Liquibase environment variables with problematic paths', async () => {
+    // Set multiple problematic environment variables
+    const envVarsToTest = {
+      'LIQUIBASE_LOG_FILE': '/liquibase/logs/app.log',
+      'LIQUIBASE_OUTPUT_FILE': '/usr/local/output/result.sql',
+      'LIQUIBASE_PROPERTIES_FILE': '/etc/liquibase/liquibase.properties',
+      'LIQUIBASE_REPORT_PATH': '/var/reports/'
+    };
+    
+    // Set the environment variables
+    Object.entries(envVarsToTest).forEach(([key, value]) => {
+      process.env[key] = value;
+    });
+    
+    const options = {
+      version: '4.32.0',
+      edition: 'oss' as const,
+      cache: false
+    };
+
+    const result = await setupLiquibase(options);
+    expect(result).toBeDefined();
+    expect(result.version).toBe('4.32.0');
+    
+    // All environment variables should be transformed to workspace-relative
+    expect(process.env.LIQUIBASE_LOG_FILE).toBe('./liquibase/logs/app.log');
+    expect(process.env.LIQUIBASE_OUTPUT_FILE).toBe('./usr/local/output/result.sql');
+    expect(process.env.LIQUIBASE_PROPERTIES_FILE).toBe('./etc/liquibase/liquibase.properties');
+    expect(process.env.LIQUIBASE_REPORT_PATH).toBe('./var/reports/');
+    
+    // Directories should exist in workspace for file paths
+    expect(fs.existsSync(path.resolve('./liquibase/logs'))).toBe(true);
+    expect(fs.existsSync(path.resolve('./usr/local/output'))).toBe(true);
+    expect(fs.existsSync(path.resolve('./etc/liquibase'))).toBe(true);
+    // Note: LIQUIBASE_REPORT_PATH is a directory path, not a file path, so directory creation is not expected
+    
+    // Clean up
+    const cleanupDirs = ['./liquibase', './usr', './etc', './var'];
+    cleanupDirs.forEach(dir => {
+      if (fs.existsSync(dir)) {
+        fs.rmSync(dir, { recursive: true });
+      }
+    });
+    
+    // Clean up environment variables
+    Object.keys(envVarsToTest).forEach(key => {
+      delete process.env[key];
+    });
   }, 30000);
 });
 

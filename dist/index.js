@@ -31272,64 +31272,113 @@ async function extractLiquibase(downloadPath) {
     }
 }
 /**
- * Validates and prepares the LIQUIBASE_LOG_FILE path if it's set in environment variables
- * Creates necessary parent directories to ensure Liquibase can write to the log file
- * Transforms problematic absolute paths to safe workspace-relative paths
+ * Validates and prepares Liquibase environment variable paths that involve file system access
+ * Creates necessary parent directories and transforms problematic absolute paths to safe workspace-relative paths
+ * Handles all Liquibase environment variables that can create files or directories
  *
- * @throws Error if log file path is invalid or cannot be created
+ * @throws Error if any path is invalid or cannot be created
  */
-async function validateLogFile() {
-    const originalLogFilePath = process.env.LIQUIBASE_LOG_FILE;
-    if (!originalLogFilePath) {
-        // No log file specified, nothing to validate
-        return;
-    }
-    try {
-        let logFilePath = originalLogFilePath;
-        // Transform problematic absolute paths to workspace-relative paths
-        if (path.isAbsolute(originalLogFilePath)) {
-            // Check if the path would require creating directories at filesystem root that are likely to fail
-            const rootParts = originalLogFilePath.split(path.sep).filter(part => part.length > 0);
-            if (rootParts.length > 0) {
-                const rootDir = rootParts[0];
-                // List of root directories that are typically restricted in CI/CD environments
-                const restrictedRootDirs = ['liquibase', 'usr', 'bin', 'sbin', 'lib', 'var', 'etc', 'opt', 'root', 'boot', 'sys', 'proc'];
-                if (restrictedRootDirs.includes(rootDir)) {
-                    // Transform absolute path to workspace-relative path
-                    const relativePath = `.${originalLogFilePath}`;
-                    logFilePath = relativePath;
-                    core.info(`Transformed log path from '${originalLogFilePath}' to '${relativePath}' (workspace-relative) due to restricted root directory '${rootDir}'`);
-                    // Update the environment variable so Liquibase uses the new path
-                    process.env.LIQUIBASE_LOG_FILE = relativePath;
+async function validateLiquibaseFilePaths() {
+    // Comprehensive list of Liquibase environment variables that involve file/directory paths
+    const liquibaseFilePathEnvVars = [
+        'LIQUIBASE_LOG_FILE',
+        'LIQUIBASE_CHANGELOG_FILE',
+        'LIQUIBASE_PROPERTIES_FILE',
+        'LIQUIBASE_CLASSPATH',
+        'LIQUIBASE_DRIVER_PROPERTIES_FILE',
+        'LIQUIBASE_DEFAULTS_FILE',
+        'LIQUIBASE_SEARCH_PATH',
+        'LIQUIBASE_LIQUIBASE_CATALOG_NAME',
+        'LIQUIBASE_LIQUIBASE_SCHEMA_NAME',
+        'LIQUIBASE_OUTPUT_FILE',
+        'LIQUIBASE_REPORT_PATH',
+        'LIQUIBASE_REPORTS_PATH',
+        'LIQUIBASE_SQL_FILE',
+        'LIQUIBASE_REFERENCE_DEFAULTS_FILE',
+        'LIQUIBASE_HUB_CONNECTION_ID_FILE',
+        'LIQUIBASE_MIGRATION_SQL_OUTPUT_FILE'
+    ];
+    // List of root directories that are typically restricted in CI/CD environments
+    const restrictedRootDirs = [
+        'liquibase', 'usr', 'bin', 'sbin', 'lib', 'var', 'etc', 'opt', 'root',
+        'boot', 'sys', 'proc', 'dev', 'run', 'srv', 'media', 'mnt'
+    ];
+    const transformedPaths = [];
+    const createdDirectories = [];
+    for (const envVarName of liquibaseFilePathEnvVars) {
+        const originalPath = process.env[envVarName];
+        if (!originalPath) {
+            continue; // Skip if not set
+        }
+        try {
+            let finalPath = originalPath;
+            // Handle multiple paths separated by path separators (for CLASSPATH-like variables)
+            const pathSeparator = process.platform === 'win32' ? ';' : ':';
+            const paths = originalPath.includes(pathSeparator)
+                ? originalPath.split(pathSeparator)
+                : [originalPath];
+            const transformedPathsList = [];
+            for (const singlePath of paths) {
+                let processedPath = singlePath.trim();
+                // Transform problematic absolute paths to workspace-relative paths
+                if (path.isAbsolute(processedPath)) {
+                    const rootParts = processedPath.split(path.sep).filter(part => part.length > 0);
+                    if (rootParts.length > 0) {
+                        const rootDir = rootParts[0];
+                        if (restrictedRootDirs.includes(rootDir)) {
+                            // Transform absolute path to workspace-relative path
+                            const relativePath = `.${processedPath}`;
+                            processedPath = relativePath;
+                            transformedPaths.push(`${envVarName}: '${singlePath}' → '${relativePath}'`);
+                        }
+                    }
                 }
-                // For other paths like /tmp, /home, etc., let them proceed as they might be accessible
+                transformedPathsList.push(processedPath);
+                // Create directory if this looks like a file path (has extension or is explicitly a file variable)
+                const isFilePath = envVarName.includes('FILE') || envVarName.includes('OUTPUT') ||
+                    path.extname(processedPath) !== '' || envVarName === 'LIQUIBASE_REPORT_PATH' ||
+                    envVarName === 'LIQUIBASE_REPORTS_PATH';
+                if (isFilePath) {
+                    const absolutePath = path.resolve(processedPath);
+                    const directory = path.dirname(absolutePath);
+                    // Create directory if it doesn't exist
+                    if (!fs.existsSync(directory)) {
+                        await io.mkdirP(directory);
+                        createdDirectories.push(directory);
+                        core.debug(`Created directory for ${envVarName}: ${directory}`);
+                    }
+                    // Test writability for critical file paths
+                    if (envVarName === 'LIQUIBASE_LOG_FILE' || envVarName.includes('OUTPUT')) {
+                        const testFile = path.join(directory, `.liquibase-test-${Date.now()}`);
+                        try {
+                            fs.writeFileSync(testFile, 'test');
+                            fs.unlinkSync(testFile);
+                            core.debug(`Verified ${envVarName} directory is writable: ${directory}`);
+                        }
+                        catch (writeError) {
+                            throw new Error(`Directory for ${envVarName} is not writable: ${directory}. Error: ${writeError instanceof Error ? writeError.message : String(writeError)}`);
+                        }
+                    }
+                }
+            }
+            // Update environment variable if paths were transformed
+            if (transformedPathsList.join(pathSeparator) !== originalPath) {
+                finalPath = transformedPathsList.join(pathSeparator);
+                process.env[envVarName] = finalPath;
             }
         }
-        // Resolve the final path (relative paths become absolute relative to workspace)
-        const absoluteLogPath = path.resolve(logFilePath);
-        const logDirectory = path.dirname(absoluteLogPath);
-        core.debug(`Validating LIQUIBASE_LOG_FILE: ${absoluteLogPath}`);
-        // Check if the directory exists, create if it doesn't
-        if (!fs.existsSync(logDirectory)) {
-            core.info(`Creating log directory: ${logDirectory}`);
-            await io.mkdirP(logDirectory);
-        }
-        // Verify the directory is writable by attempting to create a test file
-        const testFile = path.join(logDirectory, `.liquibase-test-${Date.now()}`);
-        try {
-            fs.writeFileSync(testFile, 'test');
-            fs.unlinkSync(testFile);
-            core.debug(`Log directory is writable: ${logDirectory}`);
-        }
-        catch (writeError) {
-            throw new Error(`Log directory is not writable: ${logDirectory}. Error: ${writeError instanceof Error ? writeError.message : String(writeError)}`);
+        catch (error) {
+            throw new Error(`Invalid ${envVarName} path '${originalPath}': ${error instanceof Error ? error.message : String(error)}`);
         }
     }
-    catch (error) {
-        if (error instanceof Error && error.message.includes('Log directory is not writable')) {
-            throw error; // Re-throw our specific error
-        }
-        throw new Error(`Invalid LIQUIBASE_LOG_FILE path '${originalLogFilePath}': ${error instanceof Error ? error.message : String(error)}`);
+    // Log summary of transformations
+    if (transformedPaths.length > 0) {
+        core.info(`Transformed ${transformedPaths.length} Liquibase path(s) to workspace-relative due to permission restrictions:`);
+        transformedPaths.forEach(transformation => core.info(`  ${transformation}`));
+    }
+    if (createdDirectories.length > 0) {
+        core.info(`Created ${createdDirectories.length} director(ies) for Liquibase file paths`);
+        core.debug(`Created directories: ${createdDirectories.join(', ')}`);
     }
 }
 /**
@@ -31346,8 +31395,8 @@ async function validateInstallation(liquibasePath) {
         if (!fs.existsSync(executable)) {
             throw new Error(`Liquibase executable not found at ${executable}`);
         }
-        // Validate and prepare LIQUIBASE_LOG_FILE if set
-        await validateLogFile();
+        // Validate and prepare all Liquibase file paths if set
+        await validateLiquibaseFilePaths();
         // Run 'liquibase --version' to verify the installation works
         let stdoutOutput = '';
         let stderrOutput = '';
