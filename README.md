@@ -25,6 +25,8 @@ steps:
 
 - **Version Control**: Install specific versions (4.32.0+) with exact version specification
 - **Edition Support**: Works with both OSS and Pro editions
+- **Enhanced Logging**: Clear progress indicators, path transparency, and migration guidance
+- **Path Safety**: Automatic transformation of absolute paths for GitHub Actions compatibility
 - **Caching**: Optional caching for faster workflow runs
 - **Cross-Platform**: Supports Linux, Windows, and macOS runners
 - **Environment Variables**: Supports LIQUIBASE_LICENSE_KEY environment variable for Pro edition
@@ -90,7 +92,7 @@ steps:
 - uses: liquibase/setup-liquibase@v1
   with:
     version: '4.32.0'
-    cache: true
+    cache: 'true'
 - run: liquibase --version
 ```
 
@@ -100,7 +102,7 @@ steps:
 |-------|-------------|----------|---------|
 | `version` | Specific version of Liquibase to install (e.g., "4.32.0"). Must be 4.32.0 or higher. | Yes | |
 | `edition` | Edition to install: "oss" (Open Source) or "pro" (Professional). For Pro edition, set LIQUIBASE_LICENSE_KEY environment variable when running Liquibase commands. | Yes | |
-| `cache` | Enable caching of downloaded Liquibase installations to improve workflow performance on subsequent runs | No | `false` |
+| `cache` | Enable caching of downloaded Liquibase installations to improve workflow performance on subsequent runs. Use string format: 'true' or 'false' | No | `'false'` |
 
 ## Outputs
 
@@ -166,7 +168,7 @@ The cache is unique per:
 - uses: liquibase/setup-liquibase@v1
   with:
     version: '4.32.0'
-    cache: true
+    cache: 'true'
 ```
 
 ## Pro Edition Support
@@ -208,7 +210,7 @@ jobs:
       with:
         version: '4.32.0'
         edition: 'oss'
-        cache: true
+        cache: 'true'
     
     - name: Run Liquibase Update
       run: |
@@ -237,7 +239,7 @@ jobs:
       with:
         version: '4.32.0'
         edition: 'pro'
-        cache: true
+        cache: 'true'
     
     - name: Validate Changelog
       run: liquibase validate --changelog-file=changelog.xml
@@ -284,7 +286,7 @@ jobs:
       with:
         version: '4.32.0'
         edition: 'pro'
-        cache: true
+        cache: 'true'
     
     - name: Execute Flow from Template
       run: |
@@ -318,7 +320,7 @@ jobs:
       with:
         version: '4.32.0'
         edition: 'pro'
-        cache: true
+        cache: 'true'
     
     - name: Download AWS Extension (Direct JAR)
       run: |
@@ -382,7 +384,7 @@ jobs:
       with:
         version: ${{ matrix.liquibase-version }}
         edition: 'oss'
-        cache: true
+        cache: 'true'
     
     - name: Test Migration
       run: |
@@ -416,7 +418,48 @@ This error means Java is not installed or not available in the PATH environment 
 
 #### Cache Issues
 
-If you encounter issues with caching, try disabling it temporarily by setting `cache: false` to isolate the problem.
+If you encounter issues with caching, try disabling it temporarily by setting `cache: 'false'` to isolate the problem.
+
+## Enhanced Logging & Path Handling
+
+The action provides comprehensive logging and automatic path transformation for GitHub Actions compatibility:
+
+### What You'll See
+```
+🚀 Setting up Liquibase OSS 4.32.0
+📥 Downloading from: https://github.com/liquibase/liquibase/releases/...
+📦 Extracting Liquibase archive...
+💾 Caching installation for future use...
+✅ Installation completed successfully
+🔧 Added Liquibase to system PATH
+
+🎯 Liquibase configuration:
+ Edition: OSS
+ Version: 4.32.0
+ Install Path: /opt/hostedtoolcache/liquibase-oss/4.32.0/x64
+ Cached: no
+ Execution Context: /actions-runner/_work/your-repo/your-repo
+
+💡 Migration from liquibase-github-actions:
+   • Liquibase installs to: tool cache (not /liquibase/)
+   • Liquibase executes from: your-repo/your-repo/
+   • Use relative paths: --changelog-file=changelog.xml
+   • Absolute paths are auto-transformed for security
+```
+
+### Path Transformation
+When you use absolute paths in environment variables (e.g., `LIQUIBASE_LOG_FILE=/liquibase/logs/file.log`), the action automatically transforms them to workspace-relative paths for GitHub Actions compatibility:
+
+```
+🔄 Path Transformation (Security & Compatibility):
+   📝 LIQUIBASE_LOG_FILE: '/liquibase/logs/file.log' → './liquibase/logs/file.log'
+💡 Tip: Use relative paths (e.g., "logs/file.log") to avoid transformation
+```
+
+### Migration Guidance
+The action provides specific guidance for users migrating from Docker workflows or the legacy `liquibase-github-actions` organization, helping you understand the execution context and path differences.
+
+For comprehensive documentation, see [docs/PATH_HANDLING.md](docs/PATH_HANDLING.md).
 
 ## Migration from Legacy Actions
 

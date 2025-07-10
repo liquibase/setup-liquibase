@@ -79,38 +79,45 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
     throw new Error(`Invalid edition: ${edition}. Must be either 'oss' or 'pro'`);
   }
   
-  
   // Use the specified version directly (no resolution needed since we only support specific versions)
   const resolvedVersion = version;
-  
   
   // Create a unique tool name for caching that includes the edition
   const toolName = `liquibase-${edition}`;
   
   // Check if we already have this version cached
   let toolPath = tc.find(toolName, resolvedVersion);
+  let wasFromCache = false;
   
   // Download and install if not cached or caching is disabled
   if (!toolPath || !cache) {
-    core.info(`Installing Liquibase ${edition} version ${resolvedVersion}`);
+    let setupMessage = `🚀 Setting up Liquibase ${edition.toUpperCase()} ${resolvedVersion}`;
+    if (!cache) {
+      setupMessage += ` (caching disabled)`;
+    }
+    core.info(setupMessage);
     
     try {
       // Get the appropriate download URL for this version and edition
       const downloadUrl = getDownloadUrl(resolvedVersion, edition);
-      core.info(`Downloading from: ${downloadUrl}`);
+      core.info(`📥 Downloading from: ${downloadUrl}`);
       
       // Download the Liquibase archive with error handling
       const downloadPath = await tc.downloadTool(downloadUrl);
+      core.info(`📦 Extracting Liquibase archive...`);
       
       // Extract the archive to a temporary directory
       const extractedPath = await extractLiquibase(downloadPath);
       
       // Cache the installation if caching is enabled
       if (cache) {
+        core.info(`💾 Caching installation for future use...`);
         toolPath = await tc.cacheDir(extractedPath, toolName, resolvedVersion);
       } else {
         toolPath = extractedPath;
       }
+      
+      core.info(`✅ Installation completed successfully`);
     } catch (error) {
       if (error instanceof Error) {
         if (error.message.includes('404') || error.message.includes('Not Found')) {
@@ -124,7 +131,9 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
       throw new Error(`Failed to download and install Liquibase: ${error instanceof Error ? error.message : String(error)}`);
     }
   } else {
-    core.info(`Found cached Liquibase ${edition} version ${resolvedVersion}`);
+    core.info(`🚀 Setting up Liquibase ${edition.toUpperCase()} ${resolvedVersion}`);
+    core.info(`⚡ Found cached installation, skipping download`);
+    wasFromCache = true;
   }
   
   // Construct the path to the Liquibase executable
@@ -132,10 +141,32 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
   
   // Add the tool directory to the system PATH so 'liquibase' command is available
   core.addPath(toolPath);
-  
+  core.info(`🔧 Added Liquibase to system PATH`);
   
   // Verify that the installation was successful
   await validateInstallation(liquibaseBinPath);
+  
+  // Display comprehensive setup information following popular GitHub Actions patterns
+  core.startGroup('🎯 Liquibase configuration');
+  core.info(` Edition: ${edition.toUpperCase()}`);
+  core.info(` Version: ${resolvedVersion}`);
+  core.info(` Install Path: ${toolPath}`);
+  core.info(` Cached: ${wasFromCache ? 'yes' : 'no'}`);
+  core.info(` Execution Context: ${process.cwd()}`);
+  core.endGroup();
+  
+  // Add helpful migration information with cross-platform path handling
+  core.startGroup('💡 Migration Guidance');
+  const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
+  const currentDir = process.cwd();
+  const workspaceInfo = path.relative(workspace, currentDir) || 'repository';
+  
+  core.info(`Migration from liquibase-github-actions:`);
+  core.info(`   • Liquibase installs to: tool cache (not /liquibase/)`);
+  core.info(`   • Liquibase executes from: ${workspaceInfo}/`);
+  core.info(`   • Use relative paths: --changelog-file=changelog.xml`);
+  core.info(`   • Absolute paths are auto-transformed for security`);
+  core.endGroup();
   
   // Return the results for use by the action
   return {
@@ -304,8 +335,8 @@ async function validateInstallation(liquibasePath: string): Promise<void> {
       throw new Error(`Unexpected version output: ${stdoutOutput}`);
     }
     
-    core.info('Liquibase installation validated successfully');
-    core.debug(`Version output: ${stdoutOutput}`);
+    core.info('✅ Liquibase installation validated successfully');
+    core.debug(`Version output: ${stdoutOutput.trim()}`);
   } catch (error) {
     // Pass through our detailed error messages, or wrap generic ones
     if (error instanceof Error && error.message.includes('Liquibase validation failed with exit code')) {

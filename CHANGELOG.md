@@ -3,10 +3,15 @@
 ## What's Changed in v1-beta
 
 ### 🚀 Features
+- feat: Enhanced logging and UAT feedback addressing Mike Olivas concerns
+- feat: Comprehensive path transformation transparency with clear explanations
+- feat: Migration guidance for users coming from liquibase-github-actions
+- feat: Visual progress indicators following GitHub Actions best practices
 - feat: Simplify release automation to single workflow
 - feat: Update release automation to handle published releases and improve documentation
 
 ### 🐛 Bug Fixes
+- fix: YAML 1.2 Core Schema compliance for boolean inputs (cache: ['true', 'false'])
 - fix: Remove redundant 'Setup Liquibase' prefix from release names
 - fix: Correct organization name and usage examples in release templates
 - fix: Remove duplicate code block in README Pro edition example
@@ -14,6 +19,10 @@
 - fix: Add missing permissions for issues in PR labeler workflow
 
 ### 📚 Documentation
+- docs: Add comprehensive PATH_HANDLING.md for path behavior and migration guidance
+- docs: Create migration-from-docker.yml examples for common scenarios
+- docs: Enhanced UAT testing documentation with path transformation tests
+- docs: Update README.md with enhanced logging features and boolean input requirements
 - docs: Add CLAUDE.md for DevOps team knowledge sharing
 - docs: Clean up documentation structure and fix CHANGELOG
 

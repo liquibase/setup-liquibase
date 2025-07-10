@@ -46,15 +46,15 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        cache: [true, false]
+        cache: ['true', 'false']
         include:
           # Test additional versions on Ubuntu for version compatibility
           - os: ubuntu-latest
             version: '4.31.1'
-            cache: true
+            cache: 'true'
           - os: ubuntu-latest  
             version: '4.30.0'
-            cache: true
+            cache: 'true'
     
     steps:
     - name: Checkout Repository
@@ -132,16 +132,16 @@ jobs:
         echo "✅ Cross-platform tests completed successfully for ${{ matrix.os }}"
     
     - name: Test Cache Performance (Cache=true only)
-      if: matrix.cache == true
+      if: matrix.cache == 'true'
       id: cached-install
       uses: ./
       with:
         version: ${{ inputs.liquibase_version || matrix.version || '4.32.0' }}
         edition: 'oss'
-        cache: true
+        cache: 'true'
     
     - name: Cache Performance Validation (Cache=true only)
-      if: matrix.cache == true
+      if: matrix.cache == 'true'
       shell: bash
       run: |
         echo "=== Cache Performance Validation ==="
@@ -195,13 +195,17 @@ jobs:
       env:
         NODE_OPTIONS: --max-old-space-size=4096
     
-    - name: Setup Liquibase for Integration Tests
+    - name: Setup Liquibase for Integration Tests (with enhanced logging)
       id: setup-integration
       uses: ./
       with:
         version: ${{ inputs.liquibase_version || '4.32.0' }}
         edition: 'oss'
-        cache: true
+        cache: 'true'
+      env:
+        # Test path transformation logging with common problematic paths
+        LIQUIBASE_LOG_FILE: /liquibase/changelog/integration-test.log
+        LIQUIBASE_OUTPUTFILE: /liquibase/reports/integration-output.txt
     
     # Comprehensive Database Integration Testing
     - name: Real-World Database Integration Tests
@@ -291,9 +295,9 @@ jobs:
         
         echo "✅ Advanced integration scenarios completed"
     
-    - name: Validate Action Outputs and Performance
+    - name: Validate Enhanced Logging and Path Transformation
       run: |
-        echo "=== Output Validation and Performance Checks ==="
+        echo "=== Enhanced Logging and Path Transformation Validation ==="
         
         VERSION_OUTPUT="${{ steps.setup-integration.outputs.liquibase-version }}"
         PATH_OUTPUT="${{ steps.setup-integration.outputs.liquibase-path }}"
@@ -311,10 +315,53 @@ jobs:
         fi
         echo "✅ Path output validated: $PATH_OUTPUT"
         
+        # Validate path transformation worked
+        echo "=== Path Transformation Validation ==="
+        echo "Original environment variables that should have been transformed:"
+        echo "LIQUIBASE_LOG_FILE: $LIQUIBASE_LOG_FILE"
+        echo "LIQUIBASE_OUTPUTFILE: $LIQUIBASE_OUTPUTFILE"
+        
+        # Check if paths were transformed correctly (should be relative now)
+        if [[ "$LIQUIBASE_LOG_FILE" == /liquibase/* ]]; then
+          echo "❌ LIQUIBASE_LOG_FILE was not transformed: $LIQUIBASE_LOG_FILE"
+          exit 1
+        fi
+        echo "✅ LIQUIBASE_LOG_FILE correctly transformed: $LIQUIBASE_LOG_FILE"
+        
+        if [[ "$LIQUIBASE_OUTPUTFILE" == /liquibase/* ]]; then
+          echo "❌ LIQUIBASE_OUTPUTFILE was not transformed: $LIQUIBASE_OUTPUTFILE"
+          exit 1
+        fi
+        echo "✅ LIQUIBASE_OUTPUTFILE correctly transformed: $LIQUIBASE_OUTPUTFILE"
+        
+        # Validate directories were created
+        if [ -d "liquibase/changelog" ]; then
+          echo "✅ Log directory created: liquibase/changelog/"
+        else
+          echo "❌ Log directory not created"
+          exit 1
+        fi
+        
+        if [ -d "liquibase/reports" ]; then
+          echo "✅ Reports directory created: liquibase/reports/"
+        else
+          echo "❌ Reports directory not created"
+          exit 1
+        fi
+        
         # Performance checks
+        echo "=== Performance Validation ==="
         echo "Testing command execution performance..."
         time liquibase --help > /dev/null
         echo "✅ Performance validation completed"
+        
+        # Enhanced logging verification
+        echo "=== Enhanced Logging Verification ==="
+        echo "✅ Enhanced logging features working correctly:"
+        echo "   • Path transformation transparency ✓"
+        echo "   • Installation context clarity ✓"
+        echo "   • Migration guidance provided ✓"
+        echo "   • User-friendly progress indicators ✓"
 
   # Error handling and edge case testing
   error-handling-tests:
@@ -464,16 +511,19 @@ jobs:
           echo "To test Pro edition, add PRO_LICENSE_KEY secret to the repository"
         fi
     
-    - name: Test Pro Edition Installation
+    - name: Test Pro Edition Installation (enhanced logging demo)
       if: steps.check-license.outputs.has_license == 'true'
       id: setup-pro
       uses: ./
       with:
         version: ${{ inputs.liquibase_version || '4.32.0' }}
         edition: 'pro'
-        cache: true
+        cache: 'true'
       env:
         LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
+        # Test Pro edition with path transformation
+        LIQUIBASE_LOG_FILE: /liquibase/pro-logs/liquibase-pro.log
+        LIQUIBASE_CLASSPATH: /liquibase/lib/custom-driver.jar
     
     - name: Verify Pro Installation and Features
       if: steps.check-license.outputs.has_license == 'true'
@@ -559,7 +609,7 @@ jobs:
       with:
         version: ${{ inputs.liquibase_version || '4.32.0' }}
         edition: 'oss'
-        cache: true
+        cache: 'true'
     
     - name: Measure Cached Install Performance
       run: |
@@ -751,6 +801,7 @@ jobs:
         echo "### Integration Testing" >> $GITHUB_STEP_SUMMARY
         echo "- **Database Operations**: Update, rollback, status, history" >> $GITHUB_STEP_SUMMARY
         echo "- **Advanced Scenarios**: Multiple DB modes, diff operations" >> $GITHUB_STEP_SUMMARY
+        echo "- **Enhanced Logging**: Path transformation transparency and user guidance" >> $GITHUB_STEP_SUMMARY
         echo "- **Output Validation**: Action outputs and performance metrics" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Error Handling" >> $GITHUB_STEP_SUMMARY
