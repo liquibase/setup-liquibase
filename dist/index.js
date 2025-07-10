@@ -31272,6 +31272,46 @@ async function extractLiquibase(downloadPath) {
     }
 }
 /**
+ * Validates and prepares the LIQUIBASE_LOG_FILE path if it's set in environment variables
+ * Creates necessary parent directories to ensure Liquibase can write to the log file
+ *
+ * @throws Error if log file path is invalid or cannot be created
+ */
+async function validateLogFile() {
+    const logFilePath = process.env.LIQUIBASE_LOG_FILE;
+    if (!logFilePath) {
+        // No log file specified, nothing to validate
+        return;
+    }
+    try {
+        // Resolve to absolute path to handle relative paths correctly
+        const absoluteLogPath = path.resolve(logFilePath);
+        const logDirectory = path.dirname(absoluteLogPath);
+        core.debug(`Validating LIQUIBASE_LOG_FILE: ${absoluteLogPath}`);
+        // Check if the directory exists, create if it doesn't
+        if (!fs.existsSync(logDirectory)) {
+            core.info(`Creating log directory: ${logDirectory}`);
+            await io.mkdirP(logDirectory);
+        }
+        // Verify the directory is writable by attempting to create a test file
+        const testFile = path.join(logDirectory, `.liquibase-test-${Date.now()}`);
+        try {
+            fs.writeFileSync(testFile, 'test');
+            fs.unlinkSync(testFile);
+            core.debug(`Log directory is writable: ${logDirectory}`);
+        }
+        catch (writeError) {
+            throw new Error(`Log directory is not writable: ${logDirectory}. Error: ${writeError instanceof Error ? writeError.message : String(writeError)}`);
+        }
+    }
+    catch (error) {
+        if (error instanceof Error && error.message.includes('Log directory is not writable')) {
+            throw error; // Re-throw our specific error
+        }
+        throw new Error(`Invalid LIQUIBASE_LOG_FILE path '${logFilePath}': ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+/**
  * Validates that Liquibase was installed correctly by running --version command
  *
  * @param liquibasePath - Path to the Liquibase executable (without extension)
@@ -31285,6 +31325,8 @@ async function validateInstallation(liquibasePath) {
         if (!fs.existsSync(executable)) {
             throw new Error(`Liquibase executable not found at ${executable}`);
         }
+        // Validate and prepare LIQUIBASE_LOG_FILE if set
+        await validateLogFile();
         // Run 'liquibase --version' to verify the installation works
         let stdoutOutput = '';
         let stderrOutput = '';

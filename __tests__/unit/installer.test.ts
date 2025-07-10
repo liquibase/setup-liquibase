@@ -1,5 +1,8 @@
 import { getDownloadUrl, setupLiquibase } from '../../src/installer';
 import { MIN_SUPPORTED_VERSION } from '../../src/config';
+import * as os from 'os';
+import * as path from 'path';
+import * as fs from 'fs';
 
 describe('getDownloadUrl', () => {
   it('should construct correct OSS URL for Unix-like systems', () => {
@@ -70,6 +73,114 @@ describe('getDownloadUrl', () => {
     
     Object.defineProperty(process, 'platform', { value: originalPlatform });
   });
+});
+
+describe('LIQUIBASE_LOG_FILE validation', () => {
+  const originalEnv = process.env.LIQUIBASE_LOG_FILE;
+  
+  afterEach(() => {
+    // Restore original environment variable
+    if (originalEnv) {
+      process.env.LIQUIBASE_LOG_FILE = originalEnv;
+    } else {
+      delete process.env.LIQUIBASE_LOG_FILE;
+    }
+  });
+
+  it('should succeed when LIQUIBASE_LOG_FILE is not set', async () => {
+    delete process.env.LIQUIBASE_LOG_FILE;
+    
+    const options = {
+      version: '4.32.0',
+      edition: 'oss' as const,
+      cache: false
+    };
+
+    const result = await setupLiquibase(options);
+    expect(result).toBeDefined();
+    expect(result.version).toBe('4.32.0');
+  }, 30000);
+
+  it('should create log directory and succeed when LIQUIBASE_LOG_FILE path does not exist', async () => {
+    const tempDir = path.join(os.tmpdir(), `liquibase-test-${Date.now()}`);
+    const logFilePath = path.join(tempDir, 'logs', 'liquibase.log');
+    
+    process.env.LIQUIBASE_LOG_FILE = logFilePath;
+    
+    // Ensure directory doesn't exist initially
+    expect(fs.existsSync(path.dirname(logFilePath))).toBe(false);
+    
+    const options = {
+      version: '4.32.0',
+      edition: 'oss' as const,
+      cache: false
+    };
+
+    const result = await setupLiquibase(options);
+    expect(result).toBeDefined();
+    expect(result.version).toBe('4.32.0');
+    
+    // Directory should now exist
+    expect(fs.existsSync(path.dirname(logFilePath))).toBe(true);
+    
+    // Clean up
+    if (fs.existsSync(tempDir)) {
+      fs.rmSync(tempDir, { recursive: true });
+    }
+  }, 30000);
+
+  it('should succeed when LIQUIBASE_LOG_FILE directory already exists', async () => {
+    const tempDir = path.join(os.tmpdir(), `liquibase-test-existing-${Date.now()}`);
+    const logFilePath = path.join(tempDir, 'liquibase.log');
+    
+    // Create directory first
+    fs.mkdirSync(tempDir, { recursive: true });
+    process.env.LIQUIBASE_LOG_FILE = logFilePath;
+    
+    const options = {
+      version: '4.32.0',
+      edition: 'oss' as const,
+      cache: false
+    };
+
+    const result = await setupLiquibase(options);
+    expect(result).toBeDefined();
+    expect(result.version).toBe('4.32.0');
+    
+    // Directory should still exist
+    expect(fs.existsSync(tempDir)).toBe(true);
+    
+    // Clean up
+    if (fs.existsSync(tempDir)) {
+      fs.rmSync(tempDir, { recursive: true });
+    }
+  }, 30000);
+
+  it('should handle relative log file paths', async () => {
+    const relativePath = './tmp/logs/liquibase.log';
+    const absolutePath = path.resolve(relativePath);
+    const logDir = path.dirname(absolutePath);
+    
+    process.env.LIQUIBASE_LOG_FILE = relativePath;
+    
+    const options = {
+      version: '4.32.0',
+      edition: 'oss' as const,
+      cache: false
+    };
+
+    const result = await setupLiquibase(options);
+    expect(result).toBeDefined();
+    expect(result.version).toBe('4.32.0');
+    
+    // Directory should exist
+    expect(fs.existsSync(logDir)).toBe(true);
+    
+    // Clean up
+    if (fs.existsSync('./tmp')) {
+      fs.rmSync('./tmp', { recursive: true });
+    }
+  }, 30000);
 });
 
 describe('setupLiquibase validation', () => {
