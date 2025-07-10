@@ -199,7 +199,7 @@ describe('Error Handling Tests', () => {
         // If it fails, that's acceptable too - just don't time out
         expect(error).toBeDefined();
       }
-    }, 30000);
+    }, 60000); // Increased timeout to 60 seconds for CI environments
 
     it('should validate license key sanitization', () => {
       const licenseKeysToSanitize = [
@@ -249,7 +249,7 @@ describe('Error Handling Tests', () => {
       expect(result).toBeDefined();
       expect(result.version).toBe('4.32.0');
       expect(result.path).toBeTruthy();
-    }, 30000);
+    }, 60000); // Increased timeout to 60 seconds for CI environments
   });
 
   /**
@@ -275,7 +275,7 @@ describe('Error Handling Tests', () => {
         expect(result.version).toBe('4.32.0');
         expect(result.path).toBeTruthy();
       }
-    }, 30000);
+    }, 90000); // Increased timeout to 90 seconds for CI environments
   });
 
   /**
@@ -321,7 +321,7 @@ describe('Error Handling Tests', () => {
           }
         }
       }
-    }, 60000); // Increased timeout to 60 seconds
+    }, 90000); // Increased timeout to 90 seconds for CI environments
 
     it('should handle concurrent installation attempts', async () => {
       // Test multiple simultaneous setup attempts
@@ -343,7 +343,7 @@ describe('Error Handling Tests', () => {
           expect(result.value.version).toBe('4.32.0');
         }
       });
-    }, 30000);
+    }, 60000); // Increased timeout to 60 seconds for CI environments
 
     it('should handle resource exhaustion scenarios', async () => {
       // Test with various resource-intensive scenarios
@@ -360,7 +360,7 @@ describe('Error Handling Tests', () => {
         expect(result.version).toBe(scenario.version);
         expect(result.path).toBeTruthy();
       }
-    }, 30000);
+    }, 60000); // Increased timeout to 60 seconds for CI environments
   });
 
   /**

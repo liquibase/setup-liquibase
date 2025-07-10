@@ -24,7 +24,10 @@
     // Generate declaration files and source maps for debugging
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+    
+    // Enable isolated modules for ts-jest compatibility
+    "isolatedModules": true
   },
   
   // Include all TypeScript files in the src directory

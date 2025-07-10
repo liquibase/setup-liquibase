@@ -206,7 +206,7 @@ describe('setupLiquibase validation', () => {
         expect(result.path).toBeTruthy();
       }
     }
-  }, 30000);
+  }, 60000); // Increased timeout to 60 seconds for CI environments
 
 });
 

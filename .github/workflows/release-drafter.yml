@@ -27,6 +27,11 @@ permissions:
   pull-requests: write
   actions: write
 
+# Cancel in-progress runs when new commits are pushed to the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # Multi-platform build and test validation
   build-and-test:
