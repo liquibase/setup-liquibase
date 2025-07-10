@@ -51,10 +51,10 @@ jobs:
           # Test additional versions on Ubuntu for version compatibility
           - os: ubuntu-latest
             version: '4.31.1'
-            cache: true
+            cache: 'true'
           - os: ubuntu-latest  
             version: '4.30.0'
-            cache: true
+            cache: 'true'
     
     steps:
     - name: Checkout Repository
@@ -138,7 +138,7 @@ jobs:
       with:
         version: ${{ inputs.liquibase_version || matrix.version || '4.32.0' }}
         edition: 'oss'
-        cache: true
+        cache: 'true'
     
     - name: Cache Performance Validation (Cache=true only)
       if: matrix.cache == true
@@ -201,7 +201,7 @@ jobs:
       with:
         version: ${{ inputs.liquibase_version || '4.32.0' }}
         edition: 'oss'
-        cache: true
+        cache: 'true'
       env:
         # Test path transformation logging with common problematic paths
         LIQUIBASE_LOG_FILE: /liquibase/changelog/integration-test.log
@@ -518,7 +518,7 @@ jobs:
       with:
         version: ${{ inputs.liquibase_version || '4.32.0' }}
         edition: 'pro'
-        cache: true
+        cache: 'true'
       env:
         LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
         # Test Pro edition with path transformation
@@ -609,7 +609,7 @@ jobs:
       with:
         version: ${{ inputs.liquibase_version || '4.32.0' }}
         edition: 'oss'
-        cache: true
+        cache: 'true'
     
     - name: Measure Cached Install Performance
       run: |

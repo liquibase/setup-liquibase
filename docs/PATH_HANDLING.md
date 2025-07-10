@@ -44,7 +44,7 @@ env:
   LIQUIBASE_LOG_FILE: /liquibase/changelog/liquibase.log
 
 # Action transforms to:
-# LIQUIBASE_LOG_FILE: /actions-runner/_work/your-repo/your-repo/liquibase/changelog/liquibase.log
+# LIQUIBASE_LOG_FILE: ./liquibase/changelog/liquibase.log
 ```
 
 ### Logging Transparency
