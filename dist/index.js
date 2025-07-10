@@ -31139,8 +31139,11 @@ async function run() {
         core.setFailed(error instanceof Error ? error.message : String(error));
     }
 }
-// Execute the main function when this module is loaded
-run();
+// Execute the main function only when this module is run directly
+// This prevents auto-execution when imported by tests or other modules
+if (require.main === require.cache[eval('__filename')]) {
+    run();
+}
 
 
 /***/ }),
