@@ -31001,6 +31001,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.transformLiquibaseEnvironmentVariables = transformLiquibaseEnvironmentVariables;
 const core = __importStar(__nccwpck_require__(7484));
 const installer_1 = __nccwpck_require__(7651);
 const path = __importStar(__nccwpck_require__(6928));

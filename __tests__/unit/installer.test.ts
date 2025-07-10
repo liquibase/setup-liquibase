@@ -1,4 +1,5 @@
 import { getDownloadUrl, setupLiquibase } from '../../src/installer';
+import { transformLiquibaseEnvironmentVariables } from '../../src/index';
 import { MIN_SUPPORTED_VERSION } from '../../src/config';
 import * as os from 'os';
 import * as path from 'path';
@@ -188,6 +189,9 @@ describe('Liquibase file path validation', () => {
     
     process.env.LIQUIBASE_LOG_FILE = originalPath;
     
+    // Call transformation function as it would be called at action startup
+    await transformLiquibaseEnvironmentVariables();
+    
     const options = {
       version: '4.32.0',
       edition: 'oss' as const,
@@ -224,6 +228,9 @@ describe('Liquibase file path validation', () => {
     Object.entries(envVarsToTest).forEach(([key, value]) => {
       process.env[key] = value;
     });
+    
+    // Call transformation function as it would be called at action startup
+    await transformLiquibaseEnvironmentVariables();
     
     const options = {
       version: '4.32.0',

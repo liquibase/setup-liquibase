@@ -18,7 +18,7 @@ import * as io from '@actions/io';
  * Proactively transforms any problematic Liquibase environment variables 
  * immediately when the action starts, regardless of how they're set in the workflow
  */
-async function transformLiquibaseEnvironmentVariables(): Promise<void> {
+export async function transformLiquibaseEnvironmentVariables(): Promise<void> {
   const liquibaseFilePathEnvVars = [
     'LIQUIBASE_LOG_FILE',
     'LIQUIBASE_CHANGELOG_FILE', 
