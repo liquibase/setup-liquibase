@@ -31050,7 +31050,9 @@ async function transformLiquibaseEnvironmentVariables() {
             for (const singlePath of paths) {
                 let processedPath = singlePath.trim();
                 if (path.isAbsolute(processedPath)) {
-                    const rootParts = processedPath.split(path.sep).filter(part => part.length > 0);
+                    // Handle both Unix and Windows style paths consistently
+                    const normalizedPath = processedPath.replace(/\\/g, '/');
+                    const rootParts = normalizedPath.split('/').filter(part => part.length > 0);
                     if (rootParts.length > 0) {
                         const rootDir = rootParts[0];
                         if (restrictedRootDirs.includes(rootDir)) {
