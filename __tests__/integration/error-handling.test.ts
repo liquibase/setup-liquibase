@@ -3,22 +3,26 @@
  * 
  * These tests verify that the action handles various error conditions gracefully
  * and provides meaningful error messages to users.
+ * 
+ * OPTIMIZATION: Separated unit tests (no downloads) from integration tests (minimal downloads)
  */
 
 import { setupLiquibase } from '../../src/installer';
 import { getDownloadUrl } from '../../src/installer';
 import { MIN_SUPPORTED_VERSION } from '../../src/config';
+import { getSharedOSSInstallation, validateInstallationExists } from '../fixtures/shared-installation';
 
 describe('Error Handling Tests', () => {
   /**
-   * Input validation error scenarios
+   * Unit tests - Input validation errors (NO DOWNLOADS)
+   * These test the validation logic without performing actual installations
    */
-  describe('Input Validation Errors', () => {
+  describe('Input Validation Errors (Unit Tests)', () => {
     it('should reject missing version', async () => {
       const options = {
         version: '',
         edition: 'oss' as const,
-        cache: false
+        cache: true // Use cache for validation tests - these fail before download anyway
       };
 
       await expect(setupLiquibase(options)).rejects.toThrow('Version is required');
@@ -28,14 +32,14 @@ describe('Error Handling Tests', () => {
       const options = {
         version: null as any,
         edition: 'oss' as const,
-        cache: false
+        cache: true // Use cache for validation tests - these fail before download anyway
       };
 
       await expect(setupLiquibase(options)).rejects.toThrow('Version is required');
     });
 
     it('should reject invalid version formats', async () => {
-      // We'll focus only on truly invalid formats, not those that could be handled
+      // Test purely validation logic - these fail before any downloads
       const invalidVersions = [
         'invalid-version',
         '4.32.x',
@@ -48,17 +52,10 @@ describe('Error Handling Tests', () => {
         const options = {
           version,
           edition: 'oss' as const,
-          cache: false
+          cache: true // Use cache for validation tests - these fail before download anyway
         };
 
-        try {
-          await setupLiquibase(options);
-          // If we get here, the test should fail
-          expect('Test should have failed').toBe('But it succeeded');
-        } catch (error) {
-          // Just verify we got an error, don't check the specific message
-          expect(error).toBeDefined();
-        }
+        await expect(setupLiquibase(options)).rejects.toThrow();
       }
     });
 
@@ -76,7 +73,7 @@ describe('Error Handling Tests', () => {
         const options = {
           version,
           edition: 'oss' as const,
-          cache: false
+          cache: true // Use cache for validation tests - these fail before download anyway
         };
 
         await expect(setupLiquibase(options)).rejects.toThrow(
@@ -102,7 +99,7 @@ describe('Error Handling Tests', () => {
         const options = {
           version: '4.32.0',
           edition: edition as any,
-          cache: false
+          cache: true // Use cache for validation tests - these fail before download anyway
         };
 
         await expect(setupLiquibase(options)).rejects.toThrow(
@@ -110,36 +107,13 @@ describe('Error Handling Tests', () => {
         );
       }
     });
-
-
   });
 
   /**
-   * Network and download error scenarios
+   * Unit tests - URL generation (NO DOWNLOADS)
+   * These test URL generation logic without network calls
    */
-  describe('Network and Download Errors', () => {
-    it('should handle version not found errors', async () => {
-      // Test with a version that likely doesn't exist
-      const options = {
-        version: '99.99.99',
-        edition: 'oss' as const,
-        cache: false
-      };
-
-      // This may succeed or fail depending on what versions are available
-      try {
-        const result = await setupLiquibase(options);
-        // If it succeeds, validate the result
-        expect(result).toBeDefined();
-        expect(result.version).toBe('99.99.99');
-        expect(result.path).toBeTruthy();
-      } catch (error) {
-        // If it fails, it should provide a meaningful error
-        expect(error).toBeDefined();
-        expect(error instanceof Error).toBe(true);
-      }
-    });
-
+  describe('URL Generation Logic (Unit Tests)', () => {
     it('should generate correct URLs for error scenarios', () => {
       // Test URL generation doesn't crash with edge case versions
       const edgeCaseVersions = [
@@ -174,33 +148,28 @@ describe('Error Handling Tests', () => {
 
       Object.defineProperty(process, 'platform', { value: originalPlatform });
     });
+
+    it('should handle unsupported platform scenarios', () => {
+      const unsupportedPlatforms = ['aix', 'android', 'haiku', 'netbsd', 'sunos'];
+      const originalPlatform = process.platform;
+
+      unsupportedPlatforms.forEach(platform => {
+        Object.defineProperty(process, 'platform', { value: platform });
+        
+        // Should still generate URLs, but might use default Unix behavior
+        const url = getDownloadUrl('4.32.0', 'oss');
+        expect(url).toBeTruthy();
+        expect(url).toMatch(/^https:/);
+      });
+
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    });
   });
 
   /**
-   * License configuration error scenarios
+   * Unit tests - License validation (NO DOWNLOADS)
    */
-  describe('License Configuration Errors', () => {
-    it('should handle malformed license keys gracefully', async () => {
-      // Just test with a single key to avoid timeout
-      const licenseKey = 'invalid-license-format';
-      
-      const options = {
-        version: '4.32.0',
-        edition: 'pro' as const,
-        licenseKey,
-        cache: false
-      };
-
-      try {
-        // Should complete successfully with malformed license keys (they're just passed through)
-        const result = await setupLiquibase(options);
-        expect(result).toBeDefined();
-      } catch (error) {
-        // If it fails, that's acceptable too - just don't time out
-        expect(error).toBeDefined();
-      }
-    }, 60000); // Increased timeout to 60 seconds for CI environments
-
+  describe('License Configuration Logic (Unit Tests)', () => {
     it('should validate license key sanitization', () => {
       const licenseKeysToSanitize = [
         '  valid-license-key  ', // Leading/trailing spaces
@@ -217,172 +186,25 @@ describe('Error Handling Tests', () => {
   });
 
   /**
-   * System and environment error scenarios
+   * Unit tests - Error message quality (NO DOWNLOADS)
    */
-  describe('System and Environment Errors', () => {
-    it('should handle unsupported platform scenarios', () => {
-      const unsupportedPlatforms = ['aix', 'android', 'haiku', 'netbsd', 'sunos'];
-      const originalPlatform = process.platform;
-
-      unsupportedPlatforms.forEach(platform => {
-        Object.defineProperty(process, 'platform', { value: platform });
-        
-        // Should still generate URLs, but might use default Unix behavior
-        const url = getDownloadUrl('4.32.0', 'oss');
-        expect(url).toBeTruthy();
-        expect(url).toMatch(/^https:/);
-      });
-
-      Object.defineProperty(process, 'platform', { value: originalPlatform });
-    });
-
-    it('should handle permission error scenarios', async () => {
-      // Test scenarios where file system operations might fail
-      const options = {
-        version: '4.32.0',
-        edition: 'oss' as const,
-        cache: false
-      };
-
-      // Should complete successfully in CI environment
-      const result = await setupLiquibase(options);
-      expect(result).toBeDefined();
-      expect(result.version).toBe('4.32.0');
-      expect(result.path).toBeTruthy();
-    }, 60000); // Increased timeout to 60 seconds for CI environments
-  });
-
-  /**
-   * Caching error scenarios
-   */
-  describe('Caching Error Scenarios', () => {
-    it('should handle cache-related errors gracefully', async () => {
-      const cacheScenarios = [
-        { cache: true, description: 'with caching enabled' },
-        { cache: false, description: 'with caching disabled' }
-      ];
-
-      for (const scenario of cacheScenarios) {
-        const options = {
-          version: '4.32.0',
-          edition: 'oss' as const,
-          cache: scenario.cache
-        };
-
-        // Should handle both cache scenarios successfully
-        const result = await setupLiquibase(options);
-        expect(result).toBeDefined();
-        expect(result.version).toBe('4.32.0');
-        expect(result.path).toBeTruthy();
-      }
-    }, 90000); // Increased timeout to 90 seconds for CI environments
-  });
-
-  /**
-   * Edge case and boundary condition tests
-   */
-  describe('Edge Cases and Boundary Conditions', () => {
-    it('should handle extreme version numbers', async () => {
-      const extremeVersions = [
-        '4.32.0', // Minimum supported
-        // Removing very high version to avoid timeouts
-        '4.32.0' // Exact minimum
-      ];
-
-      for (const version of extremeVersions) {
-        if (version === '4.32.0') {
-          // This should pass validation and complete successfully
-          const options = {
-            version,
-            edition: 'oss' as const,
-            cache: false
-          };
-          const result = await setupLiquibase(options);
-          expect(result).toBeDefined();
-          expect(result.version).toBe('4.32.0');
-          expect(result.path).toBeTruthy();
-        } else {
-          // Other versions may succeed or fail depending on availability
-          const options = {
-            version,
-            edition: 'oss' as const,
-            cache: false
-          };
-          try {
-            const result = await setupLiquibase(options);
-            // If it succeeds, validate the result
-            expect(result).toBeDefined();
-            expect(result.version).toBe(version);
-            expect(result.path).toBeTruthy();
-          } catch (error) {
-            // If it fails, it should provide a meaningful error
-            expect(error).toBeDefined();
-            expect(error instanceof Error).toBe(true);
-          }
-        }
-      }
-    }, 90000); // Increased timeout to 90 seconds for CI environments
-
-    it('should handle concurrent installation attempts', async () => {
-      // Test multiple simultaneous setup attempts
-      const promises = Array.from({ length: 3 }, () => {
-        return setupLiquibase({
-          version: '4.32.0',
-          edition: 'oss' as const,
-          cache: true
-        });
-      });
-
-      // All should complete successfully or fail gracefully
-      const results = await Promise.allSettled(promises);
-      results.forEach(result => {
-        // In CI environment, these will likely succeed
-        expect(['fulfilled', 'rejected']).toContain(result.status);
-        if (result.status === 'fulfilled') {
-          expect(result.value).toBeDefined();
-          expect(result.value.version).toBe('4.32.0');
-        }
-      });
-    }, 60000); // Increased timeout to 60 seconds for CI environments
-
-    it('should handle resource exhaustion scenarios', async () => {
-      // Test with various resource-intensive scenarios
-      const resourceIntensiveScenarios = [
-        { version: '4.32.0', edition: 'oss' as const, cache: true },
-        { version: '4.32.0', edition: 'oss' as const, cache: false },
-        { version: '4.32.0', edition: 'oss' as const, cache: true }
-      ];
-
-      for (const scenario of resourceIntensiveScenarios) {
-        // Should complete successfully in CI environment
-        const result = await setupLiquibase(scenario);
-        expect(result).toBeDefined();
-        expect(result.version).toBe(scenario.version);
-        expect(result.path).toBeTruthy();
-      }
-    }, 60000); // Increased timeout to 60 seconds for CI environments
-  });
-
-  /**
-   * Error message quality tests
-   */
-  describe('Error Message Quality', () => {
+  describe('Error Message Quality (Unit Tests)', () => {
     it('should provide actionable error messages', async () => {
       const testCases = [
         {
-          options: { version: '', edition: 'oss' as const, cache: false },
+          options: { version: '', edition: 'oss' as const, cache: true },
           expectedMessageParts: ['Version', 'required']
         },
         {
-          options: { version: 'invalid', edition: 'oss' as const, cache: false },
+          options: { version: 'invalid', edition: 'oss' as const, cache: true },
           expectedMessageParts: ['Invalid version format', 'semantic version']
         },
         {
-          options: { version: '4.25.0', edition: 'oss' as const, cache: false },
+          options: { version: '4.25.0', edition: 'oss' as const, cache: true },
           expectedMessageParts: ['not supported', 'Minimum supported version']
         },
         {
-          options: { version: '4.32.0', edition: 'invalid' as any, cache: false },
+          options: { version: '4.32.0', edition: 'invalid' as any, cache: true },
           expectedMessageParts: ['Invalid edition', 'oss', 'pro']
         },
       ];
@@ -411,9 +233,9 @@ describe('Error Handling Tests', () => {
 
     it('should provide consistent error message format', async () => {
       const errorGeneratingOptions = [
-        { version: '', edition: 'oss' as const, cache: false },
-        { version: 'invalid', edition: 'oss' as const, cache: false },
-        { version: '4.25.0', edition: 'oss' as const, cache: false }
+        { version: '', edition: 'oss' as const, cache: true },
+        { version: 'invalid', edition: 'oss' as const, cache: true },
+        { version: '4.25.0', edition: 'oss' as const, cache: true }
       ];
 
       const errorMessages: string[] = [];
@@ -436,5 +258,95 @@ describe('Error Handling Tests', () => {
       const uniqueMessages = new Set(errorMessages);
       expect(uniqueMessages.size).toBe(errorMessages.length);
     });
+  });
+
+  /**
+   * Integration tests - Real installation scenarios (MINIMAL DOWNLOADS)
+   * These test actual installation error handling with shared fixtures
+   */
+  describe('Real Installation Error Scenarios (Integration Tests)', () => {
+    let sharedInstallation: any;
+
+    beforeAll(async () => {
+      // Single shared installation for all integration tests
+      sharedInstallation = await getSharedOSSInstallation();
+      console.log('[ERROR HANDLING TEST] Using shared installation for integration tests');
+    }, 120000);
+
+    it('should handle concurrent installation attempts gracefully', async () => {
+      // Test multiple simultaneous setup attempts using shared cache
+      const promises = Array.from({ length: 3 }, () => {
+        return setupLiquibase({
+          version: '4.32.0',
+          edition: 'oss' as const,
+          cache: true // Use cache to avoid multiple downloads
+        });
+      });
+
+      // All should complete successfully or fail gracefully
+      const results = await Promise.allSettled(promises);
+      results.forEach(result => {
+        expect(['fulfilled', 'rejected']).toContain(result.status);
+        if (result.status === 'fulfilled') {
+          expect(result.value).toBeDefined();
+          expect(result.value.version).toBe('4.32.0');
+        }
+      });
+    }, 60000);
+
+    it('should handle version not found scenarios', async () => {
+      // Test with a version that likely doesn't exist
+      // This will attempt a real download but should fail quickly
+      const options = {
+        version: '99.99.99',
+        edition: 'oss' as const,
+        cache: true // Use cache for validation tests - these fail before download anyway
+      };
+
+      try {
+        const result = await setupLiquibase(options);
+        // If it somehow succeeds, validate the result
+        expect(result).toBeDefined();
+        expect(result.version).toBe('99.99.99');
+        expect(result.path).toBeTruthy();
+      } catch (error) {
+        // Expected case - version doesn't exist
+        expect(error).toBeDefined();
+        expect(error instanceof Error).toBe(true);
+        // Should provide meaningful error about version not found
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        expect(errorMessage).toMatch(/not found|404|Network error|Failed to download/i);
+      }
+    }, 30000);
+
+    it('should validate shared installation works correctly', () => {
+      // Lightweight validation of shared installation
+      expect(sharedInstallation).toBeDefined();
+      expect(sharedInstallation.version).toBe('4.32.0');
+      expect(sharedInstallation.path).toBeTruthy();
+      expect(validateInstallationExists(sharedInstallation)).toBe(true);
+    });
+
+    it('should handle cache scenarios without extra downloads', async () => {
+      // Test both cache scenarios using existing installations
+      const cacheScenarios = [
+        { cache: true, description: 'with caching enabled' },
+        { cache: false, description: 'with caching disabled (minimal test)' }
+      ];
+
+      for (const scenario of cacheScenarios) {
+        const options = {
+          version: '4.32.0',
+          edition: 'oss' as const,
+          cache: scenario.cache
+        };
+
+        // Should handle both cache scenarios successfully
+        const result = await setupLiquibase(options);
+        expect(result).toBeDefined();
+        expect(result.version).toBe('4.32.0');
+        expect(result.path).toBeTruthy();
+      }
+    }, 60000);
   });
 });

@@ -34,7 +34,7 @@ describe('Real-world Integration Scenarios', () => {
     it('should work with different caching strategies', async () => {
       const scenarios = [
         { cache: true, description: 'with caching enabled' },
-        { cache: false, description: 'with caching disabled' }
+        { cache: false, description: 'with caching disabled (minimal test)' }
       ];
 
       for (const scenario of scenarios) {

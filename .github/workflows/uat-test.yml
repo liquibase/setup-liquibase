@@ -593,7 +593,7 @@ jobs:
       with:
         version: ${{ inputs.liquibase_version || '4.32.0' }}
         edition: 'oss'
-        cache: false
+        cache: 'false'
     
     - name: Measure Fresh Install Performance
       run: |
