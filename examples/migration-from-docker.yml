@@ -1,0 +1,265 @@
+# Migration from Docker to setup-liquibase GitHub Action
+# This example shows common patterns for users transitioning from Docker-based Liquibase workflows
+
+name: Migration from Docker Examples
+on: [push, pull_request]
+
+jobs:
+  # Example 1: Basic changelog execution
+  basic-changelog:
+    name: Basic Changelog (Docker → GitHub Actions)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      # Docker equivalent:
+      # docker run --rm -v $(pwd):/liquibase/changelog \
+      #   liquibase/liquibase:4.32.0 update \
+      #   --changelog-file=/liquibase/changelog/changelog.xml \
+      #   --url=jdbc:h2:mem:test --username=sa --password=
+      
+      - uses: liquibase/setup-liquibase@v1
+        with:
+          version: '4.32.0'
+          edition: 'oss'
+          cache: 'true'
+      
+      - name: Show execution context (for debugging)
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Repository contents:"
+          ls -la
+          echo "Liquibase location: $(which liquibase)"
+      
+      - name: Run Liquibase Update
+        run: |
+          liquibase update \
+            --changelog-file=changelog.xml \
+            --url=jdbc:h2:mem:test \
+            --username=sa \
+            --password=
+
+  # Example 2: Handling absolute paths (demonstrates transformation)
+  absolute-paths:
+    name: Absolute Path Handling
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: liquibase/setup-liquibase@v1
+        with:
+          version: '4.32.0'
+          edition: 'oss'
+          cache: 'true'
+        env:
+          # These absolute paths will be automatically transformed:
+          LIQUIBASE_LOG_FILE: /liquibase/changelog/liquibase.log
+          # Action transforms to: ./liquibase/changelog/liquibase.log
+      
+      - name: Verify path transformation
+        run: |
+          echo "Log file location after transformation:"
+          echo "LIQUIBASE_LOG_FILE: $LIQUIBASE_LOG_FILE"
+          
+          # Create a simple changelog to generate logs
+          liquibase generate-changelog \
+            --changelog-file=generated-changelog.xml \
+            --url=jdbc:h2:mem:test \
+            --username=sa \
+            --password=
+          
+          # Show that the log file was created in workspace
+          echo "Generated files in workspace:"
+          find . -name "*.log" -type f
+
+  # Example 3: Custom JARs and classpath
+  custom-jars:
+    name: Custom JARs (Docker volumes → GitHub Actions downloads)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      # Docker equivalent:
+      # docker run --rm \
+      #   -v $(pwd):/liquibase/changelog \
+      #   -v /path/to/custom-driver.jar:/liquibase/lib/custom-driver.jar \
+      #   liquibase/liquibase:4.32.0
+      
+      - name: Download custom database driver
+        run: |
+          mkdir -p lib
+          # Example: Download PostgreSQL driver
+          wget https://jdbc.postgresql.org/download/postgresql-42.7.0.jar -O lib/postgresql.jar
+      
+      - uses: liquibase/setup-liquibase@v1
+        with:
+          version: '4.32.0'
+          edition: 'oss'
+          cache: 'true'
+        env:
+          # Point to downloaded JAR in workspace
+          LIQUIBASE_CLASSPATH: lib/postgresql.jar
+      
+      - name: Test custom driver availability
+        run: |
+          echo "Classpath: $LIQUIBASE_CLASSPATH"
+          # Test that Liquibase can see the custom driver
+          liquibase --help | grep -i "Available database types" || echo "Driver loaded successfully"
+
+  # Example 4: Multiple database environments
+  multi-environment:
+    name: Multi-Environment Setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [dev, staging, prod]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: liquibase/setup-liquibase@v1
+        with:
+          version: '4.32.0'
+          edition: 'oss'
+          cache: 'true'
+        env:
+          # Environment-specific log files (will be transformed)
+          LIQUIBASE_LOG_FILE: /liquibase/logs/${{ matrix.environment }}/liquibase.log
+      
+      - name: Run environment-specific operations
+        run: |
+          echo "Running Liquibase for environment: ${{ matrix.environment }}"
+          
+          # Create environment-specific database
+          DB_URL="jdbc:h2:./db-${{ matrix.environment }}"
+          
+          liquibase update \
+            --changelog-file=changelog.xml \
+            --url="$DB_URL" \
+            --username=sa \
+            --password=
+          
+          echo "Log file created at: $LIQUIBASE_LOG_FILE"
+          ls -la liquibase/logs/${{ matrix.environment }}/ || echo "Directory structure created"
+
+  # Example 5: Preserving reports and outputs
+  reports-and-artifacts:
+    name: Reports and Artifacts Preservation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: liquibase/setup-liquibase@v1
+        with:
+          version: '4.32.0'
+          edition: 'oss'
+          cache: 'true'
+        env:
+          LIQUIBASE_LOG_FILE: reports/liquibase.log
+      
+      - name: Generate reports
+        run: |
+          mkdir -p reports
+          
+          # Generate changelog
+          liquibase generate-changelog \
+            --changelog-file=reports/generated-changelog.xml \
+            --url=jdbc:h2:mem:test \
+            --username=sa \
+            --password=
+          
+          # Status report
+          liquibase status \
+            --changelog-file=changelog.xml \
+            --url=jdbc:h2:mem:test \
+            --username=sa \
+            --password= > reports/status.txt
+          
+          echo "Generated reports:"
+          ls -la reports/
+      
+      # Unlike Docker, GitHub Actions runners are ephemeral
+      # Save important files as artifacts
+      - name: Upload reports as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: liquibase-reports
+          path: reports/
+          retention-days: 30
+
+  # Example 6: Pro edition with license
+  pro-edition:
+    name: Pro Edition Usage
+    runs-on: ubuntu-latest
+    if: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
+    env:
+      # Set license at job level for all steps
+      LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: liquibase/setup-liquibase@v1
+        with:
+          version: '4.32.0'
+          edition: 'pro'
+          cache: 'true'
+        env:
+          LIQUIBASE_LOG_FILE: /liquibase/pro-logs/liquibase.log
+      
+      - name: Run Pro-specific operations
+        run: |
+          # Generate diff changelog (Pro feature)
+          liquibase diff-changelog \
+            --reference-url=jdbc:h2:mem:reference \
+            --reference-username=sa \
+            --reference-password= \
+            --url=jdbc:h2:mem:target \
+            --username=sa \
+            --password= \
+            --changelog-file=diff-changelog.xml
+          
+          echo "Pro edition operations completed"
+          echo "Log file: $LIQUIBASE_LOG_FILE"
+
+  # Example 7: Troubleshooting and debugging
+  debugging:
+    name: Debugging Common Issues
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: liquibase/setup-liquibase@v1
+        with:
+          version: '4.32.0'
+          edition: 'oss'
+          cache: 'true'
+        env:
+          LIQUIBASE_LOG_FILE: /liquibase/debug/liquibase.log
+      
+      - name: Debug information
+        run: |
+          echo "=== Debugging Information ==="
+          echo "Current working directory: $(pwd)"
+          echo "Contents of current directory:"
+          ls -la
+          echo ""
+          echo "Environment variables:"
+          env | grep LIQUIBASE_ | sort
+          echo ""
+          echo "Liquibase version and location:"
+          which liquibase
+          liquibase --version
+          echo ""
+          echo "Expected log file location: $LIQUIBASE_LOG_FILE"
+          echo "Checking if log directory exists:"
+          ls -la liquibase/debug/ 2>/dev/null || echo "Directory will be created when needed"
+      
+      - name: Simple operation to generate logs
+        run: |
+          liquibase status \
+            --changelog-file=changelog.xml \
+            --url=jdbc:h2:mem:debug \
+            --username=sa \
+            --password=
+          
+          echo "Operation completed. Log file contents:"
+          cat "$LIQUIBASE_LOG_FILE" 2>/dev/null || echo "Log file not found or empty"

@@ -28,7 +28,7 @@ jobs:
       with:
         version: '4.32.0'
         edition: 'oss'
-        cache: true
+        cache: 'true'
     
     - name: Verify Installation
       run: |
@@ -45,7 +45,7 @@ jobs:
 strategy:
   matrix:
     version: ['4.32.0']
-    cache: [true, false]
+    cache: ['true', 'false']  # String format required for YAML 1.2 Core Schema
     os: [ubuntu-latest, windows-latest, macos-latest]
 
 steps:
@@ -63,7 +63,7 @@ steps:
   with:
     version: '4.32.0'
     edition: 'pro'
-    cache: true
+    cache: 'true'  # String format required
   env:
     LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
 ```
@@ -181,14 +181,61 @@ runs-on: ${{ matrix.os }}
   with:
     version: '4.32.0'
     edition: 'oss'
-    cache: true
+    cache: 'true'
 
 - name: Second Install (With Cache)
   uses: liquibase/setup-liquibase@v1-beta
   with:
     version: '4.32.0'
     edition: 'oss'
-    cache: true
+    cache: 'true'
+```
+
+### 6. Enhanced Logging & Path Transformation Tests
+
+#### Path Transformation Test
+```yaml
+- name: Test Path Transformation (Enhanced Logging)
+  uses: liquibase/setup-liquibase@v1-beta
+  with:
+    version: '4.32.0'
+    edition: 'oss'
+    cache: 'true'
+  env:
+    # These absolute paths will trigger transformation logging
+    LIQUIBASE_LOG_FILE: /liquibase/changelog/test.log
+    LIQUIBASE_OUTPUTFILE: /liquibase/reports/output.txt
+
+- name: Verify Path Transformation
+  run: |
+    echo "Checking transformed paths..."
+    echo "LIQUIBASE_LOG_FILE: $LIQUIBASE_LOG_FILE"
+    echo "LIQUIBASE_OUTPUTFILE: $LIQUIBASE_OUTPUTFILE"
+    
+    # Verify paths were transformed to relative
+    if [[ "$LIQUIBASE_LOG_FILE" == /liquibase/* ]]; then
+      echo "❌ Path transformation failed"
+      exit 1
+    fi
+    echo "✅ Path transformation successful"
+    
+    # Verify directories were created
+    ls -la liquibase/changelog/ liquibase/reports/
+```
+
+#### Migration Guidance Test
+```yaml
+- name: Test Enhanced Logging Output
+  uses: liquibase/setup-liquibase@v1-beta
+  with:
+    version: '4.32.0'
+    edition: 'oss'
+    cache: 'true'
+  # Look for these enhanced logging messages in the action output:
+  # 🚀 Setting up Liquibase OSS 4.32.0
+  # 🎯 Liquibase configuration:
+  # 💡 Migration from liquibase-github-actions:
+  # 🔄 Path Transformation (Security & Compatibility):
 ```
 
 ## Test Checklist
@@ -232,6 +279,15 @@ runs-on: ${{ matrix.os }}
 - [ ] `liquibase-version` output contains correct version
 - [ ] `liquibase-path` output contains valid path
 - [ ] Outputs can be used in subsequent steps
+
+### Enhanced Logging & Path Transformation ✅
+- [ ] Installation progress shows clear visual indicators (🚀, 📥, 📦, etc.)
+- [ ] Configuration summary displays correctly with edition, version, paths
+- [ ] Migration guidance appears for liquibase-github-actions users
+- [ ] Path transformation logging shows when absolute paths are converted
+- [ ] Transformed paths work correctly (relative to workspace)
+- [ ] Directory creation happens automatically for file paths
+- [ ] Boolean inputs use string format ('true'/'false') per YAML 1.2 Core Schema
 
 ## Reporting Issues
 

@@ -31089,8 +31089,15 @@ async function transformLiquibaseEnvironmentVariables() {
         }
     }
     if (transformedPaths.length > 0) {
-        core.info(`Transformed ${transformedPaths.length} Liquibase environment variable(s) to workspace-relative paths:`);
-        transformedPaths.forEach(transformation => core.info(`  ${transformation}`));
+        core.info('');
+        core.info('🔄 Path Transformation (Security & Compatibility):');
+        core.info('   Absolute paths have been converted to workspace-relative paths');
+        core.info('   This ensures compatibility with GitHub Actions runners and prevents permission issues');
+        core.info('');
+        transformedPaths.forEach(transformation => core.info(`   📝 ${transformation}`));
+        core.info('');
+        core.info('💡 Tip: Use relative paths (e.g., "logs/file.log") to avoid transformation');
+        core.info('');
     }
 }
 /**
@@ -31117,8 +31124,6 @@ async function run() {
             throw new Error('Edition must be either "oss" or "pro"');
         }
         const edition = editionInput;
-        // Log the setup configuration for debugging purposes
-        core.info(`Setting up Liquibase version ${version} (${edition} edition)`);
         // Execute the main installation logic
         const result = await (0, installer_1.setupLiquibase)({
             version,
@@ -31128,8 +31133,7 @@ async function run() {
         // Set output values that other workflow steps can reference
         core.setOutput('liquibase-version', result.version);
         core.setOutput('liquibase-path', result.path);
-        // Log successful completion
-        core.info(`Successfully set up Liquibase ${result.version} at ${result.path}`);
+        core.info(`✅ setup-liquibase completed successfully!`);
     }
     catch (error) {
         // Handle any errors by failing the action with a descriptive message
@@ -31241,24 +31245,33 @@ async function setupLiquibase(options) {
     const toolName = `liquibase-${edition}`;
     // Check if we already have this version cached
     let toolPath = tc.find(toolName, resolvedVersion);
+    let wasFromCache = false;
     // Download and install if not cached or caching is disabled
     if (!toolPath || !cache) {
-        core.info(`Installing Liquibase ${edition} version ${resolvedVersion}`);
+        if (!cache) {
+            core.info(`🚀 Setting up Liquibase ${edition.toUpperCase()} ${resolvedVersion} (caching disabled)`);
+        }
+        else {
+            core.info(`🚀 Setting up Liquibase ${edition.toUpperCase()} ${resolvedVersion}`);
+        }
         try {
             // Get the appropriate download URL for this version and edition
             const downloadUrl = getDownloadUrl(resolvedVersion, edition);
-            core.info(`Downloading from: ${downloadUrl}`);
+            core.info(`📥 Downloading from: ${downloadUrl}`);
             // Download the Liquibase archive with error handling
             const downloadPath = await tc.downloadTool(downloadUrl);
+            core.info(`📦 Extracting Liquibase archive...`);
             // Extract the archive to a temporary directory
             const extractedPath = await extractLiquibase(downloadPath);
             // Cache the installation if caching is enabled
             if (cache) {
+                core.info(`💾 Caching installation for future use...`);
                 toolPath = await tc.cacheDir(extractedPath, toolName, resolvedVersion);
             }
             else {
                 toolPath = extractedPath;
             }
+            core.info(`✅ Installation completed successfully`);
         }
         catch (error) {
             if (error instanceof Error) {
@@ -31276,14 +31289,35 @@ async function setupLiquibase(options) {
         }
     }
     else {
-        core.info(`Found cached Liquibase ${edition} version ${resolvedVersion}`);
+        core.info(`🚀 Setting up Liquibase ${edition.toUpperCase()} ${resolvedVersion}`);
+        core.info(`⚡ Found cached installation, skipping download`);
+        wasFromCache = true;
     }
     // Construct the path to the Liquibase executable
     const liquibaseBinPath = path.join(toolPath, 'liquibase');
     // Add the tool directory to the system PATH so 'liquibase' command is available
     core.addPath(toolPath);
+    core.info(`🔧 Added Liquibase to system PATH`);
     // Verify that the installation was successful
     await validateInstallation(liquibaseBinPath);
+    // Display comprehensive setup information following popular GitHub Actions patterns
+    core.info('');
+    core.info('🎯 Liquibase configuration:');
+    core.info(` Edition: ${edition.toUpperCase()}`);
+    core.info(` Version: ${resolvedVersion}`);
+    core.info(` Install Path: ${toolPath}`);
+    core.info(` Cached: ${wasFromCache ? 'yes' : 'no'}`);
+    core.info(` Execution Context: ${process.cwd()}`);
+    core.info('');
+    // Add helpful migration information
+    const currentDir = process.cwd();
+    const workspaceInfo = currentDir.includes('/_work/') ? currentDir.split('/_work/')[1] : 'repository';
+    core.info(`💡 Migration from liquibase-github-actions:`);
+    core.info(`   • Liquibase installs to: tool cache (not /liquibase/)`);
+    core.info(`   • Liquibase executes from: ${workspaceInfo}/`);
+    core.info(`   • Use relative paths: --changelog-file=changelog.xml`);
+    core.info(`   • Absolute paths are auto-transformed for security`);
+    core.info('');
     // Return the results for use by the action
     return {
         version: resolvedVersion,
@@ -31431,8 +31465,8 @@ async function validateInstallation(liquibasePath) {
         if (!stdoutOutput.toLowerCase().includes('liquibase')) {
             throw new Error(`Unexpected version output: ${stdoutOutput}`);
         }
-        core.info('Liquibase installation validated successfully');
-        core.debug(`Version output: ${stdoutOutput}`);
+        core.info('✅ Liquibase installation validated successfully');
+        core.debug(`Version output: ${stdoutOutput.trim()}`);
     }
     catch (error) {
         // Pass through our detailed error messages, or wrap generic ones

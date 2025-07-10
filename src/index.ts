@@ -114,8 +114,15 @@ export async function transformLiquibaseEnvironmentVariables(): Promise<void> {
   }
   
   if (transformedPaths.length > 0) {
-    core.info(`Transformed ${transformedPaths.length} Liquibase environment variable(s) to workspace-relative paths:`);
-    transformedPaths.forEach(transformation => core.info(`  ${transformation}`));
+    core.info('');
+    core.info('🔄 Path Transformation (Security & Compatibility):');
+    core.info('   Absolute paths have been converted to workspace-relative paths');
+    core.info('   This ensures compatibility with GitHub Actions runners and prevents permission issues');
+    core.info('');
+    transformedPaths.forEach(transformation => core.info(`   📝 ${transformation}`));
+    core.info('');
+    core.info('💡 Tip: Use relative paths (e.g., "logs/file.log") to avoid transformation');
+    core.info('');
   }
 }
 
@@ -146,9 +153,6 @@ async function run(): Promise<void> {
     }
     const edition = editionInput as 'oss' | 'pro';
 
-    // Log the setup configuration for debugging purposes
-    core.info(`Setting up Liquibase version ${version} (${edition} edition)`);
-
     // Execute the main installation logic
     const result = await setupLiquibase({
       version,
@@ -160,8 +164,7 @@ async function run(): Promise<void> {
     core.setOutput('liquibase-version', result.version);
     core.setOutput('liquibase-path', result.path);
 
-    // Log successful completion
-    core.info(`Successfully set up Liquibase ${result.version} at ${result.path}`);
+    core.info(`✅ setup-liquibase completed successfully!`);
   } catch (error) {
     // Handle any errors by failing the action with a descriptive message
     core.setFailed(error instanceof Error ? error.message : String(error));
