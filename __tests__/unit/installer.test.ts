@@ -1,5 +1,9 @@
 import { getDownloadUrl, setupLiquibase } from '../../src/installer';
+import { transformLiquibaseEnvironmentVariables } from '../../src/index';
 import { MIN_SUPPORTED_VERSION } from '../../src/config';
+import * as os from 'os';
+import * as path from 'path';
+import * as fs from 'fs';
 
 describe('getDownloadUrl', () => {
   it('should construct correct OSS URL for Unix-like systems', () => {
@@ -71,6 +75,9 @@ describe('getDownloadUrl', () => {
     Object.defineProperty(process, 'platform', { value: originalPlatform });
   });
 });
+
+// Note: Path transformation integration tests moved to __tests__/integration/path-transformation.test.ts
+// to prevent CI timeouts in unit tests
 
 describe('setupLiquibase validation', () => {
   it('should reject empty version', async () => {
