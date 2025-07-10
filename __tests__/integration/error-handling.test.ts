@@ -22,7 +22,7 @@ describe('Error Handling Tests', () => {
       const options = {
         version: '',
         edition: 'oss' as const,
-        cache: false
+        cache: true // Use cache for validation tests - these fail before download anyway
       };
 
       await expect(setupLiquibase(options)).rejects.toThrow('Version is required');
@@ -32,7 +32,7 @@ describe('Error Handling Tests', () => {
       const options = {
         version: null as any,
         edition: 'oss' as const,
-        cache: false
+        cache: true // Use cache for validation tests - these fail before download anyway
       };
 
       await expect(setupLiquibase(options)).rejects.toThrow('Version is required');
@@ -52,7 +52,7 @@ describe('Error Handling Tests', () => {
         const options = {
           version,
           edition: 'oss' as const,
-          cache: false
+          cache: true // Use cache for validation tests - these fail before download anyway
         };
 
         await expect(setupLiquibase(options)).rejects.toThrow();
@@ -73,7 +73,7 @@ describe('Error Handling Tests', () => {
         const options = {
           version,
           edition: 'oss' as const,
-          cache: false
+          cache: true // Use cache for validation tests - these fail before download anyway
         };
 
         await expect(setupLiquibase(options)).rejects.toThrow(
@@ -99,7 +99,7 @@ describe('Error Handling Tests', () => {
         const options = {
           version: '4.32.0',
           edition: edition as any,
-          cache: false
+          cache: true // Use cache for validation tests - these fail before download anyway
         };
 
         await expect(setupLiquibase(options)).rejects.toThrow(
@@ -192,19 +192,19 @@ describe('Error Handling Tests', () => {
     it('should provide actionable error messages', async () => {
       const testCases = [
         {
-          options: { version: '', edition: 'oss' as const, cache: 'false' },
+          options: { version: '', edition: 'oss' as const, cache: true },
           expectedMessageParts: ['Version', 'required']
         },
         {
-          options: { version: 'invalid', edition: 'oss' as const, cache: 'false' },
+          options: { version: 'invalid', edition: 'oss' as const, cache: true },
           expectedMessageParts: ['Invalid version format', 'semantic version']
         },
         {
-          options: { version: '4.25.0', edition: 'oss' as const, cache: 'false' },
+          options: { version: '4.25.0', edition: 'oss' as const, cache: true },
           expectedMessageParts: ['not supported', 'Minimum supported version']
         },
         {
-          options: { version: '4.32.0', edition: 'invalid' as any, cache: 'false' },
+          options: { version: '4.32.0', edition: 'invalid' as any, cache: true },
           expectedMessageParts: ['Invalid edition', 'oss', 'pro']
         },
       ];
@@ -233,9 +233,9 @@ describe('Error Handling Tests', () => {
 
     it('should provide consistent error message format', async () => {
       const errorGeneratingOptions = [
-        { version: '', edition: 'oss' as const, cache: 'false' },
-        { version: 'invalid', edition: 'oss' as const, cache: 'false' },
-        { version: '4.25.0', edition: 'oss' as const, cache: 'false' }
+        { version: '', edition: 'oss' as const, cache: true },
+        { version: 'invalid', edition: 'oss' as const, cache: true },
+        { version: '4.25.0', edition: 'oss' as const, cache: true }
       ];
 
       const errorMessages: string[] = [];
@@ -300,7 +300,7 @@ describe('Error Handling Tests', () => {
       const options = {
         version: '99.99.99',
         edition: 'oss' as const,
-        cache: false
+        cache: true // Use cache for validation tests - these fail before download anyway
       };
 
       try {
@@ -331,7 +331,7 @@ describe('Error Handling Tests', () => {
       // Test both cache scenarios using existing installations
       const cacheScenarios = [
         { cache: true, description: 'with caching enabled' },
-        { cache: false, description: 'with caching disabled' }
+        { cache: false, description: 'with caching disabled (minimal test)' }
       ];
 
       for (const scenario of cacheScenarios) {
