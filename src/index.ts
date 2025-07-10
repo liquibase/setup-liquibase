@@ -114,15 +114,14 @@ export async function transformLiquibaseEnvironmentVariables(): Promise<void> {
   }
   
   if (transformedPaths.length > 0) {
-    core.info('');
-    core.info('🔄 Path Transformation (Security & Compatibility):');
-    core.info('   Absolute paths have been converted to workspace-relative paths');
-    core.info('   This ensures compatibility with GitHub Actions runners and prevents permission issues');
-    core.info('');
-    transformedPaths.forEach(transformation => core.info(`   📝 ${transformation}`));
-    core.info('');
+    const indent = '  ';
+    core.startGroup('🔄 Path Transformation (Security & Compatibility)');
+    core.info(`${indent}Absolute paths have been converted to workspace-relative paths`);
+    core.info(`${indent}Transformed ${transformedPaths.length} Liquibase environment variable(s) to workspace-relative paths`);
+    core.info(`${indent}This ensures compatibility with GitHub Actions runners and prevents permission issues`);
+    transformedPaths.forEach(transformation => core.info(`${indent}📝 ${transformation}`));
     core.info('💡 Tip: Use relative paths (e.g., "logs/file.log") to avoid transformation');
-    core.info('');
+    core.endGroup();
   }
 }
 

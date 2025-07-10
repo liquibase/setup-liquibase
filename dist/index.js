@@ -31089,15 +31089,14 @@ async function transformLiquibaseEnvironmentVariables() {
         }
     }
     if (transformedPaths.length > 0) {
-        core.info('');
-        core.info('🔄 Path Transformation (Security & Compatibility):');
-        core.info('   Absolute paths have been converted to workspace-relative paths');
-        core.info('   This ensures compatibility with GitHub Actions runners and prevents permission issues');
-        core.info('');
-        transformedPaths.forEach(transformation => core.info(`   📝 ${transformation}`));
-        core.info('');
+        const indent = '  ';
+        core.startGroup('🔄 Path Transformation (Security & Compatibility)');
+        core.info(`${indent}Absolute paths have been converted to workspace-relative paths`);
+        core.info(`${indent}Transformed ${transformedPaths.length} Liquibase environment variable(s) to workspace-relative paths`);
+        core.info(`${indent}This ensures compatibility with GitHub Actions runners and prevents permission issues`);
+        transformedPaths.forEach(transformation => core.info(`${indent}📝 ${transformation}`));
         core.info('💡 Tip: Use relative paths (e.g., "logs/file.log") to avoid transformation');
-        core.info('');
+        core.endGroup();
     }
 }
 /**
@@ -31248,12 +31247,11 @@ async function setupLiquibase(options) {
     let wasFromCache = false;
     // Download and install if not cached or caching is disabled
     if (!toolPath || !cache) {
+        let setupMessage = `🚀 Setting up Liquibase ${edition.toUpperCase()} ${resolvedVersion}`;
         if (!cache) {
-            core.info(`🚀 Setting up Liquibase ${edition.toUpperCase()} ${resolvedVersion} (caching disabled)`);
+            setupMessage += ` (caching disabled)`;
         }
-        else {
-            core.info(`🚀 Setting up Liquibase ${edition.toUpperCase()} ${resolvedVersion}`);
-        }
+        core.info(setupMessage);
         try {
             // Get the appropriate download URL for this version and edition
             const downloadUrl = getDownloadUrl(resolvedVersion, edition);
@@ -31301,23 +31299,24 @@ async function setupLiquibase(options) {
     // Verify that the installation was successful
     await validateInstallation(liquibaseBinPath);
     // Display comprehensive setup information following popular GitHub Actions patterns
-    core.info('');
-    core.info('🎯 Liquibase configuration:');
+    core.startGroup('🎯 Liquibase configuration');
     core.info(` Edition: ${edition.toUpperCase()}`);
     core.info(` Version: ${resolvedVersion}`);
     core.info(` Install Path: ${toolPath}`);
     core.info(` Cached: ${wasFromCache ? 'yes' : 'no'}`);
     core.info(` Execution Context: ${process.cwd()}`);
-    core.info('');
-    // Add helpful migration information
+    core.endGroup();
+    // Add helpful migration information with cross-platform path handling
+    core.startGroup('💡 Migration Guidance');
+    const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
     const currentDir = process.cwd();
-    const workspaceInfo = currentDir.includes('/_work/') ? currentDir.split('/_work/')[1] : 'repository';
-    core.info(`💡 Migration from liquibase-github-actions:`);
+    const workspaceInfo = path.relative(workspace, currentDir) || 'repository';
+    core.info(`Migration from liquibase-github-actions:`);
     core.info(`   • Liquibase installs to: tool cache (not /liquibase/)`);
     core.info(`   • Liquibase executes from: ${workspaceInfo}/`);
     core.info(`   • Use relative paths: --changelog-file=changelog.xml`);
     core.info(`   • Absolute paths are auto-transformed for security`);
-    core.info('');
+    core.endGroup();
     // Return the results for use by the action
     return {
         version: resolvedVersion,

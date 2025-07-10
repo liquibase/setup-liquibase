@@ -44,16 +44,19 @@ env:
   LIQUIBASE_LOG_FILE: /liquibase/changelog/liquibase.log
 
 # Action transforms to:
-# LIQUIBASE_LOG_FILE: /actions-runner/_work/your-repo/your-repo/liquibase/changelog/liquibase.log
+# LIQUIBASE_LOG_FILE: ./liquibase/changelog/liquibase.log
 ```
 
 ### Logging Transparency
 When path transformation occurs, you'll see clear logging:
 ```
-[setup-liquibase] Transforming absolute path for security:
-[setup-liquibase]   Original: /liquibase/changelog/liquibase.log  
-[setup-liquibase]   Transformed: ./liquibase/changelog/liquibase.log
-[setup-liquibase]   Full path: /actions-runner/_work/your-repo/your-repo/liquibase/changelog/liquibase.log
+🔄 Path Transformation (Security & Compatibility):
+   Absolute paths have been converted to workspace-relative paths
+   This ensures compatibility with GitHub Actions runners and prevents permission issues
+
+   📝 LIQUIBASE_LOG_FILE: '/liquibase/changelog/liquibase.log' → './liquibase/changelog/liquibase.log'
+
+💡 Tip: Use relative paths (e.g., "logs/file.log") to avoid transformation
 ```
 
 ## Docker vs GitHub Actions Comparison
