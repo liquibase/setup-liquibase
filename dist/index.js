@@ -31015,7 +31015,7 @@ async function transformLiquibaseEnvironmentVariables() {
     // Dynamically find all Liquibase environment variables that likely contain file/directory paths
     const pathIndicators = [
         'FILE', 'PATH', 'DIR', 'DIRECTORY', 'CLASSPATH', 'OUTPUT',
-        'LOG', 'SQL', 'DEFAULTS', 'PROPERTIES', 'CHANGELOG', 'SCHEMA'
+        'SQL', 'DEFAULTS', 'PROPERTIES', 'CHANGELOG', 'SCHEMA'
     ];
     const liquibaseFilePathEnvVars = Object.keys(process.env)
         .filter(key => {
@@ -31063,8 +31063,8 @@ async function transformLiquibaseEnvironmentVariables() {
                             transformedPaths.push(`${envVarName}: '${singlePath}' → '${relativePath}'`);
                             // Create directory if this looks like a file path
                             const isFilePath = envVarName.includes('FILE') || envVarName.includes('OUTPUT') ||
-                                path.extname(processedPath) !== '' || envVarName === 'LIQUIBASE_REPORT_PATH' ||
-                                envVarName === 'LIQUIBASE_REPORTS_PATH';
+                                (path.extname(processedPath) !== '' && !fs.existsSync(processedPath)) ||
+                                (fs.existsSync(processedPath) && fs.statSync(processedPath).isFile());
                             if (isFilePath) {
                                 const absolutePath = path.resolve(processedPath);
                                 const directory = path.dirname(absolutePath);
