@@ -72,7 +72,8 @@ export async function transformLiquibaseEnvironmentVariables(): Promise<void> {
             const rootDir = rootParts[0];
             
             if (restrictedRootDirs.includes(rootDir)) {
-              const relativePath = `.${processedPath}`;
+              // Create a proper workspace-relative path using Node.js path module
+              const relativePath = path.join('.', processedPath.substring(1)); // Remove leading slash and join with '.'
               processedPath = relativePath;
               wasTransformed = true;
               

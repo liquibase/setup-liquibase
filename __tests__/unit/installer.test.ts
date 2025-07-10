@@ -178,14 +178,15 @@ describe('Liquibase file path validation', () => {
     expect(fs.existsSync(logDir)).toBe(true);
     
     // Clean up
-    if (fs.existsSync('./tmp')) {
-      fs.rmSync('./tmp', { recursive: true });
+    const cleanupPath = path.join('.', 'tmp');
+    if (fs.existsSync(cleanupPath)) {
+      fs.rmSync(cleanupPath, { recursive: true });
     }
   }, 30000);
 
   it('should transform problematic absolute paths to workspace-relative paths', async () => {
     const originalPath = '/liquibase/changelog/liquibase.dev.log.json';
-    const expectedTransformedPath = './liquibase/changelog/liquibase.dev.log.json';
+    const expectedTransformedPath = path.join('.', 'liquibase', 'changelog', 'liquibase.dev.log.json');
     
     process.env.LIQUIBASE_LOG_FILE = originalPath;
     
@@ -206,12 +207,13 @@ describe('Liquibase file path validation', () => {
     expect(process.env.LIQUIBASE_LOG_FILE).toBe(expectedTransformedPath);
     
     // Directory should exist in workspace
-    const expectedDir = path.resolve('./liquibase/changelog');
+    const expectedDir = path.resolve('.', 'liquibase', 'changelog');
     expect(fs.existsSync(expectedDir)).toBe(true);
     
     // Clean up
-    if (fs.existsSync('./liquibase')) {
-      fs.rmSync('./liquibase', { recursive: true });
+    const cleanupDir = path.join('.', 'liquibase');
+    if (fs.existsSync(cleanupDir)) {
+      fs.rmSync(cleanupDir, { recursive: true });
     }
   }, 30000);
 
@@ -243,19 +245,24 @@ describe('Liquibase file path validation', () => {
     expect(result.version).toBe('4.32.0');
     
     // All environment variables should be transformed to workspace-relative
-    expect(process.env.LIQUIBASE_LOG_FILE).toBe('./liquibase/logs/app.log');
-    expect(process.env.LIQUIBASE_OUTPUT_FILE).toBe('./usr/local/output/result.sql');
-    expect(process.env.LIQUIBASE_PROPERTIES_FILE).toBe('./etc/liquibase/liquibase.properties');
-    expect(process.env.LIQUIBASE_REPORT_PATH).toBe('./var/reports/');
+    expect(process.env.LIQUIBASE_LOG_FILE).toBe(path.join('.', 'liquibase', 'logs', 'app.log'));
+    expect(process.env.LIQUIBASE_OUTPUT_FILE).toBe(path.join('.', 'usr', 'local', 'output', 'result.sql'));
+    expect(process.env.LIQUIBASE_PROPERTIES_FILE).toBe(path.join('.', 'etc', 'liquibase', 'liquibase.properties'));
+    expect(process.env.LIQUIBASE_REPORT_PATH).toBe(path.join('.', 'var', 'reports') + path.sep);
     
     // Directories should exist in workspace for file paths
-    expect(fs.existsSync(path.resolve('./liquibase/logs'))).toBe(true);
-    expect(fs.existsSync(path.resolve('./usr/local/output'))).toBe(true);
-    expect(fs.existsSync(path.resolve('./etc/liquibase'))).toBe(true);
+    expect(fs.existsSync(path.resolve('.', 'liquibase', 'logs'))).toBe(true);
+    expect(fs.existsSync(path.resolve('.', 'usr', 'local', 'output'))).toBe(true);
+    expect(fs.existsSync(path.resolve('.', 'etc', 'liquibase'))).toBe(true);
     // Note: LIQUIBASE_REPORT_PATH is a directory path, not a file path, so directory creation is not expected
     
     // Clean up
-    const cleanupDirs = ['./liquibase', './usr', './etc', './var'];
+    const cleanupDirs = [
+      path.join('.', 'liquibase'), 
+      path.join('.', 'usr'), 
+      path.join('.', 'etc'), 
+      path.join('.', 'var')
+    ];
     cleanupDirs.forEach(dir => {
       if (fs.existsSync(dir)) {
         fs.rmSync(dir, { recursive: true });
