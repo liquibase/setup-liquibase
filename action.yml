@@ -23,7 +23,7 @@ inputs:
   cache:
     description: 'Enable caching of downloaded Liquibase installations to improve workflow performance on subsequent runs'
     required: false
-    default: false
+    default: 'false'
 
 # Output values that other workflow steps can use
 outputs:
