@@ -192,19 +192,19 @@ describe('Error Handling Tests', () => {
     it('should provide actionable error messages', async () => {
       const testCases = [
         {
-          options: { version: '', edition: 'oss' as const, cache: false },
+          options: { version: '', edition: 'oss' as const, cache: 'false' },
           expectedMessageParts: ['Version', 'required']
         },
         {
-          options: { version: 'invalid', edition: 'oss' as const, cache: false },
+          options: { version: 'invalid', edition: 'oss' as const, cache: 'false' },
           expectedMessageParts: ['Invalid version format', 'semantic version']
         },
         {
-          options: { version: '4.25.0', edition: 'oss' as const, cache: false },
+          options: { version: '4.25.0', edition: 'oss' as const, cache: 'false' },
           expectedMessageParts: ['not supported', 'Minimum supported version']
         },
         {
-          options: { version: '4.32.0', edition: 'invalid' as any, cache: false },
+          options: { version: '4.32.0', edition: 'invalid' as any, cache: 'false' },
           expectedMessageParts: ['Invalid edition', 'oss', 'pro']
         },
       ];
@@ -233,9 +233,9 @@ describe('Error Handling Tests', () => {
 
     it('should provide consistent error message format', async () => {
       const errorGeneratingOptions = [
-        { version: '', edition: 'oss' as const, cache: false },
-        { version: 'invalid', edition: 'oss' as const, cache: false },
-        { version: '4.25.0', edition: 'oss' as const, cache: false }
+        { version: '', edition: 'oss' as const, cache: 'false' },
+        { version: 'invalid', edition: 'oss' as const, cache: 'false' },
+        { version: '4.25.0', edition: 'oss' as const, cache: 'false' }
       ];
 
       const errorMessages: string[] = [];
