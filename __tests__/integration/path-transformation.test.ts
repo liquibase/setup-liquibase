@@ -131,7 +131,7 @@ describe('Path Transformation Tests', () => {
       const transformedPath = process.env.LIQUIBASE_LOG_FILE;
       expect(transformedPath).toBeTruthy();
       expect(transformedPath).toContain('liquibase-test-');
-      expect(transformedPath).toContain('logs/liquibase.log');
+      expect(transformedPath).toContain(path.join('logs', 'liquibase.log'));
     });
 
     it('should handle missing environment variables gracefully', async () => {
