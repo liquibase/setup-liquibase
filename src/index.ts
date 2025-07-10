@@ -19,24 +19,26 @@ import * as io from '@actions/io';
  * immediately when the action starts, regardless of how they're set in the workflow
  */
 export async function transformLiquibaseEnvironmentVariables(): Promise<void> {
-  const liquibaseFilePathEnvVars = [
-    'LIQUIBASE_LOG_FILE',
-    'LIQUIBASE_CHANGELOG_FILE', 
-    'LIQUIBASE_PROPERTIES_FILE',
-    'LIQUIBASE_CLASSPATH',
-    'LIQUIBASE_DRIVER_PROPERTIES_FILE',
-    'LIQUIBASE_DEFAULTS_FILE',
-    'LIQUIBASE_SEARCH_PATH',
-    'LIQUIBASE_LIQUIBASE_CATALOG_NAME',
-    'LIQUIBASE_LIQUIBASE_SCHEMA_NAME',
-    'LIQUIBASE_OUTPUT_FILE',
-    'LIQUIBASE_REPORT_PATH',
-    'LIQUIBASE_REPORTS_PATH',
-    'LIQUIBASE_SQL_FILE',
-    'LIQUIBASE_REFERENCE_DEFAULTS_FILE',
-    'LIQUIBASE_HUB_CONNECTION_ID_FILE',
-    'LIQUIBASE_MIGRATION_SQL_OUTPUT_FILE'
+  // Dynamically find all Liquibase environment variables that likely contain file/directory paths
+  const pathIndicators = [
+    'FILE', 'PATH', 'DIR', 'DIRECTORY', 'CLASSPATH', 'OUTPUT', 
+    'LOG', 'SQL', 'DEFAULTS', 'PROPERTIES', 'CHANGELOG', 'SCHEMA'
   ];
+  
+  const liquibaseFilePathEnvVars = Object.keys(process.env)
+    .filter(key => {
+      // Must start with LIQUIBASE_
+      if (!key.startsWith('LIQUIBASE_')) return false;
+      
+      // Must contain path-like indicators
+      return pathIndicators.some(indicator => key.includes(indicator));
+    })
+    .sort(); // Sort for consistent processing order
+
+  // Debug: Show which Liquibase environment variables are being processed
+  if (liquibaseFilePathEnvVars.length > 0) {
+    core.debug(`Detected ${liquibaseFilePathEnvVars.length} Liquibase environment variable(s) with potential file paths: ${liquibaseFilePathEnvVars.join(', ')}`);
+  }
 
   const restrictedRootDirs = [
     'liquibase', 'usr', 'bin', 'sbin', 'lib', 'var', 'etc', 'opt', 'root', 
