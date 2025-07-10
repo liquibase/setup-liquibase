@@ -181,6 +181,35 @@ describe('LIQUIBASE_LOG_FILE validation', () => {
       fs.rmSync('./tmp', { recursive: true });
     }
   }, 30000);
+
+  it('should transform problematic absolute paths to workspace-relative paths', async () => {
+    const originalPath = '/liquibase/changelog/liquibase.dev.log.json';
+    const expectedTransformedPath = './liquibase/changelog/liquibase.dev.log.json';
+    
+    process.env.LIQUIBASE_LOG_FILE = originalPath;
+    
+    const options = {
+      version: '4.32.0',
+      edition: 'oss' as const,
+      cache: false
+    };
+
+    const result = await setupLiquibase(options);
+    expect(result).toBeDefined();
+    expect(result.version).toBe('4.32.0');
+    
+    // Environment variable should be transformed
+    expect(process.env.LIQUIBASE_LOG_FILE).toBe(expectedTransformedPath);
+    
+    // Directory should exist in workspace
+    const expectedDir = path.resolve('./liquibase/changelog');
+    expect(fs.existsSync(expectedDir)).toBe(true);
+    
+    // Clean up
+    if (fs.existsSync('./liquibase')) {
+      fs.rmSync('./liquibase', { recursive: true });
+    }
+  }, 30000);
 });
 
 describe('setupLiquibase validation', () => {

@@ -227,19 +227,46 @@ async function extractLiquibase(downloadPath: string): Promise<string> {
 /**
  * Validates and prepares the LIQUIBASE_LOG_FILE path if it's set in environment variables
  * Creates necessary parent directories to ensure Liquibase can write to the log file
+ * Transforms problematic absolute paths to safe workspace-relative paths
  * 
  * @throws Error if log file path is invalid or cannot be created
  */
 async function validateLogFile(): Promise<void> {
-  const logFilePath = process.env.LIQUIBASE_LOG_FILE;
+  const originalLogFilePath = process.env.LIQUIBASE_LOG_FILE;
   
-  if (!logFilePath) {
+  if (!originalLogFilePath) {
     // No log file specified, nothing to validate
     return;
   }
   
   try {
-    // Resolve to absolute path to handle relative paths correctly
+    let logFilePath = originalLogFilePath;
+    
+    // Transform problematic absolute paths to workspace-relative paths
+    if (path.isAbsolute(originalLogFilePath)) {
+      // Check if the path would require creating directories at filesystem root that are likely to fail
+      const rootParts = originalLogFilePath.split(path.sep).filter(part => part.length > 0);
+      if (rootParts.length > 0) {
+        const rootDir = rootParts[0];
+        
+        // List of root directories that are typically restricted in CI/CD environments
+        const restrictedRootDirs = ['liquibase', 'usr', 'bin', 'sbin', 'lib', 'var', 'etc', 'opt', 'root', 'boot', 'sys', 'proc'];
+        
+        if (restrictedRootDirs.includes(rootDir)) {
+          // Transform absolute path to workspace-relative path
+          const relativePath = `.${originalLogFilePath}`;
+          logFilePath = relativePath;
+          
+          core.info(`Transformed log path from '${originalLogFilePath}' to '${relativePath}' (workspace-relative) due to restricted root directory '${rootDir}'`);
+          
+          // Update the environment variable so Liquibase uses the new path
+          process.env.LIQUIBASE_LOG_FILE = relativePath;
+        }
+        // For other paths like /tmp, /home, etc., let them proceed as they might be accessible
+      }
+    }
+    
+    // Resolve the final path (relative paths become absolute relative to workspace)
     const absoluteLogPath = path.resolve(logFilePath);
     const logDirectory = path.dirname(absoluteLogPath);
     
@@ -265,7 +292,7 @@ async function validateLogFile(): Promise<void> {
     if (error instanceof Error && error.message.includes('Log directory is not writable')) {
       throw error; // Re-throw our specific error
     }
-    throw new Error(`Invalid LIQUIBASE_LOG_FILE path '${logFilePath}': ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(`Invalid LIQUIBASE_LOG_FILE path '${originalLogFilePath}': ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
