@@ -372,8 +372,8 @@ async function validateInstallation(liquibasePath: string): Promise<void> {
       throw new Error(`Liquibase executable not found at ${executable}`);
     }
     
-    // Validate and prepare all Liquibase file paths if set
-    await validateLiquibaseFilePaths();
+    // Note: Environment variable path validation and transformation 
+    // is now handled in index.ts at action startup
     
     // Run 'liquibase --version' to verify the installation works
     let stdoutOutput = '';
