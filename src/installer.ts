@@ -156,7 +156,7 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
   core.endGroup();
   
   // Add helpful migration information with cross-platform path handling
-  core.startGroup('💡 Migration guidance');
+  core.startGroup('💡 Migration Guidance');
   const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
   const currentDir = process.cwd();
   const workspaceInfo = path.relative(workspace, currentDir) || 'repository';

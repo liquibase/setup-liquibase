@@ -31090,7 +31090,8 @@ async function transformLiquibaseEnvironmentVariables() {
     }
     if (transformedPaths.length > 0) {
         core.startGroup('🔄 Path Transformation (Security & Compatibility)');
-        core.info(`   Transformed ${transformedPaths.length} variable(s) to workspace-relative paths`);
+        core.info('   Absolute paths have been converted to workspace-relative paths');
+        core.info(`   Transformed ${transformedPaths.length} Liquibase environment variable(s) to workspace-relative paths`);
         core.info('   This ensures compatibility with GitHub Actions runners and prevents permission issues');
         transformedPaths.forEach(transformation => core.info(`   📝 ${transformation}`));
         core.info('💡 Tip: Use relative paths (e.g., "logs/file.log") to avoid transformation');
@@ -31305,7 +31306,7 @@ async function setupLiquibase(options) {
     core.info(` Execution Context: ${process.cwd()}`);
     core.endGroup();
     // Add helpful migration information with cross-platform path handling
-    core.startGroup('💡 Migration guidance');
+    core.startGroup('💡 Migration Guidance');
     const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
     const currentDir = process.cwd();
     const workspaceInfo = path.relative(workspace, currentDir) || 'repository';
