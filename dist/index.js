@@ -31365,6 +31365,8 @@ async function validateLiquibaseFilePaths() {
             if (transformedPathsList.join(pathSeparator) !== originalPath) {
                 finalPath = transformedPathsList.join(pathSeparator);
                 process.env[envVarName] = finalPath;
+                // Export the transformed variable to persist it for subsequent GitHub Actions steps
+                core.exportVariable(envVarName, finalPath);
             }
         }
         catch (error) {
