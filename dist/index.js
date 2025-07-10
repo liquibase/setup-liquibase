@@ -31089,15 +31089,12 @@ async function transformLiquibaseEnvironmentVariables() {
         }
     }
     if (transformedPaths.length > 0) {
-        core.info('');
-        core.info('🔄 Path Transformation (Security & Compatibility):');
+        core.startGroup('🔄 Path Transformation (Security & Compatibility)');
         core.info('   Absolute paths have been converted to workspace-relative paths');
         core.info('   This ensures compatibility with GitHub Actions runners and prevents permission issues');
-        core.info('');
         transformedPaths.forEach(transformation => core.info(`   📝 ${transformation}`));
-        core.info('');
         core.info('💡 Tip: Use relative paths (e.g., "logs/file.log") to avoid transformation');
-        core.info('');
+        core.endGroup();
     }
 }
 /**
@@ -31248,12 +31245,11 @@ async function setupLiquibase(options) {
     let wasFromCache = false;
     // Download and install if not cached or caching is disabled
     if (!toolPath || !cache) {
+        let setupMessage = `🚀 Setting up Liquibase ${edition.toUpperCase()} ${resolvedVersion}`;
         if (!cache) {
-            core.info(`🚀 Setting up Liquibase ${edition.toUpperCase()} ${resolvedVersion} (caching disabled)`);
+            setupMessage += ` (caching disabled)`;
         }
-        else {
-            core.info(`🚀 Setting up Liquibase ${edition.toUpperCase()} ${resolvedVersion}`);
-        }
+        core.info(setupMessage);
         try {
             // Get the appropriate download URL for this version and edition
             const downloadUrl = getDownloadUrl(resolvedVersion, edition);

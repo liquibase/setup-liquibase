@@ -91,11 +91,11 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
   
   // Download and install if not cached or caching is disabled
   if (!toolPath || !cache) {
+    let setupMessage = `🚀 Setting up Liquibase ${edition.toUpperCase()} ${resolvedVersion}`;
     if (!cache) {
-      core.info(`🚀 Setting up Liquibase ${edition.toUpperCase()} ${resolvedVersion} (caching disabled)`);
-    } else {
-      core.info(`🚀 Setting up Liquibase ${edition.toUpperCase()} ${resolvedVersion}`);
+      setupMessage += ` (caching disabled)`;
     }
+    core.info(setupMessage);
     
     try {
       // Get the appropriate download URL for this version and edition
