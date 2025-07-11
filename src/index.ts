@@ -145,11 +145,6 @@ async function run(): Promise<void> {
       throw new Error('Version input is required. Must be a specific version (e.g., "4.32.0")');
     }
 
-    // Validate required edition input using type guard
-    function isValidEdition(edition: string): edition is 'oss' | 'pro' {
-      return edition === 'oss' || edition === 'pro';
-    }
-
     if (!editionInput) {
       throw new Error('Edition input is required. Must be either "oss" or "pro"');
     }
