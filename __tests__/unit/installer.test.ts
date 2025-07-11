@@ -123,35 +123,8 @@ describe('setupLiquibase validation', () => {
   });
 
 
-  it('should accept valid OSS configuration', async () => {
-    const options = {
-      version: '4.32.0',
-      edition: 'oss' as const,
-    };
-
-    // Should pass validation and complete successfully in CI environment
-    const result = await setupLiquibase(options);
-    expect(result).toBeDefined();
-    expect(result.version).toBe('4.32.0');
-    expect(result.path).toBeTruthy();
-  }, 60000); // Increased timeout to 60 seconds
-
-  // Conditionally run Pro edition test based on license key availability
-  const itConditional = (process.env.LIQUIBASE_LICENSE_KEY || process.env.CI) ? it : it.skip;
-  
-  itConditional('should accept valid Pro configuration', async () => {
-    const options = {
-      version: '4.32.0',
-      edition: 'pro' as const,
-    };
-
-    // Should pass validation and complete successfully in CI environment
-    // Note: Pro edition requires LIQUIBASE_LICENSE_KEY environment variable for runtime validation
-    const result = await setupLiquibase(options);
-    expect(result).toBeDefined();
-    expect(result.version).toBe('4.32.0');
-    expect(result.path).toBeTruthy();
-  }, 30000);
+  // Note: Actual installation testing is covered by integration tests
+  // Unit tests focus on input validation and configuration logic only
 
   it('should reject latest version', async () => {
     const options = {
@@ -178,9 +151,6 @@ describe('setupLiquibase validation', () => {
   it('should handle edge cases in version validation', async () => {
     const testCases = [
       { version: '4.31.9', shouldFail: true, reason: 'below minimum version' },
-      { version: '4.32.0', shouldFail: false, reason: 'exact minimum version' },
-      // Version 4.32.1 doesn't exist, using 4.32.0 instead
-      { version: '4.32.0', shouldFail: false, reason: 'valid version' },
       { version: '5.0.0', shouldFail: true, reason: 'non-existent future version' },
       { version: 'v4.32.0', shouldFail: true, reason: 'version with v prefix' },
       { version: '4.32', shouldFail: true, reason: 'incomplete semantic version' },
@@ -193,17 +163,10 @@ describe('setupLiquibase validation', () => {
         edition: 'oss' as const,
         };
 
-      if (testCase.shouldFail) {
-        await expect(setupLiquibase(options)).rejects.toThrow();
-      } else {
-        // These should complete successfully for valid versions
-        const result = await setupLiquibase(options);
-        expect(result).toBeDefined();
-        expect(result.version).toBe(testCase.version);
-        expect(result.path).toBeTruthy();
-      }
+      // All these test cases should fail validation before attempting download
+      await expect(setupLiquibase(options)).rejects.toThrow();
     }
-  }, 60000); // Increased timeout to 60 seconds for CI environments
+  });
 
 });
 

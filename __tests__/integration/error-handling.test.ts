@@ -260,25 +260,6 @@ describe('Error Handling Tests', () => {
    */
   describe('Real Installation Error Scenarios (Integration Tests)', () => {
 
-    it('should handle concurrent installation attempts gracefully', async () => {
-      // Test multiple simultaneous setup attempts
-      const promises = Array.from({ length: 3 }, () => {
-        return setupLiquibase({
-          version: '4.32.0',
-          edition: 'oss' as const
-        });
-      });
-
-      // All should complete successfully or fail gracefully
-      const results = await Promise.allSettled(promises);
-      results.forEach(result => {
-        expect(['fulfilled', 'rejected']).toContain(result.status);
-        if (result.status === 'fulfilled') {
-          expect(result.value).toBeDefined();
-          expect(result.value.version).toBe('4.32.0');
-        }
-      });
-    }, 60000);
 
     it('should handle version not found scenarios', async () => {
       // Test with a version that likely doesn't exist

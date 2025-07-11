@@ -5,9 +5,10 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "ncc build src/index.ts -o dist --source-map --license licenses.txt",
-    "test": "jest --maxWorkers=1",
+    "test": "jest --maxWorkers=1 --forceExit",
     "test:ci": "jest --ci --maxWorkers=1 --forceExit --no-coverage",
-    "test:memory": "cross-env NODE_OPTIONS=\"--max-old-space-size=4096\" jest --maxWorkers=1",
+    "test:memory": "cross-env NODE_OPTIONS=\"--max-old-space-size=4096\" jest --maxWorkers=1 --forceExit",
+    "test:debug": "jest --maxWorkers=1 --detectOpenHandles --forceExit",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write src/**/*.ts",
     "package": "npm run build && npm test"

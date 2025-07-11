@@ -129,6 +129,14 @@ export async function transformLiquibaseEnvironmentVariables(): Promise<void> {
 }
 
 /**
+ * Type guard function to validate edition input
+ * Moved to module level for better performance (avoid redeclaration on each execution)
+ */
+function isValidEdition(edition: string): edition is 'oss' | 'pro' {
+  return edition === 'oss' || edition === 'pro';
+}
+
+/**
  * Main execution function for the GitHub Action
  * Orchestrates the entire Liquibase setup process
  */
@@ -146,10 +154,6 @@ async function run(): Promise<void> {
     }
 
     // Validate required edition input using type guard
-    function isValidEdition(edition: string): edition is 'oss' | 'pro' {
-      return edition === 'oss' || edition === 'pro';
-    }
-
     if (!editionInput) {
       throw new Error('Edition input is required. Must be either "oss" or "pro"');
     }
