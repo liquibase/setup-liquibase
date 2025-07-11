@@ -30,31 +30,6 @@ describe('Real-world Integration Scenarios', () => {
       expect(result.path).toBeTruthy();
     }, 60000);
 
-    it('should work with consistent installation behavior', async () => {
-      const options = {
-        version: '4.32.0',
-        edition: 'oss' as const
-      };
-
-      // Should complete successfully with consistent behavior
-      const result = await setupLiquibase(options);
-      expect(result).toBeDefined();
-      expect(result.version).toBe('4.32.0');
-      expect(result.path).toBeTruthy();
-    }, 60000); // Increased timeout to 60 seconds due to download and extraction time
-
-    it('should handle specific version in CI/CD workflow', async () => {
-      const options = {
-        version: '4.32.0',
-        edition: 'oss' as const
-      };
-
-      // Should install the specific version successfully
-      const result = await setupLiquibase(options);
-      expect(result).toBeDefined();
-      expect(result.version).toBe('4.32.0');
-      expect(result.path).toBeTruthy();
-    }, 30000);
   });
 
   /**
