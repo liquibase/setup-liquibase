@@ -5,17 +5,16 @@
  * - Downloading and installing Liquibase (OSS and Pro editions)
  * - Version resolution and management
  * - Cross-platform support (Linux, Windows, macOS)
- * - Caching for improved performance
  * - Installation validation
  */
 
 import * as core from '@actions/core';
-import * as tc from '@actions/tool-cache';
 import * as exec from '@actions/exec';
 import * as io from '@actions/io';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
+import { downloadTool, extractZip } from '@actions/tool-cache';
 import { DOWNLOAD_URLS, MIN_SUPPORTED_VERSION } from './config';
 import * as semver from 'semver';
 
@@ -27,8 +26,6 @@ export interface LiquibaseSetupOptions {
   version: string;
   /** Edition to install: 'oss' for Open Source, 'pro' for Professional */
   edition: 'oss' | 'pro';
-  /** Whether to cache the downloaded installation */
-  cache: boolean;
 }
 
 /**
@@ -47,16 +44,15 @@ export interface LiquibaseSetupResult {
  * This function coordinates the entire installation process:
  * 1. Validates version and edition requirements
  * 2. Resolves the exact version to install
- * 3. Checks for cached installations
- * 4. Downloads and extracts Liquibase if needed
- * 5. Validates the installation
- * 6. Adds Liquibase to the system PATH
+ * 3. Downloads and extracts Liquibase
+ * 4. Validates the installation
+ * 5. Adds Liquibase to the system PATH
  * 
  * @param options - Configuration for the Liquibase setup
  * @returns Promise resolving to the setup result with version and path
  */
 export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<LiquibaseSetupResult> {
-  const { version, edition, cache } = options;
+  const { version, edition } = options;
   
   // Enhanced version validation
   if (!version) {
@@ -82,58 +78,34 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
   // Use the specified version directly (no resolution needed since we only support specific versions)
   const resolvedVersion = version;
   
-  // Create a unique tool name for caching that includes the edition
-  const toolName = `liquibase-${edition}`;
+  core.info(`🚀 Setting up Liquibase ${edition.toUpperCase()} ${resolvedVersion}`);
   
-  // Check if we already have this version cached
-  let toolPath = tc.find(toolName, resolvedVersion);
-  let wasFromCache = false;
+  let toolPath: string;
   
-  // Download and install if not cached or caching is disabled
-  if (!toolPath || !cache) {
-    let setupMessage = `🚀 Setting up Liquibase ${edition.toUpperCase()} ${resolvedVersion}`;
-    if (!cache) {
-      setupMessage += ` (caching disabled)`;
-    }
-    core.info(setupMessage);
+  try {
+    // Get the appropriate download URL for this version and edition
+    const downloadUrl = getDownloadUrl(resolvedVersion, edition);
+    core.info(`📥 Downloading from: ${downloadUrl}`);
     
-    try {
-      // Get the appropriate download URL for this version and edition
-      const downloadUrl = getDownloadUrl(resolvedVersion, edition);
-      core.info(`📥 Downloading from: ${downloadUrl}`);
-      
-      // Download the Liquibase archive with error handling
-      const downloadPath = await tc.downloadTool(downloadUrl);
-      core.info(`📦 Extracting Liquibase archive...`);
-      
-      // Extract the archive to a temporary directory
-      const extractedPath = await extractLiquibase(downloadPath);
-      
-      // Cache the installation if caching is enabled
-      if (cache) {
-        core.info(`💾 Caching installation for future use...`);
-        toolPath = await tc.cacheDir(extractedPath, toolName, resolvedVersion);
-      } else {
-        toolPath = extractedPath;
+    // Download the Liquibase archive with error handling
+    const downloadPath = await downloadTool(downloadUrl);
+    core.info(`📦 Extracting Liquibase archive...`);
+    
+    // Extract the archive to a temporary directory
+    toolPath = await extractLiquibase(downloadPath);
+    
+    core.info(`✅ Installation completed successfully`);
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.includes('404') || error.message.includes('Not Found')) {
+        throw new Error(`Liquibase ${edition} version ${resolvedVersion} not found. Please check that this version exists and is available for download.`);
+      } else if (error.message.includes('ENOTFOUND') || error.message.includes('network')) {
+        throw new Error(`Network error downloading Liquibase. Please check your internet connection and try again.`);
+      } else if (error.message.includes('EACCES') || error.message.includes('permission')) {
+        throw new Error(`Permission denied while installing Liquibase. Please check that the runner has sufficient permissions.`);
       }
-      
-      core.info(`✅ Installation completed successfully`);
-    } catch (error) {
-      if (error instanceof Error) {
-        if (error.message.includes('404') || error.message.includes('Not Found')) {
-          throw new Error(`Liquibase ${edition} version ${resolvedVersion} not found. Please check that this version exists and is available for download.`);
-        } else if (error.message.includes('ENOTFOUND') || error.message.includes('network')) {
-          throw new Error(`Network error downloading Liquibase. Please check your internet connection and try again.`);
-        } else if (error.message.includes('EACCES') || error.message.includes('permission')) {
-          throw new Error(`Permission denied while installing Liquibase. Please check that the runner has sufficient permissions.`);
-        }
-      }
-      throw new Error(`Failed to download and install Liquibase: ${error instanceof Error ? error.message : String(error)}`);
     }
-  } else {
-    core.info(`🚀 Setting up Liquibase ${edition.toUpperCase()} ${resolvedVersion}`);
-    core.info(`⚡ Found cached installation, skipping download`);
-    wasFromCache = true;
+    throw new Error(`Failed to download and install Liquibase: ${error instanceof Error ? error.message : String(error)}`);
   }
   
   // Construct the path to the Liquibase executable
@@ -151,7 +123,6 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
   core.info(` Edition: ${edition.toUpperCase()}`);
   core.info(` Version: ${resolvedVersion}`);
   core.info(` Install Path: ${toolPath}`);
-  core.info(` Cached: ${wasFromCache ? 'yes' : 'no'}`);
   core.info(` Execution Context: ${process.cwd()}`);
   core.endGroup();
   
@@ -162,7 +133,7 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
   const workspaceInfo = path.relative(workspace, currentDir) || 'repository';
   
   core.info(`Migration from liquibase-github-actions:`);
-  core.info(`   • Liquibase installs to: tool cache (not /liquibase/)`);
+  core.info(`   • Liquibase installs to: temporary directory (not /liquibase/)`);
   core.info(`   • Liquibase executes from: ${workspaceInfo}/`);
   core.info(`   • Use relative paths: --changelog-file=changelog.xml`);
   core.info(`   • Absolute paths are auto-transformed for security`);
@@ -208,7 +179,7 @@ async function extractLiquibase(downloadPath: string): Promise<string> {
   try {
     if (platform === 'win32') {
       // Extract ZIP archives (Windows)
-      return await tc.extractZip(downloadPath);
+      return await extractZip(downloadPath);
     } else {
       // For both macOS and Linux, use a direct exec approach instead of tool-cache
       // Create a temporary directory for extraction

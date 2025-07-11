@@ -22,7 +22,6 @@ jobs:
         with:
           version: '4.32.0'
           edition: 'oss'
-          cache: 'true'
       
       - name: Show execution context (for debugging)
         run: |
@@ -50,7 +49,6 @@ jobs:
         with:
           version: '4.32.0'
           edition: 'oss'
-          cache: 'true'
         env:
           # These absolute paths will be automatically transformed:
           LIQUIBASE_LOG_FILE: /liquibase/changelog/liquibase.log
@@ -95,7 +93,6 @@ jobs:
         with:
           version: '4.32.0'
           edition: 'oss'
-          cache: 'true'
         env:
           # Point to downloaded JAR in workspace
           LIQUIBASE_CLASSPATH: lib/postgresql.jar
@@ -120,7 +117,6 @@ jobs:
         with:
           version: '4.32.0'
           edition: 'oss'
-          cache: 'true'
         env:
           # Environment-specific log files (will be transformed)
           LIQUIBASE_LOG_FILE: /liquibase/logs/${{ matrix.environment }}/liquibase.log
@@ -152,7 +148,6 @@ jobs:
         with:
           version: '4.32.0'
           edition: 'oss'
-          cache: 'true'
         env:
           LIQUIBASE_LOG_FILE: reports/liquibase.log
       
@@ -201,7 +196,6 @@ jobs:
         with:
           version: '4.32.0'
           edition: 'pro'
-          cache: 'true'
         env:
           LIQUIBASE_LOG_FILE: /liquibase/pro-logs/liquibase.log
       
@@ -231,7 +225,6 @@ jobs:
         with:
           version: '4.32.0'
           edition: 'oss'
-          cache: 'true'
         env:
           LIQUIBASE_LOG_FILE: /liquibase/debug/liquibase.log
       

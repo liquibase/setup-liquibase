@@ -28,7 +28,6 @@ jobs:
       with:
         version: '4.32.0'
         edition: 'oss'
-        cache: 'true'
     
     - name: Verify Installation
       run: |
@@ -45,7 +44,6 @@ jobs:
 strategy:
   matrix:
     version: ['4.32.0']
-    cache: ['true', 'false']  # String format required for YAML 1.2 Core Schema
     os: [ubuntu-latest, windows-latest, macos-latest]
 
 steps:
@@ -53,7 +51,6 @@ steps:
   with:
     version: ${{ matrix.version }}
     edition: 'oss'
-    cache: ${{ matrix.cache }}
 ```
 
 #### Pro Edition Tests
@@ -63,7 +60,6 @@ steps:
   with:
     version: '4.32.0'
     edition: 'pro'
-    cache: 'true'  # String format required
   env:
     LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
 ```
@@ -174,21 +170,13 @@ runs-on: ${{ matrix.os }}
 
 ### 5. Performance Tests
 
-#### Caching Performance
+#### Installation Performance
 ```yaml
-- name: First Install (No Cache)
+- name: Install Liquibase
   uses: liquibase/setup-liquibase@v1-beta
   with:
     version: '4.32.0'
     edition: 'oss'
-    cache: 'true'
-
-- name: Second Install (With Cache)
-  uses: liquibase/setup-liquibase@v1-beta
-  with:
-    version: '4.32.0'
-    edition: 'oss'
-    cache: 'true'
 ```
 
 ### 6. Enhanced Logging & Path Transformation Tests
@@ -200,7 +188,6 @@ runs-on: ${{ matrix.os }}
   with:
     version: '4.32.0'
     edition: 'oss'
-    cache: 'true'
   env:
     # These absolute paths will trigger transformation logging
     LIQUIBASE_LOG_FILE: /liquibase/changelog/test.log
@@ -230,7 +217,6 @@ runs-on: ${{ matrix.os }}
   with:
     version: '4.32.0'
     edition: 'oss'
-    cache: 'true'
   # Look for these enhanced logging messages in the action output:
   # 🚀 Setting up Liquibase OSS 4.32.0
   # 🎯 Liquibase configuration:
@@ -257,10 +243,10 @@ runs-on: ${{ matrix.os }}
 - [ ] Minimum version validation works (4.32.0+)
 - [ ] Invalid versions are properly rejected
 
-### Caching ✅
-- [ ] Caching improves subsequent install performance
-- [ ] Cache works across different workflow runs
-- [ ] Cache is specific to version and edition
+### Installation ✅
+- [ ] Installation completes efficiently
+- [ ] Installation works consistently across workflow runs
+- [ ] Installation behavior is consistent
 
 ### Error Handling ✅
 - [ ] Invalid versions are rejected
@@ -369,7 +355,7 @@ For external contributors testing this action:
 - ✅ **OSS Edition Tests**: Full access to all OSS functionality testing
 - ✅ **Integration Tests**: Database operations with H2 (no license required)
 - ✅ **Error Handling Tests**: Complete validation of error scenarios
-- ✅ **Performance Tests**: Caching and performance validation
+- ✅ **Performance Tests**: Installation performance validation
 - ⏩ **Pro Edition Tests**: Installation tests run successfully (runtime license validation not tested)
 
 **This is expected behavior** - OSS tests provide comprehensive validation of 95%+ of the action's functionality. See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for detailed development guidance.
@@ -377,7 +363,6 @@ For external contributors testing this action:
 ## Troubleshooting Common Issues
 
 ### Performance Issues
-- **Slow installs**: Ensure `cache: true` is set for repeated runs
 - **CI timeouts**: Latest OS runners are recommended for optimal performance
 
 ### Platform-Specific Issues

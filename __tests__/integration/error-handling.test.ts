@@ -10,7 +10,6 @@
 import { setupLiquibase } from '../../src/installer';
 import { getDownloadUrl } from '../../src/installer';
 import { MIN_SUPPORTED_VERSION } from '../../src/config';
-import { getSharedOSSInstallation, validateInstallationExists } from '../fixtures/shared-installation';
 
 describe('Error Handling Tests', () => {
   /**
@@ -22,7 +21,6 @@ describe('Error Handling Tests', () => {
       const options = {
         version: '',
         edition: 'oss' as const,
-        cache: true // Use cache for validation tests - these fail before download anyway
       };
 
       await expect(setupLiquibase(options)).rejects.toThrow('Version is required');
@@ -32,7 +30,6 @@ describe('Error Handling Tests', () => {
       const options = {
         version: null as any,
         edition: 'oss' as const,
-        cache: true // Use cache for validation tests - these fail before download anyway
       };
 
       await expect(setupLiquibase(options)).rejects.toThrow('Version is required');
@@ -52,8 +49,7 @@ describe('Error Handling Tests', () => {
         const options = {
           version,
           edition: 'oss' as const,
-          cache: true // Use cache for validation tests - these fail before download anyway
-        };
+          };
 
         await expect(setupLiquibase(options)).rejects.toThrow();
       }
@@ -73,8 +69,7 @@ describe('Error Handling Tests', () => {
         const options = {
           version,
           edition: 'oss' as const,
-          cache: true // Use cache for validation tests - these fail before download anyway
-        };
+          };
 
         await expect(setupLiquibase(options)).rejects.toThrow(
           `Version ${version} is not supported. Minimum supported version is ${MIN_SUPPORTED_VERSION}`
@@ -99,8 +94,7 @@ describe('Error Handling Tests', () => {
         const options = {
           version: '4.32.0',
           edition: edition as any,
-          cache: true // Use cache for validation tests - these fail before download anyway
-        };
+          };
 
         await expect(setupLiquibase(options)).rejects.toThrow(
           `Invalid edition: ${edition}. Must be either 'oss' or 'pro'`
@@ -192,19 +186,19 @@ describe('Error Handling Tests', () => {
     it('should provide actionable error messages', async () => {
       const testCases = [
         {
-          options: { version: '', edition: 'oss' as const, cache: true },
+          options: { version: '', edition: 'oss' as const,  },
           expectedMessageParts: ['Version', 'required']
         },
         {
-          options: { version: 'invalid', edition: 'oss' as const, cache: true },
+          options: { version: 'invalid', edition: 'oss' as const,  },
           expectedMessageParts: ['Invalid version format', 'semantic version']
         },
         {
-          options: { version: '4.25.0', edition: 'oss' as const, cache: true },
+          options: { version: '4.25.0', edition: 'oss' as const,  },
           expectedMessageParts: ['not supported', 'Minimum supported version']
         },
         {
-          options: { version: '4.32.0', edition: 'invalid' as any, cache: true },
+          options: { version: '4.32.0', edition: 'invalid' as any,  },
           expectedMessageParts: ['Invalid edition', 'oss', 'pro']
         },
       ];
@@ -233,9 +227,9 @@ describe('Error Handling Tests', () => {
 
     it('should provide consistent error message format', async () => {
       const errorGeneratingOptions = [
-        { version: '', edition: 'oss' as const, cache: true },
-        { version: 'invalid', edition: 'oss' as const, cache: true },
-        { version: '4.25.0', edition: 'oss' as const, cache: true }
+        { version: '', edition: 'oss' as const,  },
+        { version: 'invalid', edition: 'oss' as const,  },
+        { version: '4.25.0', edition: 'oss' as const,  }
       ];
 
       const errorMessages: string[] = [];
@@ -265,21 +259,13 @@ describe('Error Handling Tests', () => {
    * These test actual installation error handling with shared fixtures
    */
   describe('Real Installation Error Scenarios (Integration Tests)', () => {
-    let sharedInstallation: any;
-
-    beforeAll(async () => {
-      // Single shared installation for all integration tests
-      sharedInstallation = await getSharedOSSInstallation();
-      console.log('[ERROR HANDLING TEST] Using shared installation for integration tests');
-    }, 120000);
 
     it('should handle concurrent installation attempts gracefully', async () => {
-      // Test multiple simultaneous setup attempts using shared cache
+      // Test multiple simultaneous setup attempts
       const promises = Array.from({ length: 3 }, () => {
         return setupLiquibase({
           version: '4.32.0',
-          edition: 'oss' as const,
-          cache: true // Use cache to avoid multiple downloads
+          edition: 'oss' as const
         });
       });
 
@@ -299,8 +285,7 @@ describe('Error Handling Tests', () => {
       // This will attempt a real download but should fail quickly
       const options = {
         version: '99.99.99',
-        edition: 'oss' as const,
-        cache: true // Use cache for validation tests - these fail before download anyway
+        edition: 'oss' as const
       };
 
       try {
@@ -319,34 +304,19 @@ describe('Error Handling Tests', () => {
       }
     }, 30000);
 
-    it('should validate shared installation works correctly', () => {
-      // Lightweight validation of shared installation
-      expect(sharedInstallation).toBeDefined();
-      expect(sharedInstallation.version).toBe('4.32.0');
-      expect(sharedInstallation.path).toBeTruthy();
-      expect(validateInstallationExists(sharedInstallation)).toBe(true);
-    });
 
-    it('should handle cache scenarios without extra downloads', async () => {
-      // Test both cache scenarios using existing installations
-      const cacheScenarios = [
-        { cache: true, description: 'with caching enabled' },
-        { cache: false, description: 'with caching disabled (minimal test)' }
-      ];
+    it('should handle installation without extra complexity', async () => {
+      // Test simple installation scenario
+      const options = {
+        version: '4.32.0',
+        edition: 'oss' as const
+      };
 
-      for (const scenario of cacheScenarios) {
-        const options = {
-          version: '4.32.0',
-          edition: 'oss' as const,
-          cache: scenario.cache
-        };
-
-        // Should handle both cache scenarios successfully
-        const result = await setupLiquibase(options);
-        expect(result).toBeDefined();
-        expect(result.version).toBe('4.32.0');
-        expect(result.path).toBeTruthy();
-      }
+      // Should complete installation successfully
+      const result = await setupLiquibase(options);
+      expect(result).toBeDefined();
+      expect(result.version).toBe('4.32.0');
+      expect(result.path).toBeTruthy();
     }, 60000);
   });
 });

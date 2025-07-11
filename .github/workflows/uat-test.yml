@@ -37,25 +37,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Cross-platform tests - installation, compatibility, and caching across all platforms
+  # Cross-platform tests - installation and compatibility across all platforms
   cross-platform-tests:
-    name: "Cross-Platform Tests (${{ matrix.os }}) - Cache: ${{ matrix.cache }}"
+    name: "Cross-Platform Tests (${{ matrix.os }})"
     runs-on: ${{ matrix.os }}
     if: inputs.test_scope == 'full' || inputs.test_scope == 'cross-platform' || github.event_name == 'schedule'
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        cache: ['true', 'false']
         include:
           # Test additional versions on Ubuntu for version compatibility
           - os: ubuntu-latest
             version: '4.31.1'
-            cache: 'true'
-          - os: ubuntu-latest  
+          - os: ubuntu-latest
             version: '4.30.0'
-            cache: 'true'
-    
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -66,12 +62,11 @@ jobs:
       with:
         version: ${{ inputs.liquibase_version || matrix.version || '4.32.0' }}
         edition: 'oss'
-        cache: ${{ matrix.cache }}
     
     - name: Verify Installation and Platform Compatibility
       shell: bash
       run: |
-        echo "=== Cross-Platform Testing for ${{ matrix.os }} (Cache: ${{ matrix.cache }}) ==="
+        echo "=== Cross-Platform Testing for ${{ matrix.os }} ==="
         
         # Test 1: Basic installation verification
         echo "1. Verifying Liquibase installation..."
@@ -131,46 +126,6 @@ jobs:
         
         echo "✅ Cross-platform tests completed successfully for ${{ matrix.os }}"
     
-    - name: Test Cache Performance (Cache=true only)
-      if: matrix.cache == 'true'
-      id: cached-install
-      uses: ./
-      with:
-        version: ${{ inputs.liquibase_version || matrix.version || '4.32.0' }}
-        edition: 'oss'
-        cache: 'true'
-    
-    - name: Cache Performance Validation (Cache=true only)
-      if: matrix.cache == 'true'
-      shell: bash
-      run: |
-        echo "=== Cache Performance Validation ==="
-        
-        # Validate cached install completed successfully
-        echo "1. Cached installation completed successfully"
-        liquibase --version
-        
-        # Compare outputs between first and cached install
-        echo "2. Comparing installation outputs..."
-        FIRST_VERSION="${{ steps.setup-liquibase.outputs.liquibase-version }}"
-        CACHED_VERSION="${{ steps.cached-install.outputs.liquibase-version }}"
-        
-        if [ "$FIRST_VERSION" != "$CACHED_VERSION" ]; then
-          echo "❌ Version mismatch between installs: $FIRST_VERSION vs $CACHED_VERSION"
-          exit 1
-        fi
-        echo "✅ Version consistency verified: $FIRST_VERSION"
-        
-        FIRST_PATH="${{ steps.setup-liquibase.outputs.liquibase-path }}"
-        CACHED_PATH="${{ steps.cached-install.outputs.liquibase-path }}"
-        
-        if [ "$FIRST_PATH" != "$CACHED_PATH" ]; then
-          echo "❌ Path mismatch between installs: $FIRST_PATH vs $CACHED_PATH"
-          exit 1
-        fi
-        echo "✅ Path consistency verified: $FIRST_PATH"
-        
-        echo "3. Cache performance test completed - installations are consistent"
 
   # Comprehensive integration tests - real-world scenarios and advanced functionality
   integration-tests:
@@ -201,7 +156,6 @@ jobs:
       with:
         version: ${{ inputs.liquibase_version || '4.32.0' }}
         edition: 'oss'
-        cache: 'true'
       env:
         # Test path transformation logging with common problematic paths
         LIQUIBASE_LOG_FILE: /liquibase/changelog/integration-test.log
@@ -511,6 +465,13 @@ jobs:
           echo "To test Pro edition, add PRO_LICENSE_KEY secret to the repository"
         fi
     
+    - name: Download MySQL driver for realistic classpath testing
+      if: steps.check-license.outputs.has_license == 'true'
+      run: |
+        mkdir -p liquibase/lib
+        curl -L -o liquibase/lib/mysql-connector-j-9.0.0.jar \
+          https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/9.0.0/mysql-connector-j-9.0.0.jar
+    
     - name: Test Pro Edition Installation (enhanced logging demo)
       if: steps.check-license.outputs.has_license == 'true'
       id: setup-pro
@@ -518,12 +479,11 @@ jobs:
       with:
         version: ${{ inputs.liquibase_version || '4.32.0' }}
         edition: 'pro'
-        cache: 'true'
       env:
         LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
-        # Test Pro edition with path transformation
+        # Test Pro edition with path transformation using real MySQL driver
         LIQUIBASE_LOG_FILE: /liquibase/pro-logs/liquibase-pro.log
-        LIQUIBASE_CLASSPATH: /liquibase/lib/custom-driver.jar
+        LIQUIBASE_CLASSPATH: /liquibase/lib/mysql-connector-j-9.0.0.jar
     
     - name: Verify Pro Installation and Features
       if: steps.check-license.outputs.has_license == 'true'
@@ -557,16 +517,10 @@ jobs:
         echo "✅ Pro path output: $PATH_OUTPUT"
         
         echo "✅ Pro edition tests completed successfully"
-    
-    - name: Skip Pro Tests (No License)
-      if: steps.check-license.outputs.has_license == 'false'
-      run: |
-        echo "⏩ Skipping Pro edition tests - no license key available"
-        echo "Pro edition tests require a valid license key in repository secrets"
 
-  # Performance and caching validation
+  # Performance validation
   performance-tests:
-    name: Performance & Caching Tests
+    name: Performance Tests
     runs-on: ubuntu-latest
     if: inputs.test_scope == 'full' || inputs.test_scope == 'performance' || github.event_name == 'schedule'
     
@@ -593,7 +547,6 @@ jobs:
       with:
         version: ${{ inputs.liquibase_version || '4.32.0' }}
         edition: 'oss'
-        cache: 'false'
     
     - name: Measure Fresh Install Performance
       run: |
@@ -603,71 +556,67 @@ jobs:
         liquibase --version
         echo "✅ Fresh installation completed and validated"
     
-    - name: Performance Test - Cached Installation  
-      id: cached-install
+    - name: Performance Test - Second Installation
+      id: second-install
       uses: ./
       with:
         version: ${{ inputs.liquibase_version || '4.32.0' }}
         edition: 'oss'
-        cache: 'true'
-    
-    - name: Measure Cached Install Performance
+            
+    - name: Measure Second Install Performance
       run: |
-        echo "=== Performance Test - Cached Installation ==="
+        echo "=== Performance Test - Second Installation ==="
         
-        # Validate cached installation
+        # Validate second installation
         liquibase --version
-        echo "✅ Cached installation completed and validated"
+        echo "✅ Second installation completed and validated"
     
-    - name: Cache Performance Analysis
+    - name: Installation Consistency Analysis
       run: |
-        echo "=== Cache Performance Analysis ==="
+        echo "=== Installation Consistency Analysis ==="
         
-        # Compare outputs between fresh and cached installs
-        FRESH_VERSION="${{ steps.fresh-install.outputs.liquibase-version }}"
-        CACHED_VERSION="${{ steps.cached-install.outputs.liquibase-version }}"
+        # Compare outputs between first and second installs
+        FIRST_VERSION="${{ steps.fresh-install.outputs.liquibase-version }}"
+        SECOND_VERSION="${{ steps.second-install.outputs.liquibase-version }}"
         
-        if [ "$FRESH_VERSION" != "$CACHED_VERSION" ]; then
-          echo "❌ Version mismatch between installs: $FRESH_VERSION vs $CACHED_VERSION"
+        if [ "$FIRST_VERSION" != "$SECOND_VERSION" ]; then
+          echo "❌ Version mismatch between installs: $FIRST_VERSION vs $SECOND_VERSION"
           exit 1
         fi
-        echo "✅ Version consistency verified: $FRESH_VERSION"
+        echo "✅ Version consistency verified: $FIRST_VERSION"
         
-        FRESH_PATH="${{ steps.fresh-install.outputs.liquibase-path }}"
-        CACHED_PATH="${{ steps.cached-install.outputs.liquibase-path }}"
+        FIRST_PATH="${{ steps.fresh-install.outputs.liquibase-path }}"
+        SECOND_PATH="${{ steps.second-install.outputs.liquibase-path }}"
         
-        echo "Fresh install path: $FRESH_PATH"
-        echo "Cached install path: $CACHED_PATH"
+        echo "First install path: $FIRST_PATH"
+        echo "Second install path: $SECOND_PATH"
         
-        # Validate paths are different (expected behavior)
-        # Fresh installs use temp directories, cached installs use tool cache
-        if [ "$FRESH_PATH" == "$CACHED_PATH" ]; then
-          echo "⚠️ WARNING: Fresh and cached installs have identical paths - cache may not be working"
+        # Validate paths are different (expected behavior - each install uses separate temp dirs)
+        if [ "$FIRST_PATH" == "$SECOND_PATH" ]; then
+          echo "⚠️ WARNING: Both installs have identical paths - this is unexpected"
         else
           echo "✅ Path difference confirmed (expected behavior):"
-          echo "  - Fresh install uses temporary directory"
-          echo "  - Cached install uses tool cache directory"
+          echo "  - Each installation uses separate temporary directories"
         fi
         
         # Validate both paths exist and contain Liquibase
-        if [ ! -d "$FRESH_PATH" ]; then
-          echo "❌ Fresh install path does not exist: $FRESH_PATH"
+        if [ ! -d "$FIRST_PATH" ]; then
+          echo "❌ First install path does not exist: $FIRST_PATH"
           exit 1
         fi
-        echo "✅ Fresh install path verified: $FRESH_PATH"
+        echo "✅ First install path verified: $FIRST_PATH"
         
-        if [ ! -d "$CACHED_PATH" ]; then
-          echo "❌ Cached install path does not exist: $CACHED_PATH"
+        if [ ! -d "$SECOND_PATH" ]; then
+          echo "❌ Second install path does not exist: $SECOND_PATH"
           exit 1
         fi
-        echo "✅ Cached install path verified: $CACHED_PATH"
+        echo "✅ Second install path verified: $SECOND_PATH"
         
         # Performance validation
         echo "Performance benchmarks:"
         echo "- Both installations produce consistent versions"
-        echo "- Fresh installs use temporary directories"
-        echo "- Cached installs use persistent tool cache"
-        echo "- Cache should provide faster subsequent installations"
+        echo "- Each installation uses separate temporary directories"
+        echo "- Installations are isolated and independent"
         
         echo "✅ Performance testing completed"
     
@@ -714,7 +663,7 @@ jobs:
         
         # Cross-platform tests
         if [[ "${{ needs.cross-platform-tests.result }}" == "success" ]]; then
-          echo "| Cross-Platform Tests | ✅ PASSED | Ubuntu, Windows, macOS × Cache scenarios |" >> $GITHUB_STEP_SUMMARY
+          echo "| Cross-Platform Tests | ✅ PASSED | Ubuntu, Windows, macOS |" >> $GITHUB_STEP_SUMMARY
         elif [[ "${{ needs.cross-platform-tests.result }}" == "skipped" ]]; then
           echo "| Cross-Platform Tests | ⏩ SKIPPED | Test scope limited |" >> $GITHUB_STEP_SUMMARY
         else
@@ -750,7 +699,7 @@ jobs:
         
         # Performance tests
         if [[ "${{ needs.performance-tests.result }}" == "success" ]]; then
-          echo "| Performance Tests | ✅ PASSED | Caching, installation speed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Performance Tests | ✅ PASSED | Installation speed, reliability |" >> $GITHUB_STEP_SUMMARY
         elif [[ "${{ needs.performance-tests.result }}" == "skipped" ]]; then
           echo "| Performance Tests | ⏩ SKIPPED | Test scope limited |" >> $GITHUB_STEP_SUMMARY
         else
@@ -795,7 +744,7 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Cross-Platform Testing" >> $GITHUB_STEP_SUMMARY
         echo "- **Platforms**: Ubuntu 22.04, Windows Server 2022, macOS 12" >> $GITHUB_STEP_SUMMARY
-        echo "- **Cache Scenarios**: Both enabled and disabled" >> $GITHUB_STEP_SUMMARY
+        echo "- **Installation Type**: Fresh installations using temporary directories" >> $GITHUB_STEP_SUMMARY
         echo "- **Version Coverage**: Multiple Liquibase versions" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Integration Testing" >> $GITHUB_STEP_SUMMARY
@@ -810,8 +759,8 @@ jobs:
         echo "- **Edge Cases**: Boundary conditions and error scenarios" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Performance Testing" >> $GITHUB_STEP_SUMMARY
-        echo "- **Installation Speed**: Fresh vs cached installations" >> $GITHUB_STEP_SUMMARY
-        echo "- **Cache Efficiency**: Multi-version caching validation" >> $GITHUB_STEP_SUMMARY
+        echo "- **Installation Speed**: Download and extraction performance" >> $GITHUB_STEP_SUMMARY
+        echo "- **Installation Consistency**: Multiple installation validation" >> $GITHUB_STEP_SUMMARY
         echo "- **Performance Benchmarks**: Time-based performance validation" >> $GITHUB_STEP_SUMMARY
         
         echo "" >> $GITHUB_STEP_SUMMARY
