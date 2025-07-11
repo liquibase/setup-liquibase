@@ -66,7 +66,7 @@ jobs:
     - name: Verify Installation and Platform Compatibility
       shell: bash
       run: |
-        echo "=== Cross-Platform Testing for ${{ matrix.os }} ===
+        echo "=== Cross-Platform Testing for ${{ matrix.os }} ==="
         
         # Test 1: Basic installation verification
         echo "1. Verifying Liquibase installation..."
