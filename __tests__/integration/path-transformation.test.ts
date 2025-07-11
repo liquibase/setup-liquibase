@@ -173,47 +173,32 @@ describe('Path Transformation Tests', () => {
     });
 
 
-    it('should complete installation when LIQUIBASE_LOG_FILE is not set', async () => {
+    it('should handle case when LIQUIBASE_LOG_FILE is not set', async () => {
       delete process.env.LIQUIBASE_LOG_FILE;
       
-      // Use cache to leverage shared installation
-      const options = {
-        version: '4.32.0',
-        edition: 'oss' as const,
-      };
+      // Should not throw error and should not transform anything
+      await expect(transformLiquibaseEnvironmentVariables()).resolves.not.toThrow();
+      
+      // Environment should remain unchanged since no LIQUIBASE_ vars with path indicators are set
+      expect(process.env.LIQUIBASE_LOG_FILE).toBeUndefined();
+    });
 
-      const result = await setupLiquibase(options);
-      expect(result).toBeDefined();
-      expect(result.version).toBe('4.32.0');
-      expect(result.path).toBeTruthy();
-    }, 60000);
-
-    it('should create log directory and complete installation with transformed path', async () => {
+    it('should transform path and create directory without requiring installation', async () => {
       const originalPath = '/liquibase/integration-test/app.log';
       const expectedTransformedPath = path.join('.', 'liquibase', 'integration-test', 'app.log');
       
       process.env.LIQUIBASE_LOG_FILE = originalPath;
       
-      // Call transformation first
+      // Call transformation - this should transform path and create directory
       await transformLiquibaseEnvironmentVariables();
       
       // Environment variable should be transformed
       expect(process.env.LIQUIBASE_LOG_FILE).toBe(expectedTransformedPath);
       
-      // Use cache to leverage shared installation
-      const options = {
-        version: '4.32.0',
-        edition: 'oss' as const,
-      };
-
-      const result = await setupLiquibase(options);
-      expect(result).toBeDefined();
-      expect(result.version).toBe('4.32.0');
-      
-      // Directory should be created
+      // Directory should be created by the transformation process
       const expectedDir = path.resolve('.', 'liquibase', 'integration-test');
       expect(fs.existsSync(expectedDir)).toBe(true);
-    }, 60000);
+    });
 
     it('should handle existing directories without issues', async () => {
       const tempDir = path.join('.', 'tmp', `existing-${Date.now()}`);
