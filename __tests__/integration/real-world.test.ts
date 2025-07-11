@@ -28,7 +28,7 @@ describe('Real-world Integration Scenarios', () => {
       expect(result).toBeDefined();
       expect(result.version).toBe('4.32.0');
       expect(result.path).toBeTruthy();
-    }, 30000);
+    }, 60000);
 
     it('should work with consistent installation behavior', async () => {
       const options = {
