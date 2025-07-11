@@ -168,18 +168,7 @@ runs-on: ${{ matrix.os }}
     echo "✅ Pro edition installed successfully (license validation at runtime)"
 ```
 
-### 5. Performance Tests
-
-#### Installation Performance
-```yaml
-- name: Install Liquibase
-  uses: liquibase/setup-liquibase@v1-beta
-  with:
-    version: '4.32.0'
-    edition: 'oss'
-```
-
-### 6. Enhanced Logging & Path Transformation Tests
+### 5. Enhanced Logging & Path Transformation Tests
 
 #### Path Transformation Test
 ```yaml
@@ -296,7 +285,6 @@ Copy and paste this template when reporting UAT issues:
 **Platform**: ubuntu-latest / windows-latest / macos-latest  
 **Liquibase Version**: 4.32.0  
 **Edition**: oss / pro  
-**Cache Enabled**: true / false  
 
 **Expected Behavior**:  
 [Describe what should happen]
@@ -326,7 +314,7 @@ The v1-beta release is ready for v1.0.0 promotion when:
 - [ ] All basic functionality tests pass
 - [ ] All platform compatibility tests pass
 - [ ] No critical bugs are found
-- [ ] Performance is acceptable (< 3 minutes for fresh install, < 45 seconds for cached)
+- [ ] Installation completes in reasonable time (< 3 minutes)
 - [ ] Error handling works as expected
 - [ ] Integration tests with real databases work
 - [ ] Documentation is accurate and complete
