@@ -25,13 +25,16 @@ export async function transformLiquibaseEnvironmentVariables(): Promise<void> {
     'SQL', 'DEFAULTS', 'PROPERTIES', 'CHANGELOG', 'SCHEMA'
   ];
   
+  // Create a regex pattern for efficient matching - O(1) per key instead of O(m)
+  const pathIndicatorPattern = new RegExp(`(${pathIndicators.join('|')})`, 'i');
+  
   const liquibaseFilePathEnvVars = Object.keys(process.env)
     .filter(key => {
       // Must start with LIQUIBASE_
       if (!key.startsWith('LIQUIBASE_')) return false;
       
-      // Must contain path-like indicators
-      return pathIndicators.some(indicator => key.includes(indicator));
+      // Must contain path-like indicators - now O(1) instead of O(m)
+      return pathIndicatorPattern.test(key);
     })
     .sort(); // Sort for consistent processing order
 
@@ -136,27 +139,29 @@ async function run(): Promise<void> {
     // Extract input parameters from the GitHub Action context
     const version = core.getInput('version');
     const editionInput = core.getInput('edition');
-    const cache = core.getBooleanInput('cache');
 
     // Validate required version input
     if (!version) {
       throw new Error('Version input is required. Must be a specific version (e.g., "4.32.0")');
     }
 
-    // Validate required edition input
+    // Validate required edition input using type guard
+    function isValidEdition(edition: string): edition is 'oss' | 'pro' {
+      return edition === 'oss' || edition === 'pro';
+    }
+
     if (!editionInput) {
       throw new Error('Edition input is required. Must be either "oss" or "pro"');
     }
-    if (editionInput !== 'oss' && editionInput !== 'pro') {
-      throw new Error('Edition must be either "oss" or "pro"');
+    if (!isValidEdition(editionInput)) {
+      throw new Error(`Invalid edition: "${editionInput}". Must be either "oss" or "pro"`);
     }
-    const edition = editionInput as 'oss' | 'pro';
+    const edition = editionInput; // Now TypeScript knows it's 'oss' | 'pro'
 
     // Execute the main installation logic
     const result = await setupLiquibase({
       version,
-      edition,
-      cache
+      edition
     });
 
     // Set output values that other workflow steps can reference

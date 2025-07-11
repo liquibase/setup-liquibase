@@ -4,7 +4,7 @@ This document explains how paths work in the setup-liquibase GitHub Action, addr
 
 ## Executive Summary
 
-- **Liquibase Installation**: Installed in a temporary tool cache location and added to PATH
+- **Liquibase Installation**: Installed in a temporary temporary directory location and added to PATH
 - **Execution Context**: Liquibase runs from your checked-out repository's root directory
 - **Path Handling**: Absolute paths are automatically transformed to workspace-relative paths for security
 - **Transparency**: All path transformations are logged for user awareness

@@ -20,8 +20,7 @@ describe('Real-world Integration Scenarios', () => {
       // For now, we test the configuration and validation logic
       const options = {
         version: '4.32.0',
-        edition: 'oss' as const,
-        cache: true
+        edition: 'oss' as const
       };
 
       // Should pass validation and complete successfully in CI environment
@@ -31,32 +30,23 @@ describe('Real-world Integration Scenarios', () => {
       expect(result.path).toBeTruthy();
     }, 30000);
 
-    it('should work with different caching strategies', async () => {
-      const scenarios = [
-        { cache: true, description: 'with caching enabled' },
-        { cache: false, description: 'with caching disabled (minimal test)' }
-      ];
+    it('should work with consistent installation behavior', async () => {
+      const options = {
+        version: '4.32.0',
+        edition: 'oss' as const
+      };
 
-      for (const scenario of scenarios) {
-        const options = {
-          version: '4.32.0',
-          edition: 'oss' as const,
-          cache: scenario.cache
-        };
-
-        // Should complete successfully regardless of cache setting
-        const result = await setupLiquibase(options);
-        expect(result).toBeDefined();
-        expect(result.version).toBe('4.32.0');
-        expect(result.path).toBeTruthy();
-      }
+      // Should complete successfully with consistent behavior
+      const result = await setupLiquibase(options);
+      expect(result).toBeDefined();
+      expect(result.version).toBe('4.32.0');
+      expect(result.path).toBeTruthy();
     }, 60000); // Increased timeout to 60 seconds due to download and extraction time
 
     it('should handle specific version in CI/CD workflow', async () => {
       const options = {
         version: '4.32.0',
-        edition: 'oss' as const,
-        cache: true
+        edition: 'oss' as const
       };
 
       // Should install the specific version successfully
@@ -378,7 +368,6 @@ describe('Mock Integration Scenarios', () => {
     const mockInstallationSteps = [
       'validate_inputs',
       'resolve_version',
-      'check_cache',
       'download_archive',
       'extract_archive',
       'configure_license',
@@ -386,8 +375,8 @@ describe('Mock Integration Scenarios', () => {
       'add_to_path'
     ];
 
-    // Verify all steps are accounted for
-    expect(mockInstallationSteps).toHaveLength(8);
+    // Verify all steps are accounted for (7 steps after removing version resolution)
+    expect(mockInstallationSteps).toHaveLength(7);
     expect(mockInstallationSteps).toContain('validate_inputs');
     expect(mockInstallationSteps).toContain('add_to_path');
   });

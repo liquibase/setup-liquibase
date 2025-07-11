@@ -20,10 +20,6 @@ inputs:
     description: 'Edition to install: "oss" (Open Source) or "pro" (Professional with additional features). For Pro edition, set LIQUIBASE_LICENSE_KEY environment variable when running Liquibase commands.'
     required: true
   
-  cache:
-    description: 'Enable caching of downloaded Liquibase installations to improve workflow performance on subsequent runs'
-    required: false
-    default: 'false'
 
 # Output values that other workflow steps can use
 outputs:

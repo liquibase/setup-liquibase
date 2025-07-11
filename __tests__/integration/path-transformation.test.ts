@@ -8,7 +8,6 @@
 
 import { setupLiquibase } from '../../src/installer';
 import { transformLiquibaseEnvironmentVariables } from '../../src/index';
-import { getSharedOSSInstallation, validateInstallationExists } from '../fixtures/shared-installation';
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -149,14 +148,7 @@ describe('Path Transformation Tests', () => {
    * Uses shared fixtures to minimize actual Liquibase downloads
    */
   describe('Real Installation with Path Transformation (Integration Tests)', () => {
-    let sharedInstallation: any;
     const originalEnv: Record<string, string | undefined> = {};
-    
-    beforeAll(async () => {
-      // Single shared installation for all integration tests
-      sharedInstallation = await getSharedOSSInstallation();
-      console.log('[PATH TRANSFORMATION TEST] Using shared installation for integration tests');
-    }, 120000);
     
     beforeEach(() => {
       // Save original environment variables
@@ -180,13 +172,6 @@ describe('Path Transformation Tests', () => {
       });
     });
 
-    it('should validate shared installation works correctly', () => {
-      // Lightweight validation of shared installation
-      expect(sharedInstallation).toBeDefined();
-      expect(sharedInstallation.version).toBe('4.32.0');
-      expect(sharedInstallation.path).toBeTruthy();
-      expect(validateInstallationExists(sharedInstallation)).toBe(true);
-    });
 
     it('should complete installation when LIQUIBASE_LOG_FILE is not set', async () => {
       delete process.env.LIQUIBASE_LOG_FILE;
@@ -195,7 +180,6 @@ describe('Path Transformation Tests', () => {
       const options = {
         version: '4.32.0',
         edition: 'oss' as const,
-        cache: true
       };
 
       const result = await setupLiquibase(options);
@@ -220,7 +204,6 @@ describe('Path Transformation Tests', () => {
       const options = {
         version: '4.32.0',
         edition: 'oss' as const,
-        cache: true
       };
 
       const result = await setupLiquibase(options);
@@ -244,7 +227,6 @@ describe('Path Transformation Tests', () => {
       const options = {
         version: '4.32.0',
         edition: 'oss' as const,
-        cache: true
       };
 
       const result = await setupLiquibase(options);

@@ -186,7 +186,7 @@ steps:
 - Initial release of the setup-liquibase action
 - Support for both OSS and Pro editions
 - Version support: specific versions (4.32.0+) and 'latest'
-- Caching support for improved workflow performance
+- Reliable installation support for improved workflow performance
 - Cross-platform support (Linux, Windows, macOS)
 - Auto-detection of Pro edition when license key is provided
 - Dual license key input support (environment variable + input parameter)

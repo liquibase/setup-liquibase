@@ -84,7 +84,6 @@ describe('setupLiquibase validation', () => {
     const options = {
       version: '',
       edition: 'oss' as const,
-      cache: false
     };
 
     await expect(setupLiquibase(options)).rejects.toThrow('Version is required');
@@ -94,7 +93,6 @@ describe('setupLiquibase validation', () => {
     const options = {
       version: '4.25.0', // Below 4.32.0
       edition: 'oss' as const,
-      cache: false
     };
 
     await expect(setupLiquibase(options)).rejects.toThrow(
@@ -106,7 +104,6 @@ describe('setupLiquibase validation', () => {
     const options = {
       version: 'invalid-version',
       edition: 'oss' as const,
-      cache: false
     };
 
     await expect(setupLiquibase(options)).rejects.toThrow(
@@ -118,7 +115,6 @@ describe('setupLiquibase validation', () => {
     const options = {
       version: '4.32.0',
       edition: 'invalid' as any,
-      cache: false
     };
 
     await expect(setupLiquibase(options)).rejects.toThrow(
@@ -131,7 +127,6 @@ describe('setupLiquibase validation', () => {
     const options = {
       version: '4.32.0',
       edition: 'oss' as const,
-      cache: false
     };
 
     // Should pass validation and complete successfully in CI environment
@@ -148,7 +143,6 @@ describe('setupLiquibase validation', () => {
     const options = {
       version: '4.32.0',
       edition: 'pro' as const,
-      cache: false
     };
 
     // Should pass validation and complete successfully in CI environment
@@ -163,7 +157,6 @@ describe('setupLiquibase validation', () => {
     const options = {
       version: 'latest',
       edition: 'oss' as const,
-      cache: false
     };
 
     await expect(setupLiquibase(options)).rejects.toThrow(
@@ -174,9 +167,7 @@ describe('setupLiquibase validation', () => {
   it('should reject latest version for Pro edition', async () => {
     const options = {
       version: 'latest',
-      edition: 'pro' as const,
-      licenseKey: 'test-license-key',
-      cache: false
+      edition: 'pro' as const
     };
 
     await expect(setupLiquibase(options)).rejects.toThrow(
@@ -200,8 +191,7 @@ describe('setupLiquibase validation', () => {
       const options = {
         version: testCase.version,
         edition: 'oss' as const,
-        cache: false
-      };
+        };
 
       if (testCase.shouldFail) {
         await expect(setupLiquibase(options)).rejects.toThrow();
