@@ -50,9 +50,8 @@ jobs:
           # Test additional versions on Ubuntu for version compatibility
           - os: ubuntu-latest
             version: '4.31.1'
-                      - os: ubuntu-latest  
+          - os: ubuntu-latest
             version: '4.30.0'
-                
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -157,7 +156,7 @@ jobs:
       with:
         version: ${{ inputs.liquibase_version || '4.32.0' }}
         edition: 'oss'
-              env:
+      env:
         # Test path transformation logging with common problematic paths
         LIQUIBASE_LOG_FILE: /liquibase/changelog/integration-test.log
         LIQUIBASE_OUTPUTFILE: /liquibase/reports/integration-output.txt
@@ -473,7 +472,7 @@ jobs:
       with:
         version: ${{ inputs.liquibase_version || '4.32.0' }}
         edition: 'pro'
-              env:
+      env:
         LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
         # Test Pro edition with path transformation
         LIQUIBASE_LOG_FILE: /liquibase/pro-logs/liquibase-pro.log
