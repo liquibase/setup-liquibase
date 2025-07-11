@@ -517,12 +517,6 @@ jobs:
         echo "✅ Pro path output: $PATH_OUTPUT"
         
         echo "✅ Pro edition tests completed successfully"
-    
-    - name: Skip Pro Tests (No License)
-      if: steps.check-license.outputs.has_license == 'false'
-      run: |
-        echo "⏩ Skipping Pro edition tests - no license key available"
-        echo "Pro edition tests require a valid license key in repository secrets"
 
   # Performance validation
   performance-tests:
