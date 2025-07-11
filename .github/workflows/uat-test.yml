@@ -465,6 +465,13 @@ jobs:
           echo "To test Pro edition, add PRO_LICENSE_KEY secret to the repository"
         fi
     
+    - name: Download MySQL driver for realistic classpath testing
+      if: steps.check-license.outputs.has_license == 'true'
+      run: |
+        mkdir -p liquibase/lib
+        curl -L -o liquibase/lib/mysql-connector-j-9.0.0.jar \
+          https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/9.0.0/mysql-connector-j-9.0.0.jar
+    
     - name: Test Pro Edition Installation (enhanced logging demo)
       if: steps.check-license.outputs.has_license == 'true'
       id: setup-pro
@@ -474,9 +481,9 @@ jobs:
         edition: 'pro'
       env:
         LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
-        # Test Pro edition with path transformation
+        # Test Pro edition with path transformation using real MySQL driver
         LIQUIBASE_LOG_FILE: /liquibase/pro-logs/liquibase-pro.log
-        LIQUIBASE_CLASSPATH: /liquibase/lib/custom-driver.jar
+        LIQUIBASE_CLASSPATH: /liquibase/lib/mysql-connector-j-9.0.0.jar
     
     - name: Verify Pro Installation and Features
       if: steps.check-license.outputs.has_license == 'true'
