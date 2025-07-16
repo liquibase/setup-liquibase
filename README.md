@@ -6,7 +6,7 @@ This action provides the following functionality for GitHub Actions users:
 - Download and install a specific version of Liquibase
 - Support for both Liquibase OSS and Pro editions
 - Add Liquibase to the PATH
-- Cache downloaded Liquibase versions for improved performance
+- Simple, reliable Liquibase installation for CI/CD workflows
 - Cross-platform support (Linux, Windows, macOS)
 
 ## Quick Start
@@ -25,7 +25,9 @@ steps:
 
 - **Version Control**: Install specific versions (4.32.0+) with exact version specification
 - **Edition Support**: Works with both OSS and Pro editions
-- **Caching**: Optional caching for faster workflow runs
+- **Enhanced Logging**: Clear progress indicators, path transparency, and migration guidance
+- **Path Safety**: Automatic transformation of absolute paths for GitHub Actions compatibility
+- **Performance**: Optimized installation for faster workflow runs
 - **Cross-Platform**: Supports Linux, Windows, and macOS runners
 - **Environment Variables**: Supports LIQUIBASE_LICENSE_KEY environment variable for Pro edition
 - **Production Ready**: Comprehensive testing with 83 test cases covering all scenarios
@@ -82,7 +84,7 @@ steps:
     LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
 ```
 
-### With Caching
+### Production Usage
 
 ```yaml
 steps:
@@ -90,7 +92,6 @@ steps:
 - uses: liquibase/setup-liquibase@v1
   with:
     version: '4.32.0'
-    cache: true
 - run: liquibase --version
 ```
 
@@ -100,7 +101,6 @@ steps:
 |-------|-------------|----------|---------|
 | `version` | Specific version of Liquibase to install (e.g., "4.32.0"). Must be 4.32.0 or higher. | Yes | |
 | `edition` | Edition to install: "oss" (Open Source) or "pro" (Professional). For Pro edition, set LIQUIBASE_LICENSE_KEY environment variable when running Liquibase commands. | Yes | |
-| `cache` | Enable caching of downloaded Liquibase installations to improve workflow performance on subsequent runs | No | `false` |
 
 ## Outputs
 
@@ -154,20 +154,6 @@ jobs:
 
 **Note**: GitHub-hosted runners (ubuntu-latest, windows-latest, macos-latest) already have Java installed and do not need the setup-java step.
 
-## Caching
-
-When `cache: true` is set, the action will cache the downloaded Liquibase installation. This can significantly improve workflow performance for subsequent runs.
-
-The cache is unique per:
-- Version
-- Edition (OSS vs Pro)
-
-```yaml
-- uses: liquibase/setup-liquibase@v1
-  with:
-    version: '4.32.0'
-    cache: true
-```
 
 ## Pro Edition Support
 
@@ -208,8 +194,7 @@ jobs:
       with:
         version: '4.32.0'
         edition: 'oss'
-        cache: true
-    
+        
     - name: Run Liquibase Update
       run: |
         liquibase update \
@@ -237,8 +222,7 @@ jobs:
       with:
         version: '4.32.0'
         edition: 'pro'
-        cache: true
-    
+        
     - name: Validate Changelog
       run: liquibase validate --changelog-file=changelog.xml
     
@@ -284,8 +268,7 @@ jobs:
       with:
         version: '4.32.0'
         edition: 'pro'
-        cache: true
-    
+        
     - name: Execute Flow from Template
       run: |
         liquibase --search-path=flow-templates/resources,. flow \
@@ -318,8 +301,7 @@ jobs:
       with:
         version: '4.32.0'
         edition: 'pro'
-        cache: true
-    
+        
     - name: Download AWS Extension (Direct JAR)
       run: |
         wget -O liquibase-aws-extension.jar https://repo1.maven.org/maven2/org/liquibase/ext/liquibase-aws-extension/1.0.1/liquibase-aws-extension-1.0.1.jar
@@ -382,8 +364,7 @@ jobs:
       with:
         version: ${{ matrix.liquibase-version }}
         edition: 'oss'
-        cache: true
-    
+        
     - name: Test Migration
       run: |
         liquibase update --changelog-file=changelog.xml --url=jdbc:h2:mem:test
@@ -414,9 +395,46 @@ This error means Java is not installed or not available in the PATH environment 
 - For GitHub-hosted runners: This shouldn't happen as Java is pre-installed
 - For self-hosted runners: Install Java or use the setup-java action as shown above
 
-#### Cache Issues
 
-If you encounter issues with caching, try disabling it temporarily by setting `cache: false` to isolate the problem.
+## Enhanced Logging & Path Handling
+
+The action provides comprehensive logging and automatic path transformation for GitHub Actions compatibility:
+
+### What You'll See
+```
+🚀 Setting up Liquibase OSS 4.32.0
+📥 Downloading from: https://github.com/liquibase/liquibase/releases/...
+📦 Extracting Liquibase archive...
+📦 Installing Liquibase to temporary directory...
+✅ Installation completed successfully
+🔧 Added Liquibase to system PATH
+
+🎯 Liquibase configuration:
+ Edition: OSS
+ Version: 4.32.0
+ Install Path: /tmp/liquibase-extract-abc123
+ Execution Context: /actions-runner/_work/your-repo/your-repo
+
+💡 Migration from liquibase-github-actions:
+   • Liquibase installs to: temporary directory (not /liquibase/)
+   • Liquibase executes from: your-repo/your-repo/
+   • Use relative paths: --changelog-file=changelog.xml
+   • Absolute paths are auto-transformed for security
+```
+
+### Path Transformation
+When you use absolute paths in environment variables (e.g., `LIQUIBASE_LOG_FILE=/liquibase/logs/file.log`), the action automatically transforms them to workspace-relative paths for GitHub Actions compatibility:
+
+```
+🔄 Path Transformation (Security & Compatibility):
+   📝 LIQUIBASE_LOG_FILE: '/liquibase/logs/file.log' → './liquibase/logs/file.log'
+💡 Tip: Use relative paths (e.g., "logs/file.log") to avoid transformation
+```
+
+### Migration Guidance
+The action provides specific guidance for users migrating from Docker workflows or the legacy `liquibase-github-actions` organization, helping you understand the execution context and path differences.
+
+For comprehensive documentation, see [docs/PATH_HANDLING.md](docs/PATH_HANDLING.md).
 
 ## Migration from Legacy Actions
 

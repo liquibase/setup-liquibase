@@ -13,7 +13,6 @@ jobs:
         with:
           version: '4.32.0'
           edition: 'pro'
-          cache: true
       
       - name: Run Pro Features
         run: |

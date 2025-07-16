@@ -28,9 +28,7 @@ export default {
 
   transform: {
     '^.+\\.ts$': ['ts-jest', { 
-      tsconfig: 'tsconfig.json',
-      // Reduce memory usage during compilation
-      isolatedModules: true
+      tsconfig: 'tsconfig.json'
     }]
   },
 

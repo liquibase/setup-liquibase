@@ -11,7 +11,6 @@ jobs:
         with:
           version: '4.32.0'
           edition: 'oss'
-          cache: true
       
       - name: Run Liquibase Update
         run: |

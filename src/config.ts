@@ -5,16 +5,6 @@
  * to be updated or customized for different environments.
  */
 
-/**
- * API endpoints for fetching Liquibase version information
- */
-export const API_ENDPOINTS = {
-  /** GitHub API endpoint for Liquibase OSS releases */
-  OSS_RELEASES: 'https://api.github.com/repos/liquibase/liquibase/releases',
-  
-  /** Liquibase Pro releases endpoint */
-  PRO_RELEASES: 'https://download.liquibase.org/pro/releases.json'
-} as const;
 
 /**
  * Download URL templates for Liquibase distributions
@@ -38,21 +28,7 @@ export const DOWNLOAD_URLS = {
   PRO_UNIX: 'https://package.liquibase.com/downloads/cli/liquibase/releases/pro/{version}/liquibase-pro-{version}.tar.gz'
 } as const;
 
-
-/**
- * Archive file extensions by platform
- */
-export const ARCHIVE_EXTENSIONS = {
-  'win32': 'zip',
-  'unix': 'tar.gz'
-} as const;
-
 /**
  * Minimum supported version for this action
  */
 export const MIN_SUPPORTED_VERSION = '4.32.0';
-
-export const TEST_VERSIONS = {
-  OSS: '4.32.0',
-  // Add more as needed
-};

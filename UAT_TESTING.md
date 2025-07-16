@@ -28,7 +28,6 @@ jobs:
       with:
         version: '4.32.0'
         edition: 'oss'
-        cache: true
     
     - name: Verify Installation
       run: |
@@ -45,7 +44,6 @@ jobs:
 strategy:
   matrix:
     version: ['4.32.0']
-    cache: [true, false]
     os: [ubuntu-latest, windows-latest, macos-latest]
 
 steps:
@@ -53,7 +51,6 @@ steps:
   with:
     version: ${{ matrix.version }}
     edition: 'oss'
-    cache: ${{ matrix.cache }}
 ```
 
 #### Pro Edition Tests
@@ -63,7 +60,6 @@ steps:
   with:
     version: '4.32.0'
     edition: 'pro'
-    cache: true
   env:
     LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
 ```
@@ -172,23 +168,49 @@ runs-on: ${{ matrix.os }}
     echo "✅ Pro edition installed successfully (license validation at runtime)"
 ```
 
-### 5. Performance Tests
+### 5. Enhanced Logging & Path Transformation Tests
 
-#### Caching Performance
+#### Path Transformation Test
 ```yaml
-- name: First Install (No Cache)
+- name: Test Path Transformation (Enhanced Logging)
   uses: liquibase/setup-liquibase@v1-beta
   with:
     version: '4.32.0'
     edition: 'oss'
-    cache: true
+  env:
+    # These absolute paths will trigger transformation logging
+    LIQUIBASE_LOG_FILE: /liquibase/changelog/test.log
+    LIQUIBASE_OUTPUTFILE: /liquibase/reports/output.txt
 
-- name: Second Install (With Cache)
+- name: Verify Path Transformation
+  run: |
+    echo "Checking transformed paths..."
+    echo "LIQUIBASE_LOG_FILE: $LIQUIBASE_LOG_FILE"
+    echo "LIQUIBASE_OUTPUTFILE: $LIQUIBASE_OUTPUTFILE"
+    
+    # Verify paths were transformed to relative
+    if [[ "$LIQUIBASE_LOG_FILE" == /liquibase/* ]]; then
+      echo "❌ Path transformation failed"
+      exit 1
+    fi
+    echo "✅ Path transformation successful"
+    
+    # Verify directories were created
+    ls -la liquibase/changelog/ liquibase/reports/
+```
+
+#### Migration Guidance Test
+```yaml
+- name: Test Enhanced Logging Output
   uses: liquibase/setup-liquibase@v1-beta
   with:
     version: '4.32.0'
     edition: 'oss'
-    cache: true
+  # Look for these enhanced logging messages in the action output:
+  # 🚀 Setting up Liquibase OSS 4.32.0
+  # 🎯 Liquibase configuration:
+  # 💡 Migration from liquibase-github-actions:
+  # 🔄 Path Transformation (Security & Compatibility):
 ```
 
 ## Test Checklist
@@ -210,10 +232,10 @@ runs-on: ${{ matrix.os }}
 - [ ] Minimum version validation works (4.32.0+)
 - [ ] Invalid versions are properly rejected
 
-### Caching ✅
-- [ ] Caching improves subsequent install performance
-- [ ] Cache works across different workflow runs
-- [ ] Cache is specific to version and edition
+### Installation ✅
+- [ ] Installation completes efficiently
+- [ ] Installation works consistently across workflow runs
+- [ ] Installation behavior is consistent
 
 ### Error Handling ✅
 - [ ] Invalid versions are rejected
@@ -232,6 +254,15 @@ runs-on: ${{ matrix.os }}
 - [ ] `liquibase-version` output contains correct version
 - [ ] `liquibase-path` output contains valid path
 - [ ] Outputs can be used in subsequent steps
+
+### Enhanced Logging & Path Transformation ✅
+- [ ] Installation progress shows clear visual indicators (🚀, 📥, 📦, etc.)
+- [ ] Configuration summary displays correctly with edition, version, paths
+- [ ] Migration guidance appears for liquibase-github-actions users
+- [ ] Path transformation logging shows when absolute paths are converted
+- [ ] Transformed paths work correctly (relative to workspace)
+- [ ] Directory creation happens automatically for file paths
+- [ ] Boolean inputs use string format ('true'/'false') per YAML 1.2 Core Schema
 
 ## Reporting Issues
 
@@ -254,7 +285,6 @@ Copy and paste this template when reporting UAT issues:
 **Platform**: ubuntu-latest / windows-latest / macos-latest  
 **Liquibase Version**: 4.32.0  
 **Edition**: oss / pro  
-**Cache Enabled**: true / false  
 
 **Expected Behavior**:  
 [Describe what should happen]
@@ -284,7 +314,7 @@ The v1-beta release is ready for v1.0.0 promotion when:
 - [ ] All basic functionality tests pass
 - [ ] All platform compatibility tests pass
 - [ ] No critical bugs are found
-- [ ] Performance is acceptable (< 3 minutes for fresh install, < 45 seconds for cached)
+- [ ] Installation completes in reasonable time (< 3 minutes)
 - [ ] Error handling works as expected
 - [ ] Integration tests with real databases work
 - [ ] Documentation is accurate and complete
@@ -313,7 +343,7 @@ For external contributors testing this action:
 - ✅ **OSS Edition Tests**: Full access to all OSS functionality testing
 - ✅ **Integration Tests**: Database operations with H2 (no license required)
 - ✅ **Error Handling Tests**: Complete validation of error scenarios
-- ✅ **Performance Tests**: Caching and performance validation
+- ✅ **Performance Tests**: Installation performance validation
 - ⏩ **Pro Edition Tests**: Installation tests run successfully (runtime license validation not tested)
 
 **This is expected behavior** - OSS tests provide comprehensive validation of 95%+ of the action's functionality. See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for detailed development guidance.
@@ -321,7 +351,6 @@ For external contributors testing this action:
 ## Troubleshooting Common Issues
 
 ### Performance Issues
-- **Slow installs**: Ensure `cache: true` is set for repeated runs
 - **CI timeouts**: Latest OS runners are recommended for optimal performance
 
 ### Platform-Specific Issues

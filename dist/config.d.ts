@@ -5,15 +5,6 @@
  * to be updated or customized for different environments.
  */
 /**
- * API endpoints for fetching Liquibase version information
- */
-export declare const API_ENDPOINTS: {
-    /** GitHub API endpoint for Liquibase OSS releases */
-    readonly OSS_RELEASES: "https://api.github.com/repos/liquibase/liquibase/releases";
-    /** Liquibase Pro releases endpoint */
-    readonly PRO_RELEASES: "https://download.liquibase.org/pro/releases.json";
-};
-/**
  * Download URL templates for Liquibase distributions
  * Using official Liquibase download endpoints
  */
@@ -34,16 +25,6 @@ export declare const DOWNLOAD_URLS: {
     readonly PRO_UNIX: "https://package.liquibase.com/downloads/cli/liquibase/releases/pro/{version}/liquibase-pro-{version}.tar.gz";
 };
 /**
- * Archive file extensions by platform
- */
-export declare const ARCHIVE_EXTENSIONS: {
-    readonly win32: "zip";
-    readonly unix: "tar.gz";
-};
-/**
  * Minimum supported version for this action
  */
 export declare const MIN_SUPPORTED_VERSION = "4.32.0";
-export declare const TEST_VERSIONS: {
-    OSS: string;
-};

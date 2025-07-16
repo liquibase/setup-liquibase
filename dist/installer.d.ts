@@ -5,7 +5,6 @@
  * - Downloading and installing Liquibase (OSS and Pro editions)
  * - Version resolution and management
  * - Cross-platform support (Linux, Windows, macOS)
- * - Caching for improved performance
  * - Installation validation
  */
 /**
@@ -16,8 +15,6 @@ export interface LiquibaseSetupOptions {
     version: string;
     /** Edition to install: 'oss' for Open Source, 'pro' for Professional */
     edition: 'oss' | 'pro';
-    /** Whether to cache the downloaded installation */
-    cache: boolean;
 }
 /**
  * Result of a successful Liquibase setup operation
@@ -34,10 +31,9 @@ export interface LiquibaseSetupResult {
  * This function coordinates the entire installation process:
  * 1. Validates version and edition requirements
  * 2. Resolves the exact version to install
- * 3. Checks for cached installations
- * 4. Downloads and extracts Liquibase if needed
- * 5. Validates the installation
- * 6. Adds Liquibase to the system PATH
+ * 3. Downloads and extracts Liquibase
+ * 4. Validates the installation
+ * 5. Adds Liquibase to the system PATH
  *
  * @param options - Configuration for the Liquibase setup
  * @returns Promise resolving to the setup result with version and path
@@ -51,4 +47,4 @@ export declare function setupLiquibase(options: LiquibaseSetupOptions): Promise<
  * @param edition - Edition to download ('oss' or 'pro')
  * @returns Download URL for the specified version from official Liquibase endpoints
  */
-export declare function getDownloadUrl(version: string, edition: 'oss' | 'pro'): string;
+export declare function getDownloadUrl(version: string, edition: LiquibaseSetupOptions['edition']): string;

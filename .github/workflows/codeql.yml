@@ -8,6 +8,11 @@ on:
   schedule:
     - cron: '30 1 * * 0'  # Run at 1:30 UTC every Sunday
 
+# Cancel in-progress runs when new commits are pushed to the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   analyze:
     name: Analyze

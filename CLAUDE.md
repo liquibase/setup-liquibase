@@ -37,7 +37,7 @@ Single GitHub Action that installs Liquibase (OSS or Pro) and adds it to PATH, a
 ### Key Components
 
 1. **Entry Point** (`src/index.ts`)
-   - Reads action inputs (version, edition, cache)
+   - Reads action inputs (version, edition)
    - Validates inputs
    - Calls installer and sets outputs
 
@@ -45,15 +45,9 @@ Single GitHub Action that installs Liquibase (OSS or Pro) and adds it to PATH, a
    - Core installation logic
    - Platform detection (Windows/Unix)
    - Download URL construction
-   - Caching support via GitHub's tool-cache
    - Pro edition installation support
 
-3. **Version Resolver** (`src/version-resolver.ts`)
-   - Validates semantic versions
-   - Ensures version >= 4.32.0
-   - Constructs download URLs based on edition/platform
-
-4. **Configuration** (`src/config.ts`)
+3. **Configuration** (`src/config.ts`)
    - Central location for all URLs and constants
    - Download URL templates for OSS/Pro editions
    - Note: OSS URLs use 'v' prefix, Pro URLs do not
@@ -63,7 +57,6 @@ Single GitHub Action that installs Liquibase (OSS or Pro) and adds it to PATH, a
 - **Minimum Version**: 4.32.0 (enforced due to download endpoint compatibility)
 - **Editions**: 'oss' (Open Source) or 'pro' (Professional)
 - **Pro License**: Required at runtime via `LIQUIBASE_LICENSE_KEY` environment variable (not during installation)
-- **Caching**: Uses GitHub's tool-cache, keyed by version+edition
 - **Platforms**: Supports Linux (.tar.gz), Windows (.zip), and macOS (.tar.gz)
 - **Build Output**: TypeScript compiles to single `dist/index.js` with source maps
 
@@ -78,7 +71,7 @@ Single GitHub Action that installs Liquibase (OSS or Pro) and adds it to PATH, a
 
 ### GitHub Action Configuration
 
-- **action.yml**: Defines inputs (version, edition, cache) and outputs (liquibase-version, liquibase-path)
+- **action.yml**: Defines inputs (version, edition) and outputs (liquibase-version, liquibase-path)
 - **Node Runtime**: Uses Node.js 20
 - **Icon**: Database icon with blue color for marketplace
 

@@ -30904,16 +30904,7 @@ module.exports = {
  * to be updated or customized for different environments.
  */
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.TEST_VERSIONS = exports.MIN_SUPPORTED_VERSION = exports.ARCHIVE_EXTENSIONS = exports.DOWNLOAD_URLS = exports.API_ENDPOINTS = void 0;
-/**
- * API endpoints for fetching Liquibase version information
- */
-exports.API_ENDPOINTS = {
-    /** GitHub API endpoint for Liquibase OSS releases */
-    OSS_RELEASES: 'https://api.github.com/repos/liquibase/liquibase/releases',
-    /** Liquibase Pro releases endpoint */
-    PRO_RELEASES: 'https://download.liquibase.org/pro/releases.json'
-};
+exports.MIN_SUPPORTED_VERSION = exports.DOWNLOAD_URLS = void 0;
 /**
  * Download URL templates for Liquibase distributions
  * Using official Liquibase download endpoints
@@ -30935,20 +30926,9 @@ exports.DOWNLOAD_URLS = {
     PRO_UNIX: 'https://package.liquibase.com/downloads/cli/liquibase/releases/pro/{version}/liquibase-pro-{version}.tar.gz'
 };
 /**
- * Archive file extensions by platform
- */
-exports.ARCHIVE_EXTENSIONS = {
-    'win32': 'zip',
-    'unix': 'tar.gz'
-};
-/**
  * Minimum supported version for this action
  */
 exports.MIN_SUPPORTED_VERSION = '4.32.0';
-exports.TEST_VERSIONS = {
-    OSS: '4.32.0',
-    // Add more as needed
-};
 
 
 /***/ }),
@@ -31001,51 +30981,156 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.transformLiquibaseEnvironmentVariables = transformLiquibaseEnvironmentVariables;
 const core = __importStar(__nccwpck_require__(7484));
 const installer_1 = __nccwpck_require__(7651);
+const path = __importStar(__nccwpck_require__(6928));
+const fs = __importStar(__nccwpck_require__(9896));
+const io = __importStar(__nccwpck_require__(4994));
+/**
+ * Proactively transforms any problematic Liquibase environment variables
+ * immediately when the action starts, regardless of how they're set in the workflow
+ */
+async function transformLiquibaseEnvironmentVariables() {
+    // Dynamically find all Liquibase environment variables that likely contain file/directory paths
+    const pathIndicators = [
+        'FILE', 'PATH', 'DIR', 'DIRECTORY', 'CLASSPATH', 'OUTPUT',
+        'SQL', 'DEFAULTS', 'PROPERTIES', 'CHANGELOG', 'SCHEMA'
+    ];
+    // Create a regex pattern for efficient matching - O(1) per key instead of O(m)
+    const pathIndicatorPattern = new RegExp(`(${pathIndicators.join('|')})`, 'i');
+    const liquibaseFilePathEnvVars = Object.keys(process.env)
+        .filter(key => {
+        // Must start with LIQUIBASE_
+        if (!key.startsWith('LIQUIBASE_'))
+            return false;
+        // Must contain path-like indicators - now O(1) instead of O(m)
+        return pathIndicatorPattern.test(key);
+    })
+        .sort(); // Sort for consistent processing order
+    // Debug: Show which Liquibase environment variables are being processed
+    if (liquibaseFilePathEnvVars.length > 0) {
+        core.debug(`Detected ${liquibaseFilePathEnvVars.length} Liquibase environment variable(s) with potential file paths: ${liquibaseFilePathEnvVars.join(', ')}`);
+    }
+    const restrictedRootDirs = [
+        'liquibase', 'usr', 'bin', 'sbin', 'lib', 'var', 'etc', 'opt', 'root',
+        'boot', 'sys', 'proc', 'dev', 'run', 'srv', 'media', 'mnt'
+    ];
+    const transformedPaths = [];
+    for (const envVarName of liquibaseFilePathEnvVars) {
+        const originalPath = process.env[envVarName];
+        if (!originalPath) {
+            continue;
+        }
+        try {
+            const pathSeparator = process.platform === 'win32' ? ';' : ':';
+            const paths = originalPath.includes(pathSeparator)
+                ? originalPath.split(pathSeparator)
+                : [originalPath];
+            const transformedPathsList = [];
+            let wasTransformed = false;
+            for (const singlePath of paths) {
+                let processedPath = singlePath.trim();
+                if (path.isAbsolute(processedPath)) {
+                    // Handle both Unix and Windows style paths consistently
+                    const normalizedPath = processedPath.replace(/\\/g, '/');
+                    const rootParts = normalizedPath.split('/').filter(part => part.length > 0);
+                    if (rootParts.length > 0) {
+                        const rootDir = rootParts[0];
+                        if (restrictedRootDirs.includes(rootDir)) {
+                            // Create a proper workspace-relative path using Node.js path module
+                            const relativePath = path.join('.', processedPath.substring(1)); // Remove leading slash and join with '.'
+                            processedPath = relativePath;
+                            wasTransformed = true;
+                            transformedPaths.push(`${envVarName}: '${singlePath}' → '${relativePath}'`);
+                            // Create directory if this looks like a file path
+                            const isFilePath = envVarName.includes('FILE') || envVarName.includes('OUTPUT') ||
+                                (path.extname(processedPath) !== '' && !fs.existsSync(processedPath)) ||
+                                (fs.existsSync(processedPath) && fs.statSync(processedPath).isFile());
+                            if (isFilePath) {
+                                const absolutePath = path.resolve(processedPath);
+                                const directory = path.dirname(absolutePath);
+                                if (!fs.existsSync(directory)) {
+                                    await io.mkdirP(directory);
+                                    core.info(`Created directory for ${envVarName}: ${directory}`);
+                                }
+                            }
+                        }
+                    }
+                }
+                transformedPathsList.push(processedPath);
+            }
+            if (wasTransformed) {
+                const finalPath = transformedPathsList.join(pathSeparator);
+                process.env[envVarName] = finalPath;
+                core.exportVariable(envVarName, finalPath);
+            }
+        }
+        catch (error) {
+            core.warning(`Failed to transform ${envVarName} path '${originalPath}': ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    if (transformedPaths.length > 0) {
+        const indent = '  ';
+        core.startGroup('🔄 Path Transformation (Security & Compatibility)');
+        core.info(`${indent}Absolute paths have been converted to workspace-relative paths`);
+        core.info(`${indent}Transformed ${transformedPaths.length} Liquibase environment variable(s) to workspace-relative paths`);
+        core.info(`${indent}This ensures compatibility with GitHub Actions runners and prevents permission issues`);
+        transformedPaths.forEach(transformation => core.info(`${indent}📝 ${transformation}`));
+        core.info('💡 Tip: Use relative paths (e.g., "logs/file.log") to avoid transformation');
+        core.endGroup();
+    }
+}
+/**
+ * Type guard function to validate edition input
+ * Moved to module level for better performance (avoid redeclaration on each execution)
+ */
+function isValidEdition(edition) {
+    return edition === 'oss' || edition === 'pro';
+}
 /**
  * Main execution function for the GitHub Action
  * Orchestrates the entire Liquibase setup process
  */
 async function run() {
     try {
+        // Transform any problematic environment variables immediately at startup
+        await transformLiquibaseEnvironmentVariables();
         // Extract input parameters from the GitHub Action context
         const version = core.getInput('version');
         const editionInput = core.getInput('edition');
-        const cache = core.getBooleanInput('cache');
         // Validate required version input
         if (!version) {
             throw new Error('Version input is required. Must be a specific version (e.g., "4.32.0")');
         }
-        // Validate required edition input
+        // Validate required edition input using type guard
         if (!editionInput) {
             throw new Error('Edition input is required. Must be either "oss" or "pro"');
         }
-        if (editionInput !== 'oss' && editionInput !== 'pro') {
-            throw new Error('Edition must be either "oss" or "pro"');
+        if (!isValidEdition(editionInput)) {
+            throw new Error(`Invalid edition: "${editionInput}". Must be either "oss" or "pro"`);
         }
-        const edition = editionInput;
-        // Log the setup configuration for debugging purposes
-        core.info(`Setting up Liquibase version ${version} (${edition} edition)`);
+        const edition = editionInput; // Now TypeScript knows it's 'oss' | 'pro'
         // Execute the main installation logic
         const result = await (0, installer_1.setupLiquibase)({
             version,
-            edition,
-            cache
+            edition
         });
         // Set output values that other workflow steps can reference
         core.setOutput('liquibase-version', result.version);
         core.setOutput('liquibase-path', result.path);
-        // Log successful completion
-        core.info(`Successfully set up Liquibase ${result.version} at ${result.path}`);
+        core.info(`✅ setup-liquibase completed successfully!`);
     }
     catch (error) {
         // Handle any errors by failing the action with a descriptive message
         core.setFailed(error instanceof Error ? error.message : String(error));
     }
 }
-// Execute the main function when this module is loaded
-run();
+// Execute the main function only when this module is run directly
+// This prevents auto-execution when imported by tests or other modules
+if (require.main === require.cache[eval('__filename')]) {
+    run();
+}
 
 
 /***/ }),
@@ -31062,7 +31147,6 @@ run();
  * - Downloading and installing Liquibase (OSS and Pro editions)
  * - Version resolution and management
  * - Cross-platform support (Linux, Windows, macOS)
- * - Caching for improved performance
  * - Installation validation
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
@@ -31102,12 +31186,12 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.setupLiquibase = setupLiquibase;
 exports.getDownloadUrl = getDownloadUrl;
 const core = __importStar(__nccwpck_require__(7484));
-const tc = __importStar(__nccwpck_require__(3472));
 const exec = __importStar(__nccwpck_require__(5236));
 const io = __importStar(__nccwpck_require__(4994));
 const path = __importStar(__nccwpck_require__(6928));
 const fs = __importStar(__nccwpck_require__(9896));
 const os = __importStar(__nccwpck_require__(857));
+const tool_cache_1 = __nccwpck_require__(3472);
 const config_1 = __nccwpck_require__(2973);
 const semver = __importStar(__nccwpck_require__(2088));
 /**
@@ -31116,16 +31200,15 @@ const semver = __importStar(__nccwpck_require__(2088));
  * This function coordinates the entire installation process:
  * 1. Validates version and edition requirements
  * 2. Resolves the exact version to install
- * 3. Checks for cached installations
- * 4. Downloads and extracts Liquibase if needed
- * 5. Validates the installation
- * 6. Adds Liquibase to the system PATH
+ * 3. Downloads and extracts Liquibase
+ * 4. Validates the installation
+ * 5. Adds Liquibase to the system PATH
  *
  * @param options - Configuration for the Liquibase setup
  * @returns Promise resolving to the setup result with version and path
  */
 async function setupLiquibase(options) {
-    const { version, edition, cache } = options;
+    const { version, edition } = options;
     // Enhanced version validation
     if (!version) {
         throw new Error('Version is required');
@@ -31138,63 +31221,65 @@ async function setupLiquibase(options) {
     if (semver.lt(version, config_1.MIN_SUPPORTED_VERSION)) {
         throw new Error(`Version ${version} is not supported. Minimum supported version is ${config_1.MIN_SUPPORTED_VERSION}`);
     }
-    // Enhanced edition validation
-    if (!['oss', 'pro'].includes(edition)) {
+    // Enhanced edition validation with type guard
+    const validEditions = ['oss', 'pro'];
+    if (!validEditions.includes(edition)) {
         throw new Error(`Invalid edition: ${edition}. Must be either 'oss' or 'pro'`);
     }
     // Use the specified version directly (no resolution needed since we only support specific versions)
     const resolvedVersion = version;
-    // Validate the specified version meets minimum requirements
-    if (semver.lt(resolvedVersion, config_1.MIN_SUPPORTED_VERSION)) {
-        throw new Error(`Version ${resolvedVersion} is not supported. Minimum supported version is ${config_1.MIN_SUPPORTED_VERSION}`);
+    core.info(`🚀 Setting up Liquibase ${edition.toUpperCase()} ${resolvedVersion}`);
+    let toolPath;
+    try {
+        // Get the appropriate download URL for this version and edition
+        const downloadUrl = getDownloadUrl(resolvedVersion, edition);
+        core.info(`📥 Downloading from: ${downloadUrl}`);
+        // Download the Liquibase archive with error handling
+        const downloadPath = await (0, tool_cache_1.downloadTool)(downloadUrl);
+        core.info(`📦 Extracting Liquibase archive...`);
+        // Extract the archive to a temporary directory
+        toolPath = await extractLiquibase(downloadPath);
+        core.info(`✅ Installation completed successfully`);
     }
-    // Create a unique tool name for caching that includes the edition
-    const toolName = `liquibase-${edition}`;
-    // Check if we already have this version cached
-    let toolPath = tc.find(toolName, resolvedVersion);
-    // Download and install if not cached or caching is disabled
-    if (!toolPath || !cache) {
-        core.info(`Installing Liquibase ${edition} version ${resolvedVersion}`);
-        try {
-            // Get the appropriate download URL for this version and edition
-            const downloadUrl = getDownloadUrl(resolvedVersion, edition);
-            core.info(`Downloading from: ${downloadUrl}`);
-            // Download the Liquibase archive with error handling
-            const downloadPath = await tc.downloadTool(downloadUrl);
-            // Extract the archive to a temporary directory
-            const extractedPath = await extractLiquibase(downloadPath);
-            // Cache the installation if caching is enabled
-            if (cache) {
-                toolPath = await tc.cacheDir(extractedPath, toolName, resolvedVersion);
+    catch (error) {
+        if (error instanceof Error) {
+            if (error.message.includes('404') || error.message.includes('Not Found')) {
+                throw new Error(`Liquibase ${edition} version ${resolvedVersion} not found. Please check that this version exists and is available for download.`);
             }
-            else {
-                toolPath = extractedPath;
+            else if (error.message.includes('ENOTFOUND') || error.message.includes('network')) {
+                throw new Error(`Network error downloading Liquibase. Please check your internet connection and try again.`);
+            }
+            else if (error.message.includes('EACCES') || error.message.includes('permission')) {
+                throw new Error(`Permission denied while installing Liquibase. Please check that the runner has sufficient permissions.`);
             }
         }
-        catch (error) {
-            if (error instanceof Error) {
-                if (error.message.includes('404') || error.message.includes('Not Found')) {
-                    throw new Error(`Liquibase ${edition} version ${resolvedVersion} not found. Please check that this version exists and is available for download.`);
-                }
-                else if (error.message.includes('ENOTFOUND') || error.message.includes('network')) {
-                    throw new Error(`Network error downloading Liquibase. Please check your internet connection and try again.`);
-                }
-                else if (error.message.includes('EACCES') || error.message.includes('permission')) {
-                    throw new Error(`Permission denied while installing Liquibase. Please check that the runner has sufficient permissions.`);
-                }
-            }
-            throw new Error(`Failed to download and install Liquibase: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-    else {
-        core.info(`Found cached Liquibase ${edition} version ${resolvedVersion}`);
+        throw new Error(`Failed to download and install Liquibase: ${error instanceof Error ? error.message : String(error)}`);
     }
     // Construct the path to the Liquibase executable
     const liquibaseBinPath = path.join(toolPath, 'liquibase');
     // Add the tool directory to the system PATH so 'liquibase' command is available
     core.addPath(toolPath);
+    core.info(`🔧 Added Liquibase to system PATH`);
     // Verify that the installation was successful
     await validateInstallation(liquibaseBinPath);
+    // Display comprehensive setup information following popular GitHub Actions patterns
+    core.startGroup('🎯 Liquibase configuration');
+    core.info(` Edition: ${edition.toUpperCase()}`);
+    core.info(` Version: ${resolvedVersion}`);
+    core.info(` Install Path: ${toolPath}`);
+    core.info(` Execution Context: ${process.cwd()}`);
+    core.endGroup();
+    // Add helpful migration information with cross-platform path handling
+    core.startGroup('💡 Migration Guidance');
+    const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
+    const currentDir = process.cwd();
+    const workspaceInfo = path.relative(workspace, currentDir) || 'repository';
+    core.info(`Migration from liquibase-github-actions:`);
+    core.info(`   • Liquibase installs to: temporary directory (not /liquibase/)`);
+    core.info(`   • Liquibase executes from: ${workspaceInfo}/`);
+    core.info(`   • Use relative paths: --changelog-file=changelog.xml`);
+    core.info(`   • Absolute paths are auto-transformed for security`);
+    core.endGroup();
     // Return the results for use by the action
     return {
         version: resolvedVersion,
@@ -31231,7 +31316,7 @@ async function extractLiquibase(downloadPath) {
     try {
         if (platform === 'win32') {
             // Extract ZIP archives (Windows)
-            return await tc.extractZip(downloadPath);
+            return await (0, tool_cache_1.extractZip)(downloadPath);
         }
         else {
             // For both macOS and Linux, use a direct exec approach instead of tool-cache
@@ -31288,40 +31373,68 @@ async function validateInstallation(liquibasePath) {
         if (!fs.existsSync(executable)) {
             throw new Error(`Liquibase executable not found at ${executable}`);
         }
+        // Note: Environment variable path validation and transformation 
+        // is now handled in index.ts at action startup
         // Run 'liquibase --version' to verify the installation works
-        let output = '';
-        // Add timeout wrapper to prevent hanging on Pro license validation issues
+        let stdoutOutput = '';
+        let stderrOutput = '';
+        let exitCode = null;
+        // Add timeout wrapper to prevent hanging
         const execPromise = exec.exec(executable, ['--version'], {
             silent: true,
+            ignoreReturnCode: true, // Don't throw on non-zero exit codes, we'll handle them
             env: {
                 ...process.env
             },
             listeners: {
                 stdout: (data) => {
-                    output += data.toString();
+                    stdoutOutput += data.toString();
                 },
                 stderr: (data) => {
-                    const stderrOutput = data.toString();
-                    core.debug(`Liquibase stderr: ${stderrOutput}`);
-                    // Check for specific installation issues that might cause hangs
-                    if (stderrOutput.includes('ClassNotFoundException: liquibase.integration.commandline.LiquibaseLauncher')) {
-                        core.warning('Liquibase installation may have classpath issues - this is often caused by download corruption or Java environment problems');
-                    }
+                    stderrOutput += data.toString();
                 }
             }
+        }).then((code) => {
+            exitCode = code;
+            return code;
         });
+        let timeoutHandle;
+        const VALIDATION_TIMEOUT_MS = 30000;
         const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Liquibase validation timed out after 30 seconds')), 30000);
+            timeoutHandle = setTimeout(() => reject(new Error(`Liquibase validation timed out after ${VALIDATION_TIMEOUT_MS / 1000} seconds`)), VALIDATION_TIMEOUT_MS);
         });
-        await Promise.race([execPromise, timeoutPromise]);
-        // Check if version output contains expected content
-        if (!output.toLowerCase().includes('liquibase')) {
-            throw new Error(`Unexpected version output: ${output}`);
+        try {
+            await Promise.race([execPromise, timeoutPromise]);
         }
-        core.info('Liquibase installation validated successfully');
-        core.debug(`Version output: ${output}`);
+        finally {
+            // Clean up the timeout to prevent open handles
+            if (timeoutHandle) {
+                clearTimeout(timeoutHandle);
+            }
+        }
+        // If we got a non-zero exit code, include the actual error output
+        if (exitCode !== 0) {
+            let errorMessage = `Liquibase validation failed with exit code ${exitCode}`;
+            if (stderrOutput.trim()) {
+                errorMessage += `\n\nLiquibase error output:\n${stderrOutput.trim()}`;
+            }
+            if (stdoutOutput.trim()) {
+                errorMessage += `\n\nLiquibase stdout:\n${stdoutOutput.trim()}`;
+            }
+            throw new Error(errorMessage);
+        }
+        // Check if version output contains expected content
+        if (!stdoutOutput.toLowerCase().includes('liquibase')) {
+            throw new Error(`Unexpected version output: ${stdoutOutput}`);
+        }
+        core.info('✅ Liquibase installation validated successfully');
+        core.debug(`Version output: ${stdoutOutput.trim()}`);
     }
     catch (error) {
+        // Pass through our detailed error messages, or wrap generic ones
+        if (error instanceof Error && error.message.includes('Liquibase validation failed with exit code')) {
+            throw error; // Already has detailed error info
+        }
         throw new Error(`Failed to validate Liquibase installation: ${error instanceof Error ? error.message : String(error)}`);
     }
 }

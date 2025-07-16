@@ -7,4 +7,8 @@
  * - Setting output values for other workflow steps
  * - Error handling and reporting
  */
-export {};
+/**
+ * Proactively transforms any problematic Liquibase environment variables
+ * immediately when the action starts, regardless of how they're set in the workflow
+ */
+export declare function transformLiquibaseEnvironmentVariables(): Promise<void>;
