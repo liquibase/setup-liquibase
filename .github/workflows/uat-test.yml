@@ -30,6 +30,7 @@ on:
 # Minimal permissions for security
 permissions:
   contents: read
+  id-token: write
 
 # Cancel in-progress runs when new runs are triggered
 concurrency:
@@ -442,6 +443,20 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
     
+    - name: Configure AWS credentials for vault access
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.LIQUIBASE_VAULT_OIDC_ROLE_ARN }}
+        aws-region: us-east-1
+
+    - name: Get secrets from vault
+      id: vault-secrets
+      uses: aws-actions/aws-secretsmanager-get-secrets@v2
+      with:
+        secret-ids: |
+          ,/vault/liquibase
+        parse-json-secrets: true
+
     - name: Setup Node.js Environment
       uses: actions/setup-node@v4
       with:
@@ -456,7 +471,7 @@ jobs:
     - name: Check Pro License Availability
       id: check-license
       run: |
-        if [ -n "${{ secrets.PRO_LICENSE_KEY }}" ]; then
+        if [ -n "${{ env.PRO_LICENSE_KEY }}" ]; then
           echo "has_license=true" >> $GITHUB_OUTPUT
           echo "✅ Pro license key available for testing"
         else
@@ -480,7 +495,7 @@ jobs:
         version: ${{ inputs.liquibase_version || '4.32.0' }}
         edition: 'pro'
       env:
-        LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
+        LIQUIBASE_LICENSE_KEY: ${{ env.PRO_LICENSE_KEY }}
         # Test Pro edition with path transformation using real MySQL driver
         LIQUIBASE_LOG_FILE: /liquibase/pro-logs/liquibase-pro.log
         LIQUIBASE_CLASSPATH: /liquibase/lib/mysql-connector-j-9.0.0.jar
