@@ -12,6 +12,7 @@ on:
 # Minimal permissions for security
 permissions:
   contents: read
+  id-token: write
 
 # Cancel in-progress runs when new commits are pushed to the same branch
 concurrency:
