@@ -157,10 +157,13 @@ jobs:
 
 ## Pro Edition Support
 
-The action supports both Liquibase OSS and Pro editions. The Pro edition can be installed by specifying `edition: 'pro'`. 
+The action supports both Liquibase OSS and Pro editions. The Pro edition can be installed by specifying `edition: 'pro'`.
 
-For Pro edition, you must provide a valid license key using the `LIQUIBASE_LICENSE_KEY` environment variable. We recommend setting this at the **job level** for optimal security and simplicity:
+### Pro License Management
 
+**The setup action installs Pro binaries without validating the license.** License validation occurs when you run Pro-specific commands. You can provide your license key using several methods:
+
+#### Option 1: GitHub Secrets (Simple)
 ```yaml
 jobs:
   pro-operations:
@@ -175,6 +178,40 @@ jobs:
     - run: liquibase update --changelog-file=changelog.xml
     - run: liquibase checks run --changelog-file=changelog.xml
 ```
+
+#### Option 2: AWS Secrets Manager (Enterprise)
+```yaml
+jobs:
+  pro-operations:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE }}
+        aws-region: us-east-1
+    - uses: liquibase/setup-liquibase@v1
+      with:
+        version: '4.32.0'
+        edition: 'pro'
+    - name: Install AWS Secrets Manager Extension
+      run: |
+        wget -O liquibase-aws-secretsmanager.jar https://repo1.maven.org/maven2/org/liquibase/ext/liquibase-secretsmanager-aws/1.0.6/liquibase-secretsmanager-aws-1.0.6.jar
+    - run: |
+        liquibase \
+          --classpath=liquibase-aws-secretsmanager.jar \
+          --license-key=aws-secrets,my-liquibase-secrets,license-key \
+          update --changelog-file=changelog.xml
+```
+
+#### Option 3: Liquibase Properties File
+```yaml
+    - name: Configure Liquibase Properties
+      run: |
+        echo "liquibase.licenseKey=aws-secrets,my-liquibase-secrets,license-key" > liquibase.properties
+    - run: liquibase update --changelog-file=changelog.xml
+```
+
+> **Enterprise Note**: AWS Secrets Manager and other vault integrations require the appropriate Liquibase extension (manual installation shown above). Starting with Liquibase 5.0, AWS extensions will be included by default.
 
 ## Complete Workflow Examples
 
@@ -280,7 +317,7 @@ jobs:
 
 #### Example 2: Flow Files from S3
 
-**Note**: S3 integration requires the `liquibase-aws-extension` JAR file to be available in Liquibase's classpath. Download the extension from [Maven Central](https://mvnrepository.com/artifact/org.liquibase.ext/liquibase-aws-extension) and include it using the `--classpath` parameter. Extensions can be also installed using [lpm](https://github.com/liquibase/liquibase-package-manager)
+**Note**: S3 integration requires the `liquibase-aws-extension` JAR file to be available in Liquibase's classpath. Download the extension from [Maven Central](https://mvnrepository.com/artifact/org.liquibase.ext/liquibase-aws-extension) and include it using the `--classpath` parameter. Starting with Liquibase 5.0, AWS extensions will be included by default.
 
 ```yaml
 name: Database Deployment with S3 Flow
@@ -302,31 +339,13 @@ jobs:
         version: '4.32.0'
         edition: 'pro'
         
-    - name: Download AWS Extension (Direct JAR)
+    - name: Download AWS Extension
       run: |
         wget -O liquibase-aws-extension.jar https://repo1.maven.org/maven2/org/liquibase/ext/liquibase-aws-extension/1.0.1/liquibase-aws-extension-1.0.1.jar
         
-    - name: Execute Flow from S3 (Direct JAR)
+    - name: Execute Flow from S3
       run: |
         liquibase --classpath=liquibase-aws-extension.jar --search-path=s3://my-bucket/liquibase/resources,. flow \
-          --flow-file=s3://my-bucket/liquibase/flows/production-deployment.flowfile.yaml \
-          --url=jdbc:postgresql://localhost/mydb \
-          --username=dbuser \
-          --password=${{ secrets.DB_PASSWORD }}
-          
-    # Alternative: Using extensions installed via Package Manager
-    - name: Install AWS Extension via Package Manager
-      run: |
-        # Install the Liquibase Package Manager
-        wget -O lpm.zip https://github.com/liquibase/liquibase-package-manager/releases/download/v0.2.9/lpm-0.2.9-linux.zip
-        unzip lpm.zip
-        # Install the AWS extension
-        ./lpm add liquibase-aws-extension
-        
-    # Alternative: Using extensions installed via Package Manager
-    - name: Execute Flow from S3 (Package Manager)
-      run: |
-        liquibase --search-path=s3://my-bucket/liquibase/resources,. flow \
           --flow-file=s3://my-bucket/liquibase/flows/production-deployment.flowfile.yaml \
           --url=jdbc:postgresql://localhost/mydb \
           --username=dbuser \
