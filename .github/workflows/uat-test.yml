@@ -50,9 +50,9 @@ jobs:
         include:
           # Test additional versions on Ubuntu for version compatibility
           - os: ubuntu-latest
-            version: '4.31.1'
+            version: '4.33.0'
           - os: ubuntu-latest
-            version: '4.30.0'
+            version: '4.32.0'
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
