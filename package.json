@@ -36,18 +36,18 @@
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
-    "@types/node": "^24.0.15",
+    "@types/node": "^24.2.0",
     "@types/semver": "^7.5.8",
-    "@typescript-eslint/eslint-plugin": "^8.37.0",
+    "@typescript-eslint/eslint-plugin": "^8.39.0",
     "@typescript-eslint/parser": "^8.34.1",
     "@vercel/ncc": "^0.38.1",
-    "cross-env": "^7.0.3",
-    "eslint": "^9.31.0",
+    "cross-env": "^10.0.0",
+    "eslint": "^9.32.0",
     "eslint-plugin-jest": "^29.0.1",
-    "jest": "^30.0.4",
+    "jest": "^30.0.5",
     "prettier": "^3.6.2",
-    "ts-jest": "^29.4.0",
-    "typescript": "^5.4.3"
+    "ts-jest": "^29.4.1",
+    "typescript": "^5.9.2"
   },
   "overrides": {
     "inflight": "npm:@isaacs/inflight@^1.0.6",
