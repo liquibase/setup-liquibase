@@ -117,6 +117,31 @@ This action supports Liquibase versions 4.32.0 and higher:
 
 The minimum supported version is `4.32.0` to ensure compatibility with the official Liquibase download endpoints used by this action.
 
+## Action Versioning
+
+This action follows [semantic versioning](https://semver.org/):
+
+- **Major version tags** (e.g., `@v1`): Automatically updated to the latest compatible release
+  - Recommended for most users to receive non-breaking updates automatically
+- **Specific version tags** (e.g., `@v1.0.0`): Pin to an exact release
+  - Use when you need reproducible builds
+
+### Version Updates
+
+- **v1.0.x** → Patch releases: Bug fixes only (backward compatible)
+- **v1.x.0** → Minor releases: New features (backward compatible)
+- **v2.0.0** → Major releases: Breaking changes
+
+### Recommended Usage
+
+```yaml
+# Recommended: Use major version tag for automatic non-breaking updates
+- uses: liquibase/setup-liquibase@v1
+
+# Alternative: Pin to specific version for reproducibility
+- uses: liquibase/setup-liquibase@v1.0.0
+```
+
 ## Platform Support
 
 - Linux (ubuntu-latest, ubuntu-20.04, ubuntu-22.04)

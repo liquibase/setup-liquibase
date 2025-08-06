@@ -471,75 +471,14 @@ jobs:
           tag: "v${{ env.VERSION }}"
           name: "v${{ env.VERSION }}"
           bodyFile: "/tmp/changelog_entry.md"
-          artifacts: "dist/index.js,dist/index.js.map"
           makeLatest: true
           draft: ${{ github.event.inputs.publish_release != 'true' }}
           prerelease: false
           token: ${{ steps.get-token.outputs.token }}
 
-      - name: Upload Assets to Draft Release
-        if: steps.find-draft.outputs.outcome == 'success'
-        env:
-          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
-        run: |
-          echo "Uploading assets to draft release: ${{ steps.find-draft.outputs.tag_name }}"
-          
-          # Verify that distribution files exist
-          if [ ! -f "dist/index.js" ]; then
-            echo "❌ dist/index.js not found!"
-            exit 1
-          fi
-          
-          if [ ! -f "dist/index.js.map" ]; then
-            echo "❌ dist/index.js.map not found!"
-            exit 1
-          fi
-          
-          echo "✅ Distribution files verified"
-          
-          # Upload build artifacts to the draft release
-          echo "Uploading artifacts to draft release ${{ steps.find-draft.outputs.tag_name }}..."
-          if gh release upload "${{ steps.find-draft.outputs.tag_name }}" \
-            dist/index.js \
-            dist/index.js.map \
-            --clobber; then
-            echo "✅ Assets uploaded successfully to draft release"
-          else
-            echo "❌ Failed to upload assets to draft release"
-            echo "Attempting to list current release assets..."
-            gh release view "${{ steps.find-draft.outputs.tag_name }}" --json assets --jq '.assets[].name' || true
-            exit 1
-          fi
+      # Assets are not needed for GitHub Actions - they run from repository code
 
-      - name: Upload Assets to New Release
-        if: steps.find-draft.outputs.outcome == 'create_new' && steps.create-release.outcome == 'success'
-        env:
-          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
-        run: |
-          echo "Verifying assets were uploaded to new release..."
-          
-          # The ncipollo/release-action should have already uploaded the artifacts
-          # This step is mainly for verification and fallback
-          RELEASE_TAG="v${{ env.VERSION }}"
-          
-          # Check if assets exist on the release
-          ASSETS=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' || echo "")
-          
-          if echo "$ASSETS" | grep -q "index.js"; then
-            echo "✅ index.js found in release assets"
-          else
-            echo "⚠️  index.js not found, uploading manually..."
-            gh release upload "$RELEASE_TAG" dist/index.js --clobber
-          fi
-          
-          if echo "$ASSETS" | grep -q "index.js.map"; then
-            echo "✅ index.js.map found in release assets"
-          else
-            echo "⚠️  index.js.map not found, uploading manually..."
-            gh release upload "$RELEASE_TAG" dist/index.js.map --clobber
-          fi
-          
-          echo "✅ Asset verification completed for new release"
+      # GitHub Actions don't need release assets - removed per best practices
 
       - name: Commit and push changelog
         env:
