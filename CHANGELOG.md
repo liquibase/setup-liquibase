@@ -1,5 +1,40 @@
 # Changelog
 
+## [v1.0.0] - 2025-08-06
+
+### 🎉 Production Release
+
+First stable release of setup-liquibase GitHub Action!
+
+### 🚀 Key Features
+- Full support for Liquibase OSS and Pro editions
+- Cross-platform compatibility (Linux, Windows, macOS)
+- Semantic versioning with major tag support (`@v1`)
+- Enterprise-ready with comprehensive testing (74 tests)
+- GitHub Actions Marketplace availability
+
+### 📋 Changes from v1-beta
+- Transitioned from pre-release to production status
+- Removed unnecessary release assets (aligning with GitHub Actions best practices)
+- Added comprehensive semantic versioning documentation
+- Enhanced release automation workflow
+
+### 🔧 Technical Improvements
+- No release assets attached (follows setup-node, setup-java pattern)
+- Cleaner release process without artifact uploads
+- Simplified workflow configuration
+
+### 📖 Usage
+```yaml
+steps:
+  - uses: liquibase/setup-liquibase@v1
+    with:
+      version: '4.32.0'
+      edition: 'oss'
+```
+
+---
+
 ## What's Changed in v1-beta
 
 ### 🚀 Features

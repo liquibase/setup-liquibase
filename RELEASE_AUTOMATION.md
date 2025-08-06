@@ -114,7 +114,11 @@ feature:
 2. **Label PRs Appropriately**: Helps with release categorization
 3. **Test Before Release**: The multi-platform testing catches issues early
 4. **Review Draft Releases**: Check generated notes before publishing
-5. **Use Semantic Versioning**: `major.minor.patch` format
+5. **Follow Semantic Versioning**:
+   - **Patch (x.x.1)**: Bug fixes only (backward compatible)
+   - **Minor (x.1.0)**: New features (backward compatible)
+   - **Major (1.0.0)**: Breaking changes
+   - **Tags**: Major tag (v1) auto-updates to latest v1.x.x
 
 ## Troubleshooting
 
@@ -130,10 +134,11 @@ feature:
 - Ensure all tests pass before attempting release
 - Review the build summary for specific error details
 
-**Asset Upload Failures:**
-- Verify that `dist/` files are built correctly
-- Check GitHub App token permissions
-- Ensure the release exists and is accessible
+**Release Assets Policy:**
+- GitHub Actions do NOT require release assets
+- Action runs from repository code, not downloaded artifacts
+- Following same pattern as official actions (setup-node, setup-java)
+- No `index.js` or `index.js.map` assets attached to releases
 
 ## Example Workflow Run
 

@@ -1,6 +1,11 @@
-# UAT Testing Guide for Setup Liquibase v1-beta
+# UAT Testing Guide for Setup Liquibase
 
-This document provides comprehensive testing instructions for the setup-liquibase GitHub Action beta release.
+This document provides comprehensive testing instructions for the setup-liquibase GitHub Action.
+
+## Current Testing Versions
+- **Production**: `@v1` (latest stable release)
+- **Specific Version**: `@v1.0.0` (for regression testing)
+- **Pre-release**: Use specific tags when testing betas (e.g., `@v2-beta`)
 
 ## Quick Start for Testers
 
@@ -24,7 +29,7 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Setup Liquibase OSS
-      uses: liquibase/setup-liquibase@v1-beta
+      uses: liquibase/setup-liquibase@v1
       with:
         version: '4.32.0'
         edition: 'oss'
@@ -47,7 +52,7 @@ strategy:
     os: [ubuntu-latest, windows-latest, macos-latest]
 
 steps:
-- uses: liquibase/setup-liquibase@v1-beta
+- uses: liquibase/setup-liquibase@v1
   with:
     version: ${{ matrix.version }}
     edition: 'oss'
@@ -56,7 +61,7 @@ steps:
 #### Pro Edition Tests
 ```yaml
 steps:
-- uses: liquibase/setup-liquibase@v1-beta
+- uses: liquibase/setup-liquibase@v1
   with:
     version: '4.32.0'
     edition: 'pro'
@@ -81,7 +86,7 @@ runs-on: ${{ matrix.os }}
 #### Database Operations Test
 ```yaml
 - name: Setup Liquibase
-  uses: liquibase/setup-liquibase@v1-beta
+  uses: liquibase/setup-liquibase@v1
   with:
     version: '4.32.0'
     edition: 'oss'
@@ -135,7 +140,7 @@ runs-on: ${{ matrix.os }}
 #### Invalid Version Test
 ```yaml
 - name: Test Invalid Version (Should Fail)
-  uses: liquibase/setup-liquibase@v1-beta
+  uses: liquibase/setup-liquibase@v1
   continue-on-error: true
   id: invalid-version
   with:
@@ -153,7 +158,7 @@ runs-on: ${{ matrix.os }}
 #### Pro Edition Installation Test
 ```yaml
 - name: Test Pro Installation (Should Succeed)
-  uses: liquibase/setup-liquibase@v1-beta
+  uses: liquibase/setup-liquibase@v1
   id: pro-install
   with:
     version: '4.32.0'
@@ -173,7 +178,7 @@ runs-on: ${{ matrix.os }}
 #### Path Transformation Test
 ```yaml
 - name: Test Path Transformation (Enhanced Logging)
-  uses: liquibase/setup-liquibase@v1-beta
+  uses: liquibase/setup-liquibase@v1
   with:
     version: '4.32.0'
     edition: 'oss'
@@ -202,7 +207,7 @@ runs-on: ${{ matrix.os }}
 #### Migration Guidance Test
 ```yaml
 - name: Test Enhanced Logging Output
-  uses: liquibase/setup-liquibase@v1-beta
+  uses: liquibase/setup-liquibase@v1
   with:
     version: '4.32.0'
     edition: 'oss'
@@ -309,7 +314,7 @@ Copy and paste this template when reporting UAT issues:
 
 ## Success Criteria
 
-The v1-beta release is ready for v1.0.0 promotion when:
+A release is ready for production when:
 
 - [ ] All basic functionality tests pass
 - [ ] All platform compatibility tests pass
@@ -321,7 +326,7 @@ The v1-beta release is ready for v1.0.0 promotion when:
 
 ## Security & Quality Assurance
 
-The v1-beta release has undergone security scanning and quality checks:
+All releases undergo security scanning and quality checks:
 
 - ✅ **CodeQL Security Scanning**: Automated security analysis completed
 - ✅ **Dependency Updates**: All dependencies updated to latest versions
