@@ -70,7 +70,7 @@ jobs:
           permission-packages: write
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           token: ${{ steps.get-token.outputs.token }}
@@ -141,7 +141,7 @@ jobs:
           permission-issues: write
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           token: ${{ steps.get-token.outputs.token }}
@@ -187,7 +187,7 @@ jobs:
           permission-packages: write
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           token: ${{ steps.get-token.outputs.token }}
@@ -626,7 +626,7 @@ jobs:
           permission-actions: write
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ steps.get-token.outputs.token }}
           fetch-depth: 0
