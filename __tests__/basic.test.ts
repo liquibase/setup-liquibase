@@ -73,15 +73,16 @@ describe('Basic Functionality Validation', () => {
   
   /**
    * Validates that supported Liquibase editions are properly defined
-   * This ensures the action supports both OSS and Pro editions
+   * This ensures the action supports OSS, Secure, and Pro (for backward compatibility) editions
    */
-  it('should support both Liquibase editions', () => {
-    const validEditions = ['oss', 'pro'];
+  it('should support all Liquibase editions', () => {
+    const validEditions = ['oss', 'secure', 'pro'];
     
-    // Verify both supported editions are available
-    expect(validEditions).toContain('oss');  // Open Source edition
-    expect(validEditions).toContain('pro');  // Professional edition
-    expect(validEditions).toHaveLength(2);   // Only these two editions
+    // Verify all supported editions are available
+    expect(validEditions).toContain('oss');     // Open Source edition
+    expect(validEditions).toContain('secure');  // Secure edition (primary)
+    expect(validEditions).toContain('pro');     // Professional edition (backward compatibility)
+    expect(validEditions).toHaveLength(3);      // All three editions
   });
   
   /**
@@ -96,16 +97,23 @@ describe('Basic Functionality Validation', () => {
       
       const ossUrl = getDownloadUrl('4.32.0', 'oss');
       const proUrl = getDownloadUrl('4.32.0', 'pro');
+      const secureUrl = getDownloadUrl('4.32.0', 'secure');
       
       expect(ossUrl).toMatch(/^https:\/\/package\.liquibase\.com/);
       expect(proUrl).toMatch(/^https:\/\/package\.liquibase\.com/);
+      expect(secureUrl).toMatch(/^https:\/\/package\.liquibase\.com/);
+      
+      // Verify secure edition uses same URLs as pro edition
+      expect(secureUrl).toBe(proUrl);
       
       if (platform === 'win32') {
         expect(ossUrl).toContain('.zip');
         expect(proUrl).toContain('.zip');
+        expect(secureUrl).toContain('.zip');
       } else {
         expect(ossUrl).toContain('.tar.gz');
         expect(proUrl).toContain('.tar.gz');
+        expect(secureUrl).toContain('.tar.gz');
       }
     });
     

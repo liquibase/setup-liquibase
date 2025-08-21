@@ -87,28 +87,28 @@ npm test -- --testPathPattern=integration
 npm test -- --testPathPattern=performance
 ```
 
-#### ⚠️ **Pro License Tests (Maintainer Only)**
+#### ⚠️ **Secure License Tests (Maintainer Only)**
 
-Pro edition tests require a Liquibase Pro license and will be **automatically skipped** for external contributors:
+Secure edition tests require a Liquibase Secure license and will be **automatically skipped** for external contributors:
 
-- Pro edition installation
-- Pro feature validation
-- Pro license verification
+- Secure edition installation
+- Secure feature validation
+- Secure license verification
 
 **For External Contributors**: This is expected behavior. Your PRs will be fully validated using OSS tests, which cover 95%+ of the action's functionality.
 
-**For Maintainers**: Pro tests run automatically when the `PRO_LICENSE_KEY` repository secret is available.
+**For Maintainers**: Secure tests run automatically when the `PRO_LICENSE_KEY` repository secret is available.
 
 ### Continuous Integration
 
 When you create a pull request:
 
 1. **✅ All core tests run** - No secrets required
-2. **⏩ Pro tests skip gracefully** - Expected for external PRs
+2. **⏩ Secure tests skip gracefully** - Expected for external PRs
 3. **✅ Cross-platform validation** - Ubuntu, Windows, macOS
 4. **✅ Integration testing** - Real Liquibase installation and commands
 
-Your contribution will be fully validated even without Pro license access.
+Your contribution will be fully validated even without Secure license access.
 
 ## Use a Consistent Coding Style
 
@@ -133,14 +133,14 @@ Before submitting a PR:
    - Use your action with `uses: your-username/setup-liquibase@your-branch`
    - Validate OSS edition functionality
 
-3. **Check that all tests pass in CI** - Pro tests may show as skipped, this is expected
+3. **Check that all tests pass in CI** - Secure tests may show as skipped, this is expected
 
 ## Getting Help
 
 - **Questions about development**: Open a discussion in the repository
 - **Bug reports**: Use the issue template
 - **Feature requests**: Open an issue with detailed use case
-- **Pro license testing**: Only maintainers can fully test Pro features
+- **Secure license testing**: Only maintainers can fully test Secure features
 
 ## License
 

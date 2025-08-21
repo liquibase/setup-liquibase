@@ -31086,7 +31086,7 @@ async function transformLiquibaseEnvironmentVariables() {
  * Moved to module level for better performance (avoid redeclaration on each execution)
  */
 function isValidEdition(edition) {
-    return edition === 'oss' || edition === 'pro';
+    return edition === 'oss' || edition === 'pro' || edition === 'secure';
 }
 /**
  * Main execution function for the GitHub Action
@@ -31105,10 +31105,10 @@ async function run() {
         }
         // Validate required edition input using type guard
         if (!editionInput) {
-            throw new Error('Edition input is required. Must be either "oss" or "pro"');
+            throw new Error('Edition input is required. Must be "oss", "secure", or "pro" (for backward compatibility)');
         }
         if (!isValidEdition(editionInput)) {
-            throw new Error(`Invalid edition: "${editionInput}". Must be either "oss" or "pro"`);
+            throw new Error(`Invalid edition: "${editionInput}". Must be "oss", "secure", or "pro" (for backward compatibility)`);
         }
         const edition = editionInput; // Now TypeScript knows it's 'oss' | 'pro'
         // Execute the main installation logic
@@ -31222,9 +31222,9 @@ async function setupLiquibase(options) {
         throw new Error(`Version ${version} is not supported. Minimum supported version is ${config_1.MIN_SUPPORTED_VERSION}`);
     }
     // Enhanced edition validation with type guard
-    const validEditions = ['oss', 'pro'];
+    const validEditions = ['oss', 'pro', 'secure'];
     if (!validEditions.includes(edition)) {
-        throw new Error(`Invalid edition: ${edition}. Must be either 'oss' or 'pro'`);
+        throw new Error(`Invalid edition: ${edition}. Must be 'oss', 'secure', or 'pro' (for backward compatibility)`);
     }
     // Use the specified version directly (no resolution needed since we only support specific versions)
     const resolvedVersion = version;
@@ -31296,7 +31296,7 @@ async function setupLiquibase(options) {
  */
 function getDownloadUrl(version, edition) {
     const isWindows = process.platform === 'win32';
-    if (edition === 'pro') {
+    if (edition === 'pro' || edition === 'secure') {
         const template = isWindows ? config_1.DOWNLOAD_URLS.PRO_WINDOWS_ZIP : config_1.DOWNLOAD_URLS.PRO_UNIX;
         return template.replace(/\{version\}/g, version);
     }
