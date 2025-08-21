@@ -31110,7 +31110,7 @@ async function run() {
         if (!isValidEdition(editionInput)) {
             throw new Error(`Invalid edition: "${editionInput}". Must be "oss", "secure", or "pro" (for backward compatibility)`);
         }
-        const edition = editionInput; // Now TypeScript knows it's 'oss' | 'pro'
+        const edition = editionInput; // Now TypeScript knows it's 'oss' | 'pro' | 'secure'
         // Execute the main installation logic
         const result = await (0, installer_1.setupLiquibase)({
             version,
