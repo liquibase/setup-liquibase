@@ -32,7 +32,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 ## Architecture Overview
 
 ### Primary Purpose
-Single GitHub Action that installs Liquibase (OSS or Pro) and adds it to PATH, allowing users to run any Liquibase command. This replaces the previous approach of having individual actions for each command.
+Single GitHub Action that installs Liquibase (OSS or Secure) and adds it to PATH, allowing users to run any Liquibase command. This replaces the previous approach of having individual actions for each command.
 
 ### Key Components
 
@@ -45,18 +45,18 @@ Single GitHub Action that installs Liquibase (OSS or Pro) and adds it to PATH, a
    - Core installation logic
    - Platform detection (Windows/Unix)
    - Download URL construction
-   - Pro edition installation support
+   - Secure edition installation support
 
 3. **Configuration** (`src/config.ts`)
    - Central location for all URLs and constants
-   - Download URL templates for OSS/Pro editions
+   - Download URL templates for OSS/Secure editions
    - Note: OSS URLs use 'v' prefix, Pro URLs do not
 
 ### Important Implementation Details
 
 - **Minimum Version**: 4.32.0 (enforced due to download endpoint compatibility)
-- **Editions**: 'oss' (Open Source) or 'pro' (Professional)
-- **Pro License**: Required at runtime via `LIQUIBASE_LICENSE_KEY` environment variable (not during installation)
+- **Editions**: 'oss' (Open Source), 'secure' (Secure), or 'pro' (for backward compatibility)
+- **Secure License**: Required at runtime via `LIQUIBASE_LICENSE_KEY` environment variable (not during installation)
 - **Platforms**: Supports Linux (.tar.gz), Windows (.zip), and macOS (.tar.gz)
 - **Build Output**: TypeScript compiles to single `dist/index.js` with source maps
 
