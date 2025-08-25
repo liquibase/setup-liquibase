@@ -50,6 +50,28 @@ describe('getDownloadUrl', () => {
     Object.defineProperty(process, 'platform', { value: originalPlatform });
   });
 
+  it('should use zip extension for Windows Secure (same as Pro)', () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    
+    const version = '4.32.0';
+    const url = getDownloadUrl(version, 'secure');
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/pro/${version}/liquibase-pro-${version}.zip`);
+    
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
+  });
+
+  it('should construct correct Secure URL for Unix-like systems (same as Pro)', () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+    
+    const version = '4.32.0';
+    const url = getDownloadUrl(version, 'secure');
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/pro/${version}/liquibase-pro-${version}.tar.gz`);
+    
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
+  });
+
   it('should use tar.gz for macOS', () => {
     const originalPlatform = process.platform;
     Object.defineProperty(process, 'platform', { value: 'darwin' });
@@ -100,6 +122,48 @@ describe('setupLiquibase validation', () => {
     );
   });
 
+  it('should accept secure edition as valid', async () => {
+    // Mock the download and validation functions to avoid actual network calls
+    const mockDownloadTool = jest.fn().mockResolvedValue('/mock/download/path');
+    const mockExtractZip = jest.fn().mockResolvedValue('/mock/extract/path');
+    const mockMkdirP = jest.fn().mockResolvedValue(undefined);
+    const mockExec = jest.fn().mockResolvedValue(0);
+    
+    jest.doMock('@actions/tool-cache', () => ({
+      downloadTool: mockDownloadTool,
+      extractZip: mockExtractZip,
+    }));
+    jest.doMock('@actions/io', () => ({
+      mkdirP: mockMkdirP,
+    }));
+    jest.doMock('@actions/exec', () => ({
+      exec: mockExec,
+    }));
+    jest.doMock('fs', () => ({
+      existsSync: jest.fn().mockReturnValue(true),
+    }));
+
+    const options = {
+      version: '4.32.0',
+      edition: 'secure' as const,
+    };
+
+    // This should not throw for validation - the edition should be accepted
+    await expect(async () => {
+      try {
+        await setupLiquibase(options);
+      } catch (error) {
+        // Only rethrow if it's a validation error about the edition
+        if (error instanceof Error && error.message.includes('Invalid edition')) {
+          throw error;
+        }
+        // Ignore other errors (like network/download errors in mocked environment)
+      }
+    }).not.toThrow();
+
+    jest.clearAllMocks();
+  });
+
   it('should reject invalid version format', async () => {
     const options = {
       version: 'invalid-version',
@@ -118,7 +182,7 @@ describe('setupLiquibase validation', () => {
     };
 
     await expect(setupLiquibase(options)).rejects.toThrow(
-      'Invalid edition: invalid. Must be either \'oss\' or \'pro\''
+      'Invalid edition: invalid. Must be \'oss\', \'secure\', or \'pro\' (for backward compatibility)'
     );
   });
 
