@@ -146,3 +146,35 @@ This action replaces the `github-action-generator` approach:
 - All changes require dist/ rebuild via `npm run build`
 - Major releases need coordination due to public marketplace presence
 - Keep this CLAUDE.md updated for team knowledge sharing
+
+## Secure Edition Feature Status
+
+### Current Status: Temporarily Reverted (Aug 29, 2025)
+The "Secure" edition feature (DAT-20656) was merged prematurely and has been reverted from main due to marketing approval requirements.
+
+**What was done:**
+- ✅ Deleted v1.1.0 pre-release (contained Secure changes)
+- ✅ Reverted PR #70 from main branch (commit c9a1c52)
+- ✅ Preserved Secure edition changes in `DAT-20656` branch for future use
+- ✅ Public users continue using v1.0.0 without Secure branding
+
+**Ready for Future Release:**
+- **Branch**: `DAT-20656` contains complete Secure edition implementation
+- **Changes**: All TypeScript types, tests, documentation, and workflows ready
+- **Compatibility**: Full backward compatibility with existing 'pro' workflows
+- **When approved**: Simply merge DAT-20656 → main and release as v1.2.0
+
+### Implementation Details (in DAT-20656 branch)
+- Added 'secure' as primary edition option alongside 'oss' and 'pro'  
+- Secure and Pro editions download identical binaries
+- Both require same `LIQUIBASE_LICENSE_KEY` environment variable
+- 83 comprehensive tests including Secure edition validation
+- Updated all documentation to use Secure branding as primary
+
+### Release Strategy (When Marketing Approves)
+1. **Merge**: `DAT-20656` branch → main
+2. **Release**: Create v1.2.0 with Secure edition support
+3. **Update**: Point v1 tag to v1.2.0
+4. **Announce**: New Secure edition availability
+
+**Note**: All work is complete and ready for immediate release when marketing approval is received.
