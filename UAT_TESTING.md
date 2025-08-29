@@ -58,13 +58,13 @@ steps:
     edition: 'oss'
 ```
 
-#### Secure Edition Tests
+#### Pro Edition Tests
 ```yaml
 steps:
 - uses: liquibase/setup-liquibase@v1
   with:
     version: '4.32.0'
-    edition: 'secure'
+    edition: 'pro'
   env:
     LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
 ```
@@ -155,22 +155,22 @@ runs-on: ${{ matrix.os }}
     fi
 ```
 
-#### Secure Edition Installation Test
+#### Pro Edition Installation Test
 ```yaml
-- name: Test Secure Installation (Should Succeed)
+- name: Test Pro Installation (Should Succeed)
   uses: liquibase/setup-liquibase@v1
-  id: secure-install
+  id: pro-install
   with:
     version: '4.32.0'
-    edition: 'secure'
+    edition: 'pro'
 
 - name: Verify Installation Success
   run: |
-    if [ "${{ steps.secure-install.outcome }}" != "success" ]; then
-      echo "ERROR: Secure installation should succeed without license key!"
+    if [ "${{ steps.pro-install.outcome }}" != "success" ]; then
+      echo "ERROR: Pro installation should succeed without license key!"
       exit 1
     fi
-    echo "✅ Secure edition installed successfully (license validation at runtime)"
+    echo "✅ Pro edition installed successfully (license validation at runtime)"
 ```
 
 ### 5. Enhanced Logging & Path Transformation Tests
@@ -222,7 +222,7 @@ runs-on: ${{ matrix.os }}
 
 ### Basic Functionality ✅
 - [ ] OSS edition installs successfully
-- [ ] Secure edition installs successfully (license validation at runtime)
+- [ ] Pro edition installs successfully (license validation at runtime)
 - [ ] Action outputs are set correctly (liquibase-version, liquibase-path)
 - [ ] Liquibase binary is added to PATH
 - [ ] `liquibase --version` command works
@@ -244,7 +244,7 @@ runs-on: ${{ matrix.os }}
 
 ### Error Handling ✅
 - [ ] Invalid versions are rejected
-- [ ] Secure edition installation succeeds without license (separation of concerns)
+- [ ] Pro edition installation succeeds without license (separation of concerns)
 - [ ] Network failures are handled gracefully
 - [ ] Clear error messages are provided
 
@@ -289,7 +289,7 @@ Copy and paste this template when reporting UAT issues:
 
 **Platform**: ubuntu-latest / windows-latest / macos-latest  
 **Liquibase Version**: 4.32.0  
-**Edition**: oss / secure  
+**Edition**: oss / pro  
 
 **Expected Behavior**:  
 [Describe what should happen]
@@ -349,7 +349,7 @@ For external contributors testing this action:
 - ✅ **Integration Tests**: Database operations with H2 (no license required)
 - ✅ **Error Handling Tests**: Complete validation of error scenarios
 - ✅ **Performance Tests**: Installation performance validation
-- ⏩ **Secure Edition Tests**: Installation tests run successfully (runtime license validation not tested)
+- ⏩ **Pro Edition Tests**: Installation tests run successfully (runtime license validation not tested)
 
 **This is expected behavior** - OSS tests provide comprehensive validation of 95%+ of the action's functionality. See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for detailed development guidance.
 
@@ -364,9 +364,9 @@ For external contributors testing this action:
 - **Ubuntu dependency issues**: Action includes all required dependencies
 
 ### License Issues
-- **Secure edition fails**: Ensure `PRO_LICENSE_KEY` repository secret is set with valid license
+- **Pro edition fails**: Ensure `PRO_LICENSE_KEY` repository secret is set with valid license
 - **License validation**: Check that license is valid and not expired
-- **External contributors**: Secure edition tests will skip automatically (expected behavior)
+- **External contributors**: Pro edition tests will skip automatically (expected behavior)
 
 ### Version Issues
 - **Unsupported versions**: Only versions 4.32.0+ are supported

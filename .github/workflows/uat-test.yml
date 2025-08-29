@@ -532,57 +532,6 @@ jobs:
         echo "✅ Pro path output: $PATH_OUTPUT"
         
         echo "✅ Pro edition tests completed successfully"
-    
-    - name: Test Secure Edition Installation (backward compatibility test)
-      if: steps.check-license.outputs.has_license == 'true'
-      id: setup-secure
-      uses: ./
-      with:
-        version: ${{ inputs.liquibase_version || '4.32.0' }}
-        edition: 'secure'
-      env:
-        LIQUIBASE_LICENSE_KEY: ${{ env.PRO_LICENSE_KEY }}
-        # Test that secure edition works with same environment variables
-        LIQUIBASE_LOG_FILE: /liquibase/secure-logs/liquibase-secure.log
-        LIQUIBASE_CLASSPATH: /liquibase/lib/mysql-connector-j-9.0.0.jar
-    
-    - name: Verify Secure Edition Installation and Compatibility
-      if: steps.check-license.outputs.has_license == 'true'
-      run: |
-        echo "=== Secure Edition Feature Testing ==="
-        
-        # Test Secure installation (should be identical to Pro)
-        liquibase --version
-        echo "✅ Secure edition installed successfully"
-        
-        # Validate that secure edition produces identical results to pro edition
-        echo "Testing Secure edition compatibility with Pro..."
-        
-        # Validate outputs
-        VERSION_OUTPUT="${{ steps.setup-secure.outputs.liquibase-version }}"
-        PATH_OUTPUT="${{ steps.setup-secure.outputs.liquibase-path }}"
-        
-        if [ -z "$VERSION_OUTPUT" ]; then
-          echo "❌ Secure version output not set"
-          exit 1
-        fi
-        echo "✅ Secure version output: $VERSION_OUTPUT"
-        
-        if [ -z "$PATH_OUTPUT" ]; then
-          echo "❌ Secure path output not set"
-          exit 1
-        fi
-        echo "✅ Secure path output: $PATH_OUTPUT"
-        
-        # Verify that secure edition uses the same binaries as pro edition
-        PRO_VERSION="${{ steps.setup-pro.outputs.liquibase-version }}"
-        if [ "$VERSION_OUTPUT" != "$PRO_VERSION" ]; then
-          echo "❌ Secure and Pro versions should be identical: Secure=$VERSION_OUTPUT, Pro=$PRO_VERSION"
-          exit 1
-        fi
-        echo "✅ Secure edition uses identical binaries to Pro edition"
-        
-        echo "✅ Secure edition tests completed successfully"
 
   # Performance validation
   performance-tests:
@@ -754,13 +703,13 @@ jobs:
           echo "| Error Handling Tests | ❌ FAILED | Error handling issues |" >> $GITHUB_STEP_SUMMARY
         fi
         
-        # Pro/Secure edition tests
+        # Pro edition tests
         if [[ "${{ needs.pro-edition-tests.result }}" == "success" ]]; then
-          echo "| Pro/Secure Edition Tests | ✅ PASSED | License validation, Pro features, Secure compatibility |" >> $GITHUB_STEP_SUMMARY
+          echo "| Pro Edition Tests | ✅ PASSED | License validation, Pro features |" >> $GITHUB_STEP_SUMMARY
         elif [[ "${{ needs.pro-edition-tests.result }}" == "skipped" ]]; then
-          echo "| Pro/Secure Edition Tests | ⏩ SKIPPED | License unavailable or scope limited |" >> $GITHUB_STEP_SUMMARY
+          echo "| Pro Edition Tests | ⏩ SKIPPED | License unavailable or scope limited |" >> $GITHUB_STEP_SUMMARY
         else
-          echo "| Pro/Secure Edition Tests | ❌ FAILED | Pro/Secure edition issues |" >> $GITHUB_STEP_SUMMARY
+          echo "| Pro Edition Tests | ❌ FAILED | Pro edition issues |" >> $GITHUB_STEP_SUMMARY
         fi
         
         # Performance tests

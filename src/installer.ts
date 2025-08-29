@@ -24,8 +24,8 @@ import * as semver from 'semver';
 export interface LiquibaseSetupOptions {
   /** Specific version to install (e.g., "4.32.0") */
   version: string;
-  /** Edition to install: 'oss' for Open Source, 'secure' for Secure edition, or 'pro' for backward compatibility */
-  edition: 'oss' | 'pro' | 'secure';
+  /** Edition to install: 'oss' for Open Source, 'pro' for Professional */
+  edition: 'oss' | 'pro';
 }
 
 /**
@@ -70,9 +70,9 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
   }
   
   // Enhanced edition validation with type guard
-  const validEditions: readonly LiquibaseSetupOptions['edition'][] = ['oss', 'pro', 'secure'] as const;
+  const validEditions: readonly LiquibaseSetupOptions['edition'][] = ['oss', 'pro'] as const;
   if (!validEditions.includes(edition)) {
-    throw new Error(`Invalid edition: ${edition}. Must be 'oss', 'secure', or 'pro' (for backward compatibility)`);
+    throw new Error(`Invalid edition: ${edition}. Must be either 'oss' or 'pro'`);
   }
   
   // Use the specified version directly (no resolution needed since we only support specific versions)
@@ -157,7 +157,7 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
 export function getDownloadUrl(version: string, edition: LiquibaseSetupOptions['edition']): string {
   const isWindows = process.platform === 'win32';
   
-  if (edition === 'pro' || edition === 'secure') {
+  if (edition === 'pro') {
     const template = isWindows ? DOWNLOAD_URLS.PRO_WINDOWS_ZIP : DOWNLOAD_URLS.PRO_UNIX;
     return template.replace(/\{version\}/g, version);
   } else {

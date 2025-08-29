@@ -97,7 +97,7 @@ describe('Error Handling Tests', () => {
           };
 
         await expect(setupLiquibase(options)).rejects.toThrow(
-          `Invalid edition: ${edition}. Must be 'oss', 'secure', or 'pro' (for backward compatibility)`
+          `Invalid edition: ${edition}. Must be either 'oss' or 'pro'`
         );
       }
     });

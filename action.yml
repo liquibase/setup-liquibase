@@ -17,7 +17,7 @@ inputs:
     required: true
   
   edition:
-    description: 'Edition to install: "oss" (Open Source) or "secure" (Secure edition with additional features). "pro" is supported for backward compatibility. For Secure/Pro editions, set LIQUIBASE_LICENSE_KEY environment variable when running Liquibase commands.'
+    description: 'Edition to install: "oss" (Open Source) or "pro" (Professional with additional features). For Pro edition, set LIQUIBASE_LICENSE_KEY environment variable when running Liquibase commands.'
     required: true
   
 
