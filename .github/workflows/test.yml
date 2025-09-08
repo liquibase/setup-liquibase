@@ -31,7 +31,7 @@ jobs:
     
     # Setup Node.js environment with npm caching for faster builds
     - name: Setup Node.js Environment
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v5
       with:
         node-version: '20'
         cache: 'npm'
@@ -90,7 +90,7 @@ jobs:
     
     # Setup Node.js environment with npm caching
     - name: Setup Node.js Environment
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v5
       with:
         node-version: '20'
         cache: 'npm'
