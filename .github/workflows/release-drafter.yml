@@ -45,7 +45,7 @@ jobs:
     steps:
 
       - name: Configure AWS credentials for vault access
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ secrets.LIQUIBASE_VAULT_OIDC_ROLE_ARN }}
           aws-region: us-east-1
@@ -114,7 +114,7 @@ jobs:
     if: github.event_name == 'push' || github.event_name == 'pull_request'
     steps:
       - name: Configure AWS credentials for vault access
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ secrets.LIQUIBASE_VAULT_OIDC_ROLE_ARN }}
           aws-region: us-east-1
@@ -162,7 +162,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Configure AWS credentials for vault access
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ secrets.LIQUIBASE_VAULT_OIDC_ROLE_ARN }}
           aws-region: us-east-1
@@ -602,7 +602,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.publish_release == 'true'
     steps:
       - name: Configure AWS credentials for vault access
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ secrets.LIQUIBASE_VAULT_OIDC_ROLE_ARN }}
           aws-region: us-east-1
