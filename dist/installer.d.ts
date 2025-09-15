@@ -13,8 +13,8 @@
 export interface LiquibaseSetupOptions {
     /** Specific version to install (e.g., "4.32.0") */
     version: string;
-    /** Edition to install: 'oss' for Open Source, 'pro' for Professional */
-    edition: 'oss' | 'pro';
+    /** Edition to install: 'oss' for Open Source, 'pro' for Professional, 'secure' for Secure */
+    edition: 'oss' | 'pro' | 'secure';
 }
 /**
  * Result of a successful Liquibase setup operation
@@ -44,7 +44,7 @@ export declare function setupLiquibase(options: LiquibaseSetupOptions): Promise<
  * Uses official Liquibase download endpoints
  *
  * @param version - Exact version number to download
- * @param edition - Edition to download ('oss' or 'pro')
+ * @param edition - Edition to download ('oss', 'pro', or 'secure')
  * @returns Download URL for the specified version from official Liquibase endpoints
  */
 export declare function getDownloadUrl(version: string, edition: LiquibaseSetupOptions['edition']): string;

@@ -42,11 +42,33 @@ describe('getDownloadUrl', () => {
   it('should use zip extension for Windows Pro', () => {
     const originalPlatform = process.platform;
     Object.defineProperty(process, 'platform', { value: 'win32' });
-    
+
     const version = '4.32.0';
     const url = getDownloadUrl(version, 'pro');
     expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/pro/${version}/liquibase-pro-${version}.zip`);
-    
+
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
+  });
+
+  it('should construct correct Secure URL for Unix-like systems', () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+
+    const version = '4.32.0';
+    const url = getDownloadUrl(version, 'secure');
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/secure/${version}/liquibase-secure-${version}.tar.gz`);
+
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
+  });
+
+  it('should use zip extension for Windows Secure', () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+
+    const version = '4.32.0';
+    const url = getDownloadUrl(version, 'secure');
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/secure/${version}/liquibase-secure-${version}.zip`);
+
     Object.defineProperty(process, 'platform', { value: originalPlatform });
   });
 
@@ -118,7 +140,7 @@ describe('setupLiquibase validation', () => {
     };
 
     await expect(setupLiquibase(options)).rejects.toThrow(
-      'Invalid edition: invalid. Must be either \'oss\' or \'pro\''
+      'Invalid edition: invalid. Must be \'oss\', \'pro\', or \'secure\''
     );
   });
 
