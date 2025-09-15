@@ -31298,9 +31298,9 @@ async function setupLiquibase(options) {
  * Uses official Liquibase download endpoints
  *
  * For Pro and Secure editions:
- * - Versions >= 4.33.0 use Secure download URLs
+ * - Versions > 4.33.0 use Secure download URLs
  * - Special test version '5-secure-release-test' uses Secure download URLs
- * - Versions < 4.33.0 use legacy Pro download URLs
+ * - Versions <= 4.33.0 use legacy Pro download URLs
  *
  * @param version - Exact version number to download
  * @param edition - Edition to download ('oss', 'pro', or 'secure')
@@ -31308,9 +31308,9 @@ async function setupLiquibase(options) {
  */
 function getDownloadUrl(version, edition) {
     const isWindows = process.platform === 'win32';
-    // For Pro and Secure editions, use Secure URLs if version >= 4.33.0
+    // For Pro and Secure editions, use Secure URLs if version > 4.33.0
     if (edition === 'pro' || edition === 'secure') {
-        const useSecureUrls = version === '5-secure-release-test' || semver.gte(version, '4.33.0');
+        const useSecureUrls = version === '5-secure-release-test' || semver.gt(version, '4.33.0');
         if (useSecureUrls) {
             const template = isWindows ? config_1.DOWNLOAD_URLS.SECURE_WINDOWS_ZIP : config_1.DOWNLOAD_URLS.SECURE_UNIX;
             return template.replace(/\{version\}/g, version);

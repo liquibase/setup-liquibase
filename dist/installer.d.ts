@@ -44,9 +44,9 @@ export declare function setupLiquibase(options: LiquibaseSetupOptions): Promise<
  * Uses official Liquibase download endpoints
  *
  * For Pro and Secure editions:
- * - Versions >= 4.33.0 use Secure download URLs
+ * - Versions > 4.33.0 use Secure download URLs
  * - Special test version '5-secure-release-test' uses Secure download URLs
- * - Versions < 4.33.0 use legacy Pro download URLs
+ * - Versions <= 4.33.0 use legacy Pro download URLs
  *
  * @param version - Exact version number to download
  * @param edition - Edition to download ('oss', 'pro', or 'secure')
