@@ -80,9 +80,9 @@ jobs:
           cmd //c "where liquibase"
           LIQUIBASE_PATH=$(cmd //c "where liquibase" | head -1 | tr -d '\r')
           echo "Windows Liquibase path: $LIQUIBASE_PATH"
-          
+
           # Verify Windows executable works
-          if cmd //c "liquibase --help" > /dev/null 2>&1; then
+          if liquibase --help > nul 2>&1; then
             echo "✅ Windows executable works correctly"
           else
             echo "❌ Windows executable failed"
