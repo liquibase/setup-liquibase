@@ -7,10 +7,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 **setup-liquibase** is a production-ready GitHub Action that installs Liquibase for CI/CD workflows. This action **replaces** the legacy `liquibase-github-actions` organization's individual command actions with a single, flexible setup action following GitHub Actions best practices.
 
 ### Project Status
-- **Status**: Production (v1-beta in UAT, v1 for production)
-- **Replaces**: `../github-action-generator/` (being deprecated)
+- **Status**: Production (v2.x active)
+- **Replaces**: `../github-action-generator/` (deprecated)
 - **Users**: Public GitHub Actions marketplace + internal Liquibase teams
 - **Quality**: 83 comprehensive tests, multi-platform support
+- **Current Version**: 2.0.0 (supports OSS, Pro, and Secure editions)
 
 ## Build and Development Commands
 
@@ -26,8 +27,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 ### Testing Commands
 - Run a single test file: `npm test -- __tests__/unit/installer.test.ts`
 - Run tests with pattern: `npm test -- --testNamePattern="should validate"`
-- Memory optimization for tests: Tests are configured with `--max-old-space-size=4096`
-- CI tests use `--maxWorkers=2` to prevent resource exhaustion
+- Run tests with debug logging: `npm run test:debug`
+- Memory optimization for tests: Use `npm run test:memory` with `--max-old-space-size=4096`
+- CI tests use `--maxWorkers=1` to prevent resource exhaustion and cross-platform issues
+- Tests run serially by default (`--maxWorkers=1`) with forced exit to avoid hanging processes
 
 ## Architecture Overview
 
@@ -38,19 +41,22 @@ Single GitHub Action that installs Liquibase (OSS or Secure) and adds it to PATH
 
 1. **Entry Point** (`src/index.ts`)
    - Reads action inputs (version, edition)
-   - Validates inputs
+   - Validates inputs using type guards
+   - Proactively transforms environment variables (path safety)
    - Calls installer and sets outputs
 
 2. **Installer** (`src/installer.ts`)
    - Core installation logic
-   - Platform detection (Windows/Unix)
-   - Download URL construction
-   - Secure edition installation support
+   - Platform detection (Windows/Unix/macOS)
+   - Download URL construction with edition-specific templates
+   - Installation validation with timeout protection
+   - Cross-platform tar/zip extraction
 
 3. **Configuration** (`src/config.ts`)
    - Central location for all URLs and constants
-   - Download URL templates for OSS/Secure editions
-   - Note: OSS URLs use 'v' prefix, Pro URLs do not
+   - Download URL templates for OSS/Pro/Secure editions
+   - Note: OSS URLs use 'v' prefix, Pro/Secure URLs do not
+   - Minimum version enforcement (4.32.0)
 
 ### Important Implementation Details
 
@@ -59,6 +65,8 @@ Single GitHub Action that installs Liquibase (OSS or Secure) and adds it to PATH
 - **Secure License**: Required at runtime via `LIQUIBASE_LICENSE_KEY` environment variable (not during installation)
 - **Platforms**: Supports Linux (.tar.gz), Windows (.zip), and macOS (.tar.gz)
 - **Build Output**: TypeScript compiles to single `dist/index.js` with source maps
+- **Path Transformation**: Automatically converts absolute paths in Liquibase environment variables to workspace-relative paths for GitHub Actions compatibility and security
+- **URL Selection Logic**: For Pro/Secure editions, versions > 4.33.0 use Secure download URLs; versions <= 4.33.0 use legacy Pro URLs
 
 ### Testing Structure
 
@@ -98,9 +106,9 @@ Single GitHub Action that installs Liquibase (OSS or Secure) and adds it to PATH
 4. **Distribution**: `dist/index.js` automatically built and committed
 
 ### Version Strategy
-- **v1-beta**: UAT testing phase
-- **v1**: Production releases
-- **Major tags**: v1, v2, etc. point to latest minor/patch
+- **v2**: Current production releases (includes Secure edition support)
+- **Major tags**: v1, v2, etc. point to latest minor/patch within that major version
+- **Semantic Versioning**: Major.Minor.Patch (e.g., 2.0.0)
 
 ## Migration Context
 
@@ -116,7 +124,7 @@ This action replaces the `github-action-generator` approach:
 
 **New**: Single setup + flexible commands
 ```yaml
-- uses: liquibase/setup-liquibase@v1
+- uses: liquibase/setup-liquibase@v2
   with:
     version: '4.32.0'
     edition: 'oss'
@@ -147,34 +155,83 @@ This action replaces the `github-action-generator` approach:
 - Major releases need coordination due to public marketplace presence
 - Keep this CLAUDE.md updated for team knowledge sharing
 
-## Secure Edition Feature Status
+## Path Transformation Feature
 
-### Current Status: Temporarily Reverted (Aug 29, 2025)
-The "Secure" edition feature (DAT-20656) was merged prematurely and has been reverted from main due to marketing approval requirements.
+### Overview
+The action includes automatic path transformation to ensure compatibility and security when using Liquibase environment variables in GitHub Actions.
 
-**What was done:**
-- ✅ Deleted v1.1.0 pre-release (contained Secure changes)
-- ✅ Reverted PR #70 from main branch (commit c9a1c52)
-- ✅ Preserved Secure edition changes in `DAT-20656` branch for future use
-- ✅ Public users continue using v1.0.0 without Secure branding
+### How It Works
+At action startup, the entry point (`src/index.ts`) proactively scans and transforms all `LIQUIBASE_*` environment variables that likely contain file paths:
 
-**Ready for Future Release:**
-- **Branch**: `DAT-20656` contains complete Secure edition implementation
-- **Changes**: All TypeScript types, tests, documentation, and workflows ready
-- **Compatibility**: Full backward compatibility with existing 'pro' workflows
-- **When approved**: Simply merge DAT-20656 → main and release as v1.2.0
+1. **Detection**: Identifies environment variables with path indicators (FILE, PATH, DIR, CLASSPATH, OUTPUT, etc.)
+2. **Transformation**: Converts absolute paths starting with restricted root directories (e.g., `/liquibase/`, `/usr/`, `/var/`) to workspace-relative paths
+3. **Safety**: Prevents permission issues and ensures paths work correctly in GitHub Actions execution context
+4. **Directory Creation**: Automatically creates parent directories for file paths when needed
 
-### Implementation Details (in DAT-20656 branch)
-- Added 'secure' as primary edition option alongside 'oss' and 'pro'  
-- Secure and Pro editions download identical binaries
-- Both require same `LIQUIBASE_LICENSE_KEY` environment variable
-- 83 comprehensive tests including Secure edition validation
-- Updated all documentation to use Secure branding as primary
+### Example
+```yaml
+env:
+  LIQUIBASE_LOG_FILE: /liquibase/logs/output.log
+```
 
-### Release Strategy (When Marketing Approves)
-1. **Merge**: `DAT-20656` branch → main
-2. **Release**: Create v1.2.0 with Secure edition support
-3. **Update**: Point v1 tag to v1.2.0
-4. **Announce**: New Secure edition availability
+Gets transformed to:
+```
+./liquibase/logs/output.log
+```
 
-**Note**: All work is complete and ready for immediate release when marketing approval is received.
+### Implementation Details
+- Function: `transformLiquibaseEnvironmentVariables()` in `src/index.ts`
+- Runs proactively before installation begins
+- Handles both colon-separated (Unix) and semicolon-separated (Windows) path lists
+- Creates necessary directories for output files
+- Provides detailed logging of transformations in GitHub Actions UI
+
+## Edition-Specific Download Logic
+
+### Current Implementation (v2.0.0+)
+The installer uses different download URLs based on edition and version:
+
+**For 'oss' edition:**
+- Always uses OSS download URLs with 'v' prefix
+- Example: `https://package.liquibase.com/downloads/cli/liquibase/releases/download/v4.32.0/liquibase-4.32.0.tar.gz`
+
+**For 'pro' and 'secure' editions:**
+- Versions > 4.33.0: Use Secure download URLs (no 'v' prefix)
+- Versions <= 4.33.0: Use legacy Pro download URLs (no 'v' prefix)
+- Special handling for test version '5-secure-release-test'
+
+### Code Reference
+See `getDownloadUrl()` function in `src/installer.ts:162` for the complete logic.
+
+## Troubleshooting Common Development Issues
+
+### Test Hangs or Memory Issues
+- **Problem**: Tests hang or run out of memory during execution
+- **Solution**: Tests are configured with `--maxWorkers=1` and `--forceExit` flags. Use `npm run test:memory` for increased heap space
+- **Root Cause**: Cross-platform subprocess management can cause hanging handles, especially on Windows
+
+### Build Verification for GitHub Actions
+- **Problem**: Action fails with ES module errors in GitHub Actions runtime
+- **Solution**: Verify `dist/index.js` contains CommonJS `require()` statements, not ES6 `import` statements
+- **Check**: The release workflow includes automated verification in the "Verify build output" step
+- **Why**: GitHub Actions Node.js 20 runtime requires CommonJS format
+
+### Extraction Failures on macOS/Linux
+- **Problem**: Tar extraction fails with cryptic errors
+- **Solution**: The installer includes fallback extraction logic with different tar flags for macOS vs Linux
+- **Code**: See `extractLiquibase()` function in `src/installer.ts:189` with platform-specific fallback
+
+### License Validation Timeout
+- **Problem**: Pro/Secure edition validation hangs during `liquibase --version` check
+- **Solution**: Validation includes 30-second timeout wrapper to prevent hanging
+- **Code**: See `validateInstallation()` function in `src/installer.ts:249` with timeout promise race
+
+## Key Files and Their Purpose
+
+- **`dist/index.js`**: Bundled action entry point (committed to repository, built via `@vercel/ncc`)
+- **`action.yml`**: GitHub Action metadata defining inputs, outputs, and runtime
+- **`jest.config.js`**: Jest configuration with memory management and cross-platform settings
+- **`tsconfig.json`**: TypeScript compiler configuration targeting ES2019/Node.js 20
+- **`.github/workflows/release-drafter.yml`**: Single workflow handling draft updates and releases
+- **`.github/workflows/test.yml`**: PR validation testing across multiple platforms
+- **`CHANGELOG.md`**: Auto-generated from commit history during releases
