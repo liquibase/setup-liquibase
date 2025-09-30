@@ -24,8 +24,8 @@ import * as semver from 'semver';
 export interface LiquibaseSetupOptions {
   /** Specific version to install (e.g., "4.32.0") */
   version: string;
-  /** Edition to install: 'oss' for Open Source, 'pro' for Professional */
-  edition: 'oss' | 'pro';
+  /** Edition to install: 'oss' for Open Source, 'pro' for Professional, 'secure' for Secure */
+  edition: 'oss' | 'pro' | 'secure';
 }
 
 /**
@@ -70,9 +70,9 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
   }
   
   // Enhanced edition validation with type guard
-  const validEditions: readonly LiquibaseSetupOptions['edition'][] = ['oss', 'pro'] as const;
+  const validEditions: readonly LiquibaseSetupOptions['edition'][] = ['oss', 'pro', 'secure'] as const;
   if (!validEditions.includes(edition)) {
-    throw new Error(`Invalid edition: ${edition}. Must be either 'oss' or 'pro'`);
+    throw new Error(`Invalid edition: ${edition}. Must be 'oss', 'pro', or 'secure'`);
   }
   
   // Use the specified version directly (no resolution needed since we only support specific versions)
@@ -149,17 +149,30 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
 /**
  * Constructs the download URL for a specific Liquibase version and edition
  * Uses official Liquibase download endpoints
- * 
+ *
+ * For Pro and Secure editions:
+ * - Versions > 4.33.0 use Secure download URLs
+ * - Special test version '5-secure-release-test' uses Secure download URLs
+ * - Versions <= 4.33.0 use legacy Pro download URLs
+ *
  * @param version - Exact version number to download
- * @param edition - Edition to download ('oss' or 'pro')
+ * @param edition - Edition to download ('oss', 'pro', or 'secure')
  * @returns Download URL for the specified version from official Liquibase endpoints
  */
 export function getDownloadUrl(version: string, edition: LiquibaseSetupOptions['edition']): string {
   const isWindows = process.platform === 'win32';
-  
-  if (edition === 'pro') {
-    const template = isWindows ? DOWNLOAD_URLS.PRO_WINDOWS_ZIP : DOWNLOAD_URLS.PRO_UNIX;
-    return template.replace(/\{version\}/g, version);
+
+  // For Pro and Secure editions, use Secure URLs if version > 4.33.0
+  if (edition === 'pro' || edition === 'secure') {
+    const useSecureUrls = version === '5-secure-release-test' || semver.gt(version, '4.33.0');
+
+    if (useSecureUrls) {
+      const template = isWindows ? DOWNLOAD_URLS.SECURE_WINDOWS_ZIP : DOWNLOAD_URLS.SECURE_UNIX;
+      return template.replace(/\{version\}/g, version);
+    } else {
+      const template = isWindows ? DOWNLOAD_URLS.PRO_WINDOWS_ZIP : DOWNLOAD_URLS.PRO_UNIX;
+      return template.replace(/\{version\}/g, version);
+    }
   } else {
     const template = isWindows ? DOWNLOAD_URLS.OSS_WINDOWS_ZIP : DOWNLOAD_URLS.OSS_UNIX;
     return template.replace(/\{version\}/g, version);
