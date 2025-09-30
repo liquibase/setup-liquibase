@@ -21,7 +21,7 @@ This action provides the following functionality for GitHub Actions users:
 ```yaml
 steps:
 - uses: actions/checkout@v4
-- uses: liquibase/setup-liquibase@v1
+- uses: liquibase/setup-liquibase@v2
   with:
     version: '4.32.0'
     edition: 'oss'
@@ -58,7 +58,7 @@ This action is production-ready with comprehensive testing and CI optimizations:
 ```yaml
 steps:
 - uses: actions/checkout@v4
-- uses: liquibase/setup-liquibase@v1
+- uses: liquibase/setup-liquibase@v2
   with:
     version: '4.32.0'
     edition: 'oss'
@@ -70,7 +70,7 @@ steps:
 ```yaml
 steps:
 - uses: actions/checkout@v4
-- uses: liquibase/setup-liquibase@v1
+- uses: liquibase/setup-liquibase@v2
   with:
     version: '4.32.0'
     edition: 'oss'
@@ -82,7 +82,7 @@ steps:
 ```yaml
 steps:
 - uses: actions/checkout@v4
-- uses: liquibase/setup-liquibase@v1
+- uses: liquibase/setup-liquibase@v2
   with:
     version: '4.32.0'
     edition: 'secure'
@@ -96,7 +96,7 @@ steps:
 ```yaml
 steps:
 - uses: actions/checkout@v4
-- uses: liquibase/setup-liquibase@v1
+- uses: liquibase/setup-liquibase@v2
   with:
     version: '4.32.0'
 - run: liquibase --version
@@ -174,18 +174,18 @@ This action follows [semantic versioning](https://semver.org/):
 
 ### Version Updates
 
-- **v1.0.x** → Patch releases: Bug fixes only (backward compatible)
-- **v1.x.0** → Minor releases: New features (backward compatible)
-- **v2.0.0** → Major releases: Breaking changes
+- **v2.0.x** → Patch releases: Bug fixes only (backward compatible)
+- **v2.x.0** → Minor releases: New features (backward compatible)
+- **v3.0.0** → Major releases: Breaking changes
 
 ### Recommended Usage
 
 ```yaml
 # Recommended: Use major version tag for automatic non-breaking updates
-- uses: liquibase/setup-liquibase@v1
+- uses: liquibase/setup-liquibase@v2
 
 # Alternative: Pin to specific version for reproducibility
-- uses: liquibase/setup-liquibase@v1.0.0
+- uses: liquibase/setup-liquibase@v2.0.0
 ```
 
 ## Platform Support
@@ -215,7 +215,7 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
     
-    - uses: liquibase/setup-liquibase@v1
+    - uses: liquibase/setup-liquibase@v2
       with:
         version: '4.32.0'
         edition: 'oss'
@@ -282,7 +282,7 @@ jobs:
     env:
       LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
     steps:
-    - uses: liquibase/setup-liquibase@v1
+    - uses: liquibase/setup-liquibase@v2
       with:
         version: '4.32.0'
         edition: 'secure'
@@ -300,7 +300,7 @@ jobs:
       with:
         role-to-assume: ${{ secrets.AWS_ROLE }}
         aws-region: us-east-1
-    - uses: liquibase/setup-liquibase@v1
+    - uses: liquibase/setup-liquibase@v2
       with:
         version: '4.32.0'
         edition: 'secure'
@@ -338,7 +338,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - uses: liquibase/setup-liquibase@v1
+    - uses: liquibase/setup-liquibase@v2
       with:
         version: '4.32.0'
         edition: 'oss'
@@ -366,7 +366,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - uses: liquibase/setup-liquibase@v1
+    - uses: liquibase/setup-liquibase@v2
       with:
         version: '4.32.0'
         edition: 'secure'
@@ -412,7 +412,7 @@ jobs:
         path: flow-templates
         token: ${{ secrets.GITHUB_TOKEN }}
     
-    - uses: liquibase/setup-liquibase@v1
+    - uses: liquibase/setup-liquibase@v2
       with:
         version: '4.32.0'
         edition: 'secure'
@@ -445,7 +445,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - uses: liquibase/setup-liquibase@v1
+    - uses: liquibase/setup-liquibase@v2
       with:
         version: '4.32.0'
         edition: 'secure'
@@ -490,7 +490,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - uses: liquibase/setup-liquibase@v1
+    - uses: liquibase/setup-liquibase@v2
       with:
         version: ${{ matrix.liquibase-version }}
         edition: 'oss'
@@ -582,7 +582,7 @@ If you're migrating from the official Liquibase GitHub Actions, here's how to co
 
 ### After (setup-liquibase)
 ```yaml
-- uses: liquibase/setup-liquibase@v1
+- uses: liquibase/setup-liquibase@v2
   with:
     version: '4.32.0'
     edition: 'oss'
