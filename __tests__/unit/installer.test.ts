@@ -42,11 +42,100 @@ describe('getDownloadUrl', () => {
   it('should use zip extension for Windows Pro', () => {
     const originalPlatform = process.platform;
     Object.defineProperty(process, 'platform', { value: 'win32' });
-    
+
     const version = '4.32.0';
     const url = getDownloadUrl(version, 'pro');
     expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/pro/${version}/liquibase-pro-${version}.zip`);
-    
+
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
+  });
+
+  // Version-based URL selection tests
+  it('should use Pro URLs for Pro edition with version < 4.33.0', () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+
+    const version = '4.32.0';
+    const url = getDownloadUrl(version, 'pro');
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/pro/${version}/liquibase-pro-${version}.tar.gz`);
+
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
+  });
+
+  it('should use Secure URLs for Pro edition with test version', () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+
+    const version = '5-secure-release-test';
+    const url = getDownloadUrl(version, 'pro');
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/secure/${version}/liquibase-secure-${version}.tar.gz`);
+
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
+  });
+
+  it('should use Pro URLs for Secure edition with version <= 4.33.0', () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+
+    const version = '4.32.0';
+    const url = getDownloadUrl(version, 'secure');
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/pro/${version}/liquibase-pro-${version}.tar.gz`);
+
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
+  });
+
+  it('should use Pro URLs for Pro edition with version 4.33.0', () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+
+    const version = '4.33.0';
+    const url = getDownloadUrl(version, 'pro');
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/pro/${version}/liquibase-pro-${version}.tar.gz`);
+
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
+  });
+
+  it('should use Pro URLs for Secure edition with version 4.33.0', () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+
+    const version = '4.33.0';
+    const url = getDownloadUrl(version, 'secure');
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/pro/${version}/liquibase-pro-${version}.tar.gz`);
+
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
+  });
+
+  it('should use Secure URLs for Secure edition with test version', () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+
+    const version = '5-secure-release-test';
+    const url = getDownloadUrl(version, 'secure');
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/secure/${version}/liquibase-secure-${version}.tar.gz`);
+
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
+  });
+
+  it('should use Secure URLs for Pro edition with version > 4.33.0', () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+
+    const version = '4.34.0';
+    const url = getDownloadUrl(version, 'pro');
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/secure/${version}/liquibase-secure-${version}.zip`);
+
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
+  });
+
+  it('should use Secure URLs for Secure edition with version > 4.33.0', () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+
+    const version = '4.34.0';
+    const url = getDownloadUrl(version, 'secure');
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/secure/${version}/liquibase-secure-${version}.zip`);
+
     Object.defineProperty(process, 'platform', { value: originalPlatform });
   });
 
