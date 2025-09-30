@@ -31231,11 +31231,7 @@ async function setupLiquibase(options) {
     // Enhanced edition validation with type guard
     const validEditions = ['oss', 'pro', 'secure'];
     if (!validEditions.includes(edition)) {
-<<<<<<< HEAD
         throw new Error(`Invalid edition: ${edition}. Must be 'oss', 'secure', or 'pro' (for backward compatibility)`);
-=======
-        throw new Error(`Invalid edition: ${edition}. Must be 'oss', 'pro', or 'secure'`);
->>>>>>> main
     }
     // Use the specified version directly (no resolution needed since we only support specific versions)
     const resolvedVersion = version;
