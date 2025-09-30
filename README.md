@@ -2,6 +2,13 @@
 
 Set up your GitHub Actions workflow with a specific version of Liquibase.
 
+> [!IMPORTANT]
+> **Liquibase 5.0+ OSS Edition Changes**: Starting with Liquibase 5.0, the Open Source (OSS) edition no longer includes database drivers and extensions. You'll need to use the Liquibase Package Manager (LPM) to install required drivers.
+>
+> **Want drivers and extensions included?** Upgrade to the **Secure edition** which includes drivers, extensions, and additional enterprise features. See [Secure Edition Support](#secure-edition-support) for details.
+>
+> For complete guidance on using LPM with OSS, see the [Liquibase 5.0 Getting Started Guide](https://docs.liquibase.com/secure/get-started-5-0) and [Using LPM with OSS Edition](#using-lpm-with-oss-edition) section below.
+
 This action provides the following functionality for GitHub Actions users:
 - Download and install a specific version of Liquibase
 - Support for both Liquibase OSS and Secure editions
@@ -117,6 +124,45 @@ This action supports Liquibase versions 4.32.0 and higher:
 
 The minimum supported version is `4.32.0` to ensure compatibility with the official Liquibase download endpoints used by this action.
 
+**Important for Liquibase 5.0+ with OSS edition**: Starting with version 5.0.0, the OSS edition requires the Liquibase Package Manager (LPM) to install database drivers and extensions. See the [Liquibase 5.0+ OSS Edition Changes](#liquibase-50-oss-edition-changes) section below for details.
+
+## Liquibase 5.0+ OSS Edition Changes
+
+**Important for OSS Users**: Starting with Liquibase 5.0, the Open Source (OSS) edition ships without database drivers and extensions to provide a lighter, more modular experience.
+
+If you're using Liquibase 5.0+ with `edition: 'oss'`, you'll need to use the **Liquibase Package Manager (LPM)** to install required drivers and extensions for your specific database.
+
+### What This Means for GitHub Actions
+
+When using `edition: 'oss'` with Liquibase 5.0 or later:
+- ✅ Liquibase core is installed and ready to use
+- ❌ Database drivers (PostgreSQL, MySQL, Oracle, etc.) are **not included**
+- ❌ Extensions are **not included**
+- 🔧 You must use `liquibase lpm add` to install drivers before running migrations
+
+### Quick Example
+
+```yaml
+steps:
+- uses: liquibase/setup-liquibase@v2
+  with:
+    version: '5.0.0'
+    edition: 'oss'
+
+# Install PostgreSQL driver using LPM
+- name: Install PostgreSQL Driver
+  run: liquibase lpm add postgresql --global
+
+# Now you can run Liquibase commands
+- run: liquibase update --changelog-file=changelog.xml --url=jdbc:postgresql://...
+```
+
+For complete guidance on using LPM, see:
+- 📚 [Liquibase 5.0 Getting Started Guide](https://docs.liquibase.com/secure/get-started-5-0)
+- 📦 [Liquibase Package Manager Repository](https://github.com/liquibase/liquibase-package-manager)
+
+See the [Using LPM with OSS Edition](#using-lpm-with-oss-edition) section below for detailed examples.
+
 ## Action Versioning
 
 This action follows [semantic versioning](https://semver.org/):
@@ -179,6 +225,46 @@ jobs:
 
 **Note**: GitHub-hosted runners (ubuntu-latest, windows-latest, macos-latest) already have Java installed and do not need the setup-java step.
 
+## Using LPM with OSS Edition
+
+The Liquibase Package Manager (LPM) is integrated into Liquibase 5.0+ and is essential for OSS users to manage database drivers and extensions. LPM is accessible via the `liquibase lpm` command.
+
+### Basic Example
+
+```yaml
+steps:
+- uses: actions/checkout@v4
+
+- uses: liquibase/setup-liquibase@v2
+  with:
+    version: '5.0.0'
+    edition: 'oss'
+
+- name: Install PostgreSQL Driver
+  run: liquibase lpm add postgresql --global
+
+- name: Run Database Migration
+  run: |
+    liquibase update \
+      --changelog-file=changelog.xml \
+      --url=jdbc:postgresql://localhost:5432/mydb \
+      --username=dbuser \
+      --password=${{ secrets.DB_PASSWORD }}
+```
+
+### Learn More
+
+For complete documentation on using LPM, including:
+- Available database drivers and extensions
+- Advanced LPM commands and usage
+- Configuration and best practices
+- Troubleshooting guides
+
+Visit the official **[Liquibase 5.0 Getting Started Guide](https://docs.liquibase.com/secure/get-started-5-0)**
+
+Additional resources:
+- [Liquibase Package Manager Repository](https://github.com/liquibase/liquibase-package-manager)
+- [Liquibase 5.0 Release Notes](https://github.com/liquibase/liquibase/releases/tag/v5.0.0)
 
 ## Secure Edition Support
 
