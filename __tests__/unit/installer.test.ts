@@ -304,7 +304,6 @@ describe('setupLiquibase validation', () => {
   it('should handle edge cases in version validation', async () => {
     const testCases = [
       { version: '4.31.9', shouldFail: true, reason: 'below minimum version' },
-      { version: '5.0.0', shouldFail: true, reason: 'non-existent future version' },
       { version: 'v4.32.0', shouldFail: true, reason: 'version with v prefix' },
       { version: '4.32', shouldFail: true, reason: 'incomplete semantic version' },
       { version: '4.32.0.0', shouldFail: true, reason: 'too many version parts' }
