@@ -117,6 +117,45 @@ This action supports Liquibase versions 4.32.0 and higher:
 
 The minimum supported version is `4.32.0` to ensure compatibility with the official Liquibase download endpoints used by this action.
 
+**Important for Liquibase 5.0+ with OSS edition**: Starting with version 5.0.0, the OSS edition requires the Liquibase Package Manager (LPM) to install database drivers and extensions. See the [Liquibase 5.0+ OSS Edition Changes](#liquibase-50-oss-edition-changes) section below for details.
+
+## Liquibase 5.0+ OSS Edition Changes
+
+**Important for OSS Users**: Starting with Liquibase 5.0, the Open Source (OSS) edition ships without database drivers and extensions to provide a lighter, more modular experience.
+
+If you're using Liquibase 5.0+ with `edition: 'oss'`, you'll need to use the **Liquibase Package Manager (LPM)** to install required drivers and extensions for your specific database.
+
+### What This Means for GitHub Actions
+
+When using `edition: 'oss'` with Liquibase 5.0 or later:
+- ✅ Liquibase core is installed and ready to use
+- ❌ Database drivers (PostgreSQL, MySQL, Oracle, etc.) are **not included**
+- ❌ Extensions are **not included**
+- 🔧 You must use `liquibase lpm add` to install drivers before running migrations
+
+### Quick Example
+
+```yaml
+steps:
+- uses: liquibase/setup-liquibase@v2
+  with:
+    version: '5.0.0'
+    edition: 'oss'
+
+# Install PostgreSQL driver using LPM
+- name: Install PostgreSQL Driver
+  run: liquibase lpm add postgresql --global
+
+# Now you can run Liquibase commands
+- run: liquibase update --changelog-file=changelog.xml --url=jdbc:postgresql://...
+```
+
+For complete guidance on using LPM, see:
+- 📚 [Liquibase 5.0 Getting Started Guide](https://docs.liquibase.com/secure/get-started-5-0)
+- 📦 [Liquibase Package Manager Repository](https://github.com/liquibase/liquibase-package-manager)
+
+See the [Using LPM with OSS Edition](#using-lpm-with-oss-edition) section below for detailed examples.
+
 ## Action Versioning
 
 This action follows [semantic versioning](https://semver.org/):
@@ -179,6 +218,197 @@ jobs:
 
 **Note**: GitHub-hosted runners (ubuntu-latest, windows-latest, macos-latest) already have Java installed and do not need the setup-java step.
 
+## Using LPM with OSS Edition
+
+The Liquibase Package Manager (LPM) is integrated into Liquibase 5.0+ and is essential for OSS users to manage database drivers and extensions. LPM is accessible via the `liquibase lpm` command.
+
+### Available LPM Commands
+
+```bash
+liquibase lpm add <package>     # Add a driver or extension
+liquibase lpm remove <package>  # Remove a driver or extension
+liquibase lpm list              # List installed packages
+liquibase lpm search <term>     # Search for available packages
+liquibase lpm update            # Update package information
+```
+
+### Installing Database Drivers
+
+#### PostgreSQL Example
+
+```yaml
+steps:
+- uses: actions/checkout@v4
+
+- uses: liquibase/setup-liquibase@v2
+  with:
+    version: '5.0.0'
+    edition: 'oss'
+
+- name: Install PostgreSQL Driver
+  run: liquibase lpm add postgresql --global
+
+- name: Run Database Migration
+  run: |
+    liquibase update \
+      --changelog-file=changelog.xml \
+      --url=jdbc:postgresql://localhost:5432/mydb \
+      --username=dbuser \
+      --password=${{ secrets.DB_PASSWORD }}
+```
+
+#### MySQL Example
+
+```yaml
+steps:
+- uses: liquibase/setup-liquibase@v2
+  with:
+    version: '5.0.0'
+    edition: 'oss'
+
+- name: Install MySQL Driver
+  run: liquibase lpm add mysql --global
+
+- name: Run Migration
+  run: liquibase update --changelog-file=changelog.xml --url=jdbc:mysql://...
+```
+
+#### Microsoft SQL Server Example
+
+```yaml
+steps:
+- uses: liquibase/setup-liquibase@v2
+  with:
+    version: '5.0.0'
+    edition: 'oss'
+
+- name: Install SQL Server Driver
+  run: liquibase lpm add mssql --global
+
+- name: Run Migration
+  run: liquibase update --changelog-file=changelog.xml --url=jdbc:sqlserver://...
+```
+
+#### Oracle Example
+
+```yaml
+steps:
+- uses: liquibase/setup-liquibase@v2
+  with:
+    version: '5.0.0'
+    edition: 'oss'
+
+- name: Install Oracle Driver
+  run: liquibase lpm add oracle --global
+
+- name: Run Migration
+  run: liquibase update --changelog-file=changelog.xml --url=jdbc:oracle:thin:@...
+```
+
+### Installing Multiple Drivers
+
+```yaml
+- name: Install Database Drivers
+  run: |
+    liquibase lpm add postgresql --global
+    liquibase lpm add mysql --global
+    liquibase lpm add mongodb --global
+```
+
+### Installing Extensions
+
+```yaml
+- name: Install Liquibase Extensions
+  run: |
+    liquibase lpm add liquibase-mongodb --global
+    liquibase lpm add liquibase-cassandra --global
+```
+
+### Complete Workflow with LPM
+
+```yaml
+name: Database Migration with LPM
+on: [push, pull_request]
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: liquibase/setup-liquibase@v2
+      with:
+        version: '5.0.0'
+        edition: 'oss'
+
+    - name: Install PostgreSQL Driver
+      run: liquibase lpm add postgresql --global
+
+    - name: Verify Installation
+      run: |
+        liquibase --version
+        liquibase lpm list
+
+    - name: Run Liquibase Update
+      run: |
+        liquibase update \
+          --changelog-file=db/changelog/db.changelog-master.xml \
+          --url=jdbc:postgresql://localhost:5432/testdb \
+          --username=postgres \
+          --password=postgres
+
+    - name: Generate Changelog
+      run: |
+        liquibase diff-changelog \
+          --changelog-file=diff.xml \
+          --url=jdbc:postgresql://localhost:5432/testdb \
+          --username=postgres \
+          --password=postgres
+```
+
+### LPM Best Practices for GitHub Actions
+
+1. **Always use `--global` flag**: This ensures packages are installed in the Liquibase lib directory
+2. **Install drivers before any Liquibase commands**: LPM must complete before running migrations
+3. **Verify installation**: Use `liquibase lpm list` to confirm packages are installed
+4. **Cache dependencies** (optional): Consider caching the Liquibase lib directory for faster workflows
+
+### Troubleshooting LPM
+
+#### "Package not found" Error
+```bash
+# Update package information first
+liquibase lpm update
+liquibase lpm search <package-name>
+liquibase lpm add <package-name> --global
+```
+
+#### "Unable to locate LIQUIBASE_HOME" Error
+The action automatically sets LIQUIBASE_HOME, but if you encounter this error:
+```yaml
+- name: Install Driver with Explicit Home
+  run: |
+    export LIQUIBASE_HOME=$(liquibase --version | grep 'LIQUIBASE_HOME' || echo $PWD)
+    liquibase lpm add postgresql --global
+```
+
+For more information about LPM:
+- [Liquibase Package Manager Repository](https://github.com/liquibase/liquibase-package-manager)
+- [Liquibase 5.0 Release Notes](https://github.com/liquibase/liquibase/releases/tag/v5.0.0)
 
 ## Secure Edition Support
 
