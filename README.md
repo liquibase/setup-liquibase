@@ -4,7 +4,7 @@ Set up your GitHub Actions workflow with a specific version of Liquibase.
 
 This action provides the following functionality for GitHub Actions users:
 - Download and install a specific version of Liquibase
-- Support for both Liquibase OSS and Pro editions
+- Support for both Liquibase OSS and Secure editions
 - Add Liquibase to the PATH
 - Simple, reliable Liquibase installation for CI/CD workflows
 - Cross-platform support (Linux, Windows, macOS)
@@ -24,12 +24,12 @@ steps:
 ## Features
 
 - **Version Control**: Install specific versions (4.32.0+) with exact version specification
-- **Edition Support**: Works with both OSS and Pro editions
+- **Edition Support**: Works with both OSS and Secure editions
 - **Enhanced Logging**: Clear progress indicators, path transparency, and migration guidance
 - **Path Safety**: Automatic transformation of absolute paths for GitHub Actions compatibility
 - **Performance**: Optimized installation for faster workflow runs
 - **Cross-Platform**: Supports Linux, Windows, and macOS runners
-- **Environment Variables**: Supports LIQUIBASE_LICENSE_KEY environment variable for Pro edition
+- **Environment Variables**: Supports LIQUIBASE_LICENSE_KEY environment variable for Secure edition
 - **Production Ready**: Comprehensive testing with 83 test cases covering all scenarios
 - **CI Optimized**: Memory management and performance optimizations for GitHub Actions
 
@@ -70,7 +70,7 @@ steps:
 - run: liquibase update --changelog-file=changelog.xml --url=jdbc:h2:mem:test
 ```
 
-### Liquibase Pro with License Key
+### Liquibase Secure with License Key
 
 ```yaml
 steps:
@@ -78,7 +78,7 @@ steps:
 - uses: liquibase/setup-liquibase@v1
   with:
     version: '4.32.0'
-    edition: 'pro'
+    edition: 'secure'
 - run: liquibase update --changelog-file=changelog.xml --url=jdbc:h2:mem:test
   env:
     LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
@@ -100,7 +100,7 @@ steps:
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `version` | Specific version of Liquibase to install (e.g., "4.32.0"). Must be 4.32.0 or higher. | Yes | |
-| `edition` | Edition to install: "oss" (Open Source) or "pro" (Professional). For Pro edition, set LIQUIBASE_LICENSE_KEY environment variable when running Liquibase commands. | Yes | |
+| `edition` | Edition to install: "oss" (Open Source) or "secure" (Secure edition). "pro" is supported for backward compatibility. For Secure edition, set LIQUIBASE_LICENSE_KEY environment variable when running Liquibase commands. | Yes | |
 
 ## Outputs
 
@@ -180,18 +180,18 @@ jobs:
 **Note**: GitHub-hosted runners (ubuntu-latest, windows-latest, macos-latest) already have Java installed and do not need the setup-java step.
 
 
-## Pro Edition Support
+## Secure Edition Support
 
-The action supports both Liquibase OSS and Pro editions. The Pro edition can be installed by specifying `edition: 'pro'`.
+The action supports both Liquibase OSS and Secure editions. The Secure edition can be installed by specifying `edition: 'secure'`. Note that `edition: 'pro'` is still supported for backward compatibility.
 
-### Pro License Management
+### Secure License Management
 
-**The setup action installs Pro binaries without validating the license.** License validation occurs when you run Pro-specific commands. You can provide your license key using several methods:
+**The setup action installs Secure binaries without validating the license.** License validation occurs when you run Secure-specific commands. You can provide your license key using several methods:
 
 #### Option 1: GitHub Secrets (Simple)
 ```yaml
 jobs:
-  pro-operations:
+  secure-operations:
     runs-on: ubuntu-latest
     env:
       LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
@@ -199,7 +199,7 @@ jobs:
     - uses: liquibase/setup-liquibase@v1
       with:
         version: '4.32.0'
-        edition: 'pro'
+        edition: 'secure'
     - run: liquibase update --changelog-file=changelog.xml
     - run: liquibase checks run --changelog-file=changelog.xml
 ```
@@ -207,7 +207,7 @@ jobs:
 #### Option 2: AWS Secrets Manager (Enterprise)
 ```yaml
 jobs:
-  pro-operations:
+  secure-operations:
     runs-on: ubuntu-latest
     steps:
     - uses: aws-actions/configure-aws-credentials@v4
@@ -217,7 +217,7 @@ jobs:
     - uses: liquibase/setup-liquibase@v1
       with:
         version: '4.32.0'
-        edition: 'pro'
+        edition: 'secure'
     - name: Install AWS Secrets Manager Extension
       run: |
         wget -O liquibase-aws-secretsmanager.jar https://repo1.maven.org/maven2/org/liquibase/ext/liquibase-secretsmanager-aws/1.0.6/liquibase-secretsmanager-aws-1.0.6.jar
@@ -266,10 +266,10 @@ jobs:
           --password=
 ```
 
-### Liquibase Pro with Multiple Commands
+### Liquibase Secure with Multiple Commands
 
 ```yaml
-name: Pro Database Operations
+name: Secure Database Operations
 on: [push]
 
 jobs:
@@ -283,7 +283,7 @@ jobs:
     - uses: liquibase/setup-liquibase@v1
       with:
         version: '4.32.0'
-        edition: 'pro'
+        edition: 'secure'
         
     - name: Validate Changelog
       run: liquibase validate --changelog-file=changelog.xml
@@ -299,7 +299,7 @@ jobs:
       run: liquibase checks run --changelog-file=changelog.xml
 ```
 
-### Using Liquibase Flow Files (Pro Edition)
+### Using Liquibase Flow Files (Secure Edition)
 
 Flow files enable portable, platform-independent Liquibase workflows. Best practice is to store Flow files in centralized locations like template repositories or S3 for version control, reusability, and governance.
 
@@ -329,7 +329,7 @@ jobs:
     - uses: liquibase/setup-liquibase@v1
       with:
         version: '4.32.0'
-        edition: 'pro'
+        edition: 'secure'
         
     - name: Execute Flow from Template
       run: |
@@ -362,7 +362,7 @@ jobs:
     - uses: liquibase/setup-liquibase@v1
       with:
         version: '4.32.0'
-        edition: 'pro'
+        edition: 'secure'
         
     - name: Download AWS Extension
       run: |

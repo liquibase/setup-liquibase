@@ -13,7 +13,7 @@
 export interface LiquibaseSetupOptions {
     /** Specific version to install (e.g., "4.32.0") */
     version: string;
-    /** Edition to install: 'oss' for Open Source, 'pro' for Professional, 'secure' for Secure */
+    /** Edition to install: 'oss' for Open Source, 'secure' for Secure edition, or 'pro' for backward compatibility */
     edition: 'oss' | 'pro' | 'secure';
 }
 /**

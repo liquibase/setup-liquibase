@@ -24,7 +24,7 @@ import * as semver from 'semver';
 export interface LiquibaseSetupOptions {
   /** Specific version to install (e.g., "4.32.0") */
   version: string;
-  /** Edition to install: 'oss' for Open Source, 'pro' for Professional, 'secure' for Secure */
+  /** Edition to install: 'oss' for Open Source, 'secure' for Secure edition, or 'pro' for backward compatibility */
   edition: 'oss' | 'pro' | 'secure';
 }
 
@@ -72,7 +72,7 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
   // Enhanced edition validation with type guard
   const validEditions: readonly LiquibaseSetupOptions['edition'][] = ['oss', 'pro', 'secure'] as const;
   if (!validEditions.includes(edition)) {
-    throw new Error(`Invalid edition: ${edition}. Must be 'oss', 'pro', or 'secure'`);
+    throw new Error(`Invalid edition: ${edition}. Must be 'oss', 'secure', or 'pro' (for backward compatibility)`);
   }
   
   // Use the specified version directly (no resolution needed since we only support specific versions)
