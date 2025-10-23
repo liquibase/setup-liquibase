@@ -5,7 +5,7 @@ Set up your GitHub Actions workflow with a specific version of Liquibase.
 > [!IMPORTANT]
 > **Liquibase 5.0+ OSS Edition Changes**: Starting with Liquibase 5.0, the Open Source (OSS) edition no longer includes database drivers and extensions. You'll need to use the Liquibase Package Manager (LPM) to install required drivers.
 >
-> **Want drivers and extensions included?** Upgrade to the **Secure edition** which includes drivers, extensions, and additional enterprise features. See [Secure Edition Support](#secure-edition-support) for details.
+> **Want drivers and extensions included?** Upgrade to the **Secure edition** which includes most drivers (except non-redistributable ones like MySQL), extensions, and additional enterprise features. See [Secure Edition Support](#secure-edition-support) for details.
 >
 > For complete guidance on using LPM with OSS, see the [Liquibase 5.0 Getting Started Guide](https://docs.liquibase.com/secure/get-started-5-0) and [Using LPM with OSS Edition](#using-lpm-with-oss-edition) section below.
 
