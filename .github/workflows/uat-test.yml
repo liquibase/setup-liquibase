@@ -480,7 +480,9 @@ jobs:
           echo "To test Pro edition, add PRO_LICENSE_KEY secret to the repository"
         fi
     
-    - name: Download MySQL driver for realistic classpath testing
+    # Download MySQL driver for backward compatibility testing with pre-5.0 versions
+    # Note: Liquibase 5.0+ Secure edition includes JDBC drivers by default
+    - name: Download MySQL driver for backward compatibility testing
       if: steps.check-license.outputs.has_license == 'true'
       run: |
         mkdir -p liquibase/lib

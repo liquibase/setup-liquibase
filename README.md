@@ -291,6 +291,30 @@ jobs:
 ```
 
 #### Option 2: AWS Secrets Manager (Enterprise)
+
+> **Liquibase 5.0+**: AWS extensions are included by default in the Secure edition. For versions prior to 5.0, manual extension installation is required (see Pre-5.0 example below).
+
+**Liquibase 5.0+ Secure Edition** (AWS extensions included):
+```yaml
+jobs:
+  secure-operations:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE }}
+        aws-region: us-east-1
+    - uses: liquibase/setup-liquibase@v2
+      with:
+        version: '5.0.0'
+        edition: 'secure'
+    - run: |
+        liquibase \
+          --license-key=aws-secrets,my-liquibase-secrets,license-key \
+          update --changelog-file=changelog.xml
+```
+
+**Pre-5.0 Secure Edition** (requires manual extension installation):
 ```yaml
 jobs:
   secure-operations:
@@ -322,7 +346,7 @@ jobs:
     - run: liquibase update --changelog-file=changelog.xml
 ```
 
-> **Enterprise Note**: AWS Secrets Manager and other vault integrations require the appropriate Liquibase extension (manual installation shown above). Starting with Liquibase 5.0, AWS extensions will be included by default.
+> **Enterprise Note**: Liquibase 5.0+ Secure edition includes AWS Secrets Manager and other vault integrations by default. For versions prior to 5.0, manual extension installation is required (as shown in the Pre-5.0 example above).
 
 ## Complete Workflow Examples
 
@@ -428,8 +452,9 @@ jobs:
 
 #### Example 2: Flow Files from S3
 
-**Note**: S3 integration requires the `liquibase-aws-extension` JAR file to be available in Liquibase's classpath. Download the extension from [Maven Central](https://mvnrepository.com/artifact/org.liquibase.ext/liquibase-aws-extension) and include it using the `--classpath` parameter. Starting with Liquibase 5.0, AWS extensions will be included by default.
+> **Liquibase 5.0+**: AWS S3 extension is included by default in the Secure edition. For versions prior to 5.0, manual extension installation is required (see Pre-5.0 example below).
 
+**Liquibase 5.0+ Secure Edition** (AWS extensions included):
 ```yaml
 name: Database Deployment with S3 Flow
 on: [push]
@@ -444,16 +469,60 @@ jobs:
       AWS_REGION: us-east-1
     steps:
     - uses: actions/checkout@v4
-    
+
+    - uses: liquibase/setup-liquibase@v2
+      with:
+        version: '5.0.0'
+        edition: 'secure'
+
+    - name: Execute Flow from S3
+      run: |
+        liquibase --search-path=s3://my-bucket/liquibase/resources,. flow \
+          --flow-file=s3://my-bucket/liquibase/flows/production-deployment.flowfile.yaml \
+          --url=jdbc:postgresql://localhost/mydb \
+          --username=dbuser \
+          --password=${{ secrets.DB_PASSWORD }}
+
+    # Alternative: Using environment variable for search path
+    - name: Execute Flow with Environment Variable
+      env:
+        LIQUIBASE_SEARCH_PATH: s3://my-bucket/liquibase/resources,.
+      run: |
+        liquibase flow \
+          --flow-file=s3://my-bucket/liquibase/flows/staging-deployment.flowfile.yaml \
+          --url=jdbc:postgresql://localhost/mydb \
+          --username=dbuser \
+          --password=${{ secrets.DB_PASSWORD }}
+```
+
+**Pre-5.0 Secure Edition** (requires manual extension installation):
+
+**Note**: For Liquibase versions prior to 5.0, S3 integration requires the `liquibase-aws-extension` JAR file to be available in Liquibase's classpath. Download the extension from [Maven Central](https://mvnrepository.com/artifact/org.liquibase.ext/liquibase-aws-extension) and include it using the `--classpath` parameter.
+
+```yaml
+name: Database Deployment with S3 Flow (Pre-5.0)
+on: [push]
+
+jobs:
+  deploy-with-s3-flow:
+    runs-on: ubuntu-latest
+    env:
+      LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: us-east-1
+    steps:
+    - uses: actions/checkout@v4
+
     - uses: liquibase/setup-liquibase@v2
       with:
         version: '4.32.0'
         edition: 'secure'
-        
+
     - name: Download AWS Extension
       run: |
         wget -O liquibase-aws-extension.jar https://repo1.maven.org/maven2/org/liquibase/ext/liquibase-aws-extension/1.0.1/liquibase-aws-extension-1.0.1.jar
-        
+
     - name: Execute Flow from S3
       run: |
         liquibase --classpath=liquibase-aws-extension.jar --search-path=s3://my-bucket/liquibase/resources,. flow \
@@ -461,13 +530,13 @@ jobs:
           --url=jdbc:postgresql://localhost/mydb \
           --username=dbuser \
           --password=${{ secrets.DB_PASSWORD }}
-    
+
     # Alternative: Using environment variable for search path
     - name: Execute Flow with Environment Variable
       env:
         LIQUIBASE_SEARCH_PATH: s3://my-bucket/liquibase/resources,.
       run: |
-        liquibase flow \
+        liquibase --classpath=liquibase-aws-extension.jar flow \
           --flow-file=s3://my-bucket/liquibase/flows/staging-deployment.flowfile.yaml \
           --url=jdbc:postgresql://localhost/mydb \
           --username=dbuser \
