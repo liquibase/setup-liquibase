@@ -1,5 +1,5 @@
 # GitHub Action metadata for setup-liquibase
-# This action downloads and installs Liquibase (OSS or Pro) for use in GitHub Actions workflows
+# This action downloads and installs Liquibase (Community or Secure editions) for use in GitHub Actions workflows
 
 name: 'Setup Liquibase'
 description: 'Set up your GitHub Actions workflow with a specific version of Liquibase'
@@ -17,7 +17,7 @@ inputs:
     required: true
   
   edition:
-    description: 'Edition to install: "oss" (Open Source) or "secure" (Secure edition with additional features). "pro" is supported for backward compatibility. For Secure/Pro editions, set LIQUIBASE_LICENSE_KEY environment variable when running Liquibase commands.'
+    description: 'Edition to install: "community" (Community edition, formerly known as OSS) or "secure" (Secure edition with additional features). "oss" and "pro" are supported for backward compatibility. For Secure/Pro editions, set LIQUIBASE_LICENSE_KEY environment variable when running Liquibase commands.'
     required: true
   
 

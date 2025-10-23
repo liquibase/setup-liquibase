@@ -31093,7 +31093,7 @@ async function transformLiquibaseEnvironmentVariables() {
  * Moved to module level for better performance (avoid redeclaration on each execution)
  */
 function isValidEdition(edition) {
-    return edition === 'oss' || edition === 'pro' || edition === 'secure';
+    return edition === 'community' || edition === 'oss' || edition === 'pro' || edition === 'secure';
 }
 /**
  * Main execution function for the GitHub Action
@@ -31112,12 +31112,12 @@ async function run() {
         }
         // Validate required edition input using type guard
         if (!editionInput) {
-            throw new Error('Edition input is required. Must be "oss", "secure", or "pro" (for backward compatibility)');
+            throw new Error('Edition input is required. Must be "community", "secure", "oss" (backward compatibility), or "pro" (backward compatibility)');
         }
         if (!isValidEdition(editionInput)) {
-            throw new Error(`Invalid edition: "${editionInput}". Must be "oss", "secure", or "pro" (for backward compatibility)`);
+            throw new Error(`Invalid edition: "${editionInput}". Must be "community", "secure", "oss" (backward compatibility), or "pro" (backward compatibility)`);
         }
-        const edition = editionInput; // Now TypeScript knows it's 'oss' | 'pro' | 'secure'
+        const edition = editionInput; // Now TypeScript knows it's 'community' | 'oss' | 'pro' | 'secure'
         // Execute the main installation logic
         const result = await (0, installer_1.setupLiquibase)({
             version,
@@ -31229,9 +31229,9 @@ async function setupLiquibase(options) {
         throw new Error(`Version ${version} is not supported. Minimum supported version is ${config_1.MIN_SUPPORTED_VERSION}`);
     }
     // Enhanced edition validation with type guard
-    const validEditions = ['oss', 'pro', 'secure'];
+    const validEditions = ['community', 'oss', 'pro', 'secure'];
     if (!validEditions.includes(edition)) {
-        throw new Error(`Invalid edition: ${edition}. Must be 'oss', 'secure', or 'pro' (for backward compatibility)`);
+        throw new Error(`Invalid edition: ${edition}. Must be 'community', 'secure', 'oss' (backward compatibility), or 'pro' (backward compatibility)`);
     }
     // Use the specified version directly (no resolution needed since we only support specific versions)
     const resolvedVersion = version;
@@ -31302,8 +31302,11 @@ async function setupLiquibase(options) {
  * - Special test version '5-secure-release-test' uses Secure download URLs
  * - Versions <= 4.33.0 use legacy Pro download URLs
  *
+ * For Community and OSS editions:
+ * - Both 'community' and 'oss' use the same OSS download URLs for backward compatibility
+ *
  * @param version - Exact version number to download
- * @param edition - Edition to download ('oss', 'pro', or 'secure')
+ * @param edition - Edition to download ('community', 'oss', 'pro', or 'secure')
  * @returns Download URL for the specified version from official Liquibase endpoints
  */
 function getDownloadUrl(version, edition) {
@@ -31321,6 +31324,7 @@ function getDownloadUrl(version, edition) {
         }
     }
     else {
+        // For both 'community' and 'oss' editions, use OSS download URLs
         const template = isWindows ? config_1.DOWNLOAD_URLS.OSS_WINDOWS_ZIP : config_1.DOWNLOAD_URLS.OSS_UNIX;
         return template.replace(/\{version\}/g, version);
     }
