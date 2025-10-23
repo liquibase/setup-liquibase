@@ -73,16 +73,17 @@ describe('Basic Functionality Validation', () => {
   
   /**
    * Validates that supported Liquibase editions are properly defined
-   * This ensures the action supports OSS, Secure, and Pro (for backward compatibility) editions
+   * This ensures the action supports Community, Secure, OSS (backward compat), and Pro (backward compat) editions
    */
   it('should support all Liquibase editions', () => {
-    const validEditions = ['oss', 'secure', 'pro'];
-    
+    const validEditions = ['community', 'oss', 'secure', 'pro'];
+
     // Verify all supported editions are available
-    expect(validEditions).toContain('oss');     // Open Source edition
-    expect(validEditions).toContain('secure');  // Secure edition (primary)
-    expect(validEditions).toContain('pro');     // Professional edition (backward compatibility)
-    expect(validEditions).toHaveLength(3);      // All three editions
+    expect(validEditions).toContain('community'); // Community edition (primary)
+    expect(validEditions).toContain('oss');       // Open Source edition (backward compatibility)
+    expect(validEditions).toContain('secure');    // Secure edition
+    expect(validEditions).toContain('pro');       // Professional edition (backward compatibility)
+    expect(validEditions).toHaveLength(4);        // All four editions
   });
   
   /**
@@ -91,32 +92,39 @@ describe('Basic Functionality Validation', () => {
   it('should generate valid download URLs', () => {
     const platforms = ['win32', 'linux', 'darwin'];
     const originalPlatform = process.platform;
-    
+
     platforms.forEach(platform => {
       Object.defineProperty(process, 'platform', { value: platform });
-      
+
+      const communityUrl = getDownloadUrl('4.32.0', 'community');
       const ossUrl = getDownloadUrl('4.32.0', 'oss');
       const proUrl = getDownloadUrl('4.32.0', 'pro');
       const secureUrl = getDownloadUrl('4.32.0', 'secure');
-      
+
+      expect(communityUrl).toMatch(/^https:\/\/package\.liquibase\.com/);
       expect(ossUrl).toMatch(/^https:\/\/package\.liquibase\.com/);
       expect(proUrl).toMatch(/^https:\/\/package\.liquibase\.com/);
       expect(secureUrl).toMatch(/^https:\/\/package\.liquibase\.com/);
-      
+
+      // Verify community and oss use same URLs for backward compatibility
+      expect(communityUrl).toBe(ossUrl);
+
       // Verify secure edition uses same URLs as pro edition
       expect(secureUrl).toBe(proUrl);
-      
+
       if (platform === 'win32') {
+        expect(communityUrl).toContain('.zip');
         expect(ossUrl).toContain('.zip');
         expect(proUrl).toContain('.zip');
         expect(secureUrl).toContain('.zip');
       } else {
+        expect(communityUrl).toContain('.tar.gz');
         expect(ossUrl).toContain('.tar.gz');
         expect(proUrl).toContain('.tar.gz');
         expect(secureUrl).toContain('.tar.gz');
       }
     });
-    
+
     Object.defineProperty(process, 'platform', { value: originalPlatform });
   });
   
@@ -151,30 +159,31 @@ describe('Basic Functionality Validation', () => {
    */
   it('should validate input parameters correctly', () => {
     const validInputs = [
+      { version: '4.32.0', edition: 'community' },
       { version: '4.32.0', edition: 'oss' },
       { version: '4.33.1', edition: 'pro' },
-      { version: '5.0.0', edition: 'oss' }
+      { version: '5.0.0', edition: 'community' }
     ];
-    
+
     const invalidInputs = [
-      { version: '', edition: 'oss' },
+      { version: '', edition: 'community' },
       { version: '4.32.0', edition: 'invalid' },
-      { version: 'latest', edition: 'oss' },
-      { version: 'invalid', edition: 'oss' },
-      { version: '4.31.0', edition: 'oss' }
+      { version: 'latest', edition: 'community' },
+      { version: 'invalid', edition: 'community' },
+      { version: '4.31.0', edition: 'community' }
     ];
-    
+
     validInputs.forEach(input => {
       expect(semver.valid(input.version)).toBeTruthy();
       expect(semver.gte(input.version, MIN_SUPPORTED_VERSION)).toBeTruthy();
-      expect(['oss', 'pro']).toContain(input.edition);
+      expect(['community', 'oss', 'pro', 'secure']).toContain(input.edition);
     });
-    
+
     invalidInputs.forEach(input => {
       const isValidVersion = semver.valid(input.version);
-      const isValidEdition = ['oss', 'pro'].includes(input.edition);
+      const isValidEdition = ['community', 'oss', 'pro', 'secure'].includes(input.edition);
       const isAboveMinimum = isValidVersion ? semver.gte(input.version, MIN_SUPPORTED_VERSION) : false;
-      
+
       expect(isValidVersion && isValidEdition && isAboveMinimum).toBeFalsy();
     });
   });
@@ -198,9 +207,9 @@ describe('Error Message Validation', () => {
         input: { version: '4.25.0', edition: 'oss' }, 
         expectedKeywords: ['supported', 'minimum'] 
       },
-      { 
-        input: { version: '4.32.0', edition: 'invalid' }, 
-        expectedKeywords: ['edition', 'oss', 'pro'] 
+      {
+        input: { version: '4.32.0', edition: 'invalid' },
+        expectedKeywords: ['edition', 'community', 'secure']
       }
     ];
     

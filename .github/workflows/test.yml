@@ -107,13 +107,13 @@ jobs:
       env:
         NODE_OPTIONS: --max-old-space-size=4096
     
-    # Test the actual setup-liquibase action with OSS edition
-    - name: Test Liquibase Setup Action (OSS)
+    # Test the actual setup-liquibase action with Community edition
+    - name: Test Liquibase Setup Action (Community)
       id: setup-liquibase
       uses: ./
       with:
         version: '4.32.0'
-        edition: 'oss'
+        edition: 'community'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
