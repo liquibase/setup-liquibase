@@ -80,12 +80,12 @@ describe('Error Handling Tests', () => {
     it('should reject invalid editions', async () => {
       const invalidEditions = [
         'invalid',
-        'community',
         'enterprise',
         'free',
         'paid',
         'OSS',
         'PRO',
+        'COMMUNITY',
         'oss-pro',
         ''
       ];
@@ -97,7 +97,7 @@ describe('Error Handling Tests', () => {
           };
 
         await expect(setupLiquibase(options)).rejects.toThrow(
-          `Invalid edition: ${edition}. Must be 'oss', 'secure', or 'pro' (for backward compatibility)`
+          `Invalid edition: ${edition}. Must be 'community', 'secure', 'oss' (backward compatibility), or 'pro' (backward compatibility)`
         );
       }
     });

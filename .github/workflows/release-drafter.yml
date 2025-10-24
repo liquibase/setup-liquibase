@@ -389,7 +389,7 @@ jobs:
           echo '    uses: liquibase/setup-liquibase@v${{ env.VERSION }}' >> /tmp/changelog_entry.md
           echo '    with:' >> /tmp/changelog_entry.md
           echo '      version: '"'"'4.32.0'"'"'' >> /tmp/changelog_entry.md
-          echo '      edition: '"'"'oss'"'"'' >> /tmp/changelog_entry.md
+          echo '      edition: '"'"'community'"'"'' >> /tmp/changelog_entry.md
           echo '```' >> /tmp/changelog_entry.md
           
           # Add build info

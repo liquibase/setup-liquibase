@@ -10,7 +10,7 @@ jobs:
       - uses: liquibase/setup-liquibase@v1
         with:
           version: '4.32.0'
-          edition: 'oss'
+          edition: 'community'
       
       - name: Run Liquibase Update
         run: |
