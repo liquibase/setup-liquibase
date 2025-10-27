@@ -302,7 +302,7 @@ jobs:
           echo "✅ Build output verified successfully for GitHub Actions"
 
       - name: Download build artifacts from Ubuntu
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: build-artifacts-ubuntu-latest
           path: /tmp/artifacts
