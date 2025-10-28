@@ -209,15 +209,205 @@ describe('getDownloadUrl', () => {
   it('should handle different version formats', () => {
     const originalPlatform = process.platform;
     Object.defineProperty(process, 'platform', { value: 'linux' });
-    
+
     const versions = ['4.32.0', '4.33.1', '4.34.0-beta'];
     versions.forEach(version => {
       const url = getDownloadUrl(version, 'oss');
       expect(url).toContain(version);
       expect(url).toMatch(/^https:\/\/package\.liquibase\.com/);
     });
-    
+
     Object.defineProperty(process, 'platform', { value: originalPlatform });
+  });
+
+  // Custom URL tests
+  describe('with custom download URL', () => {
+    it('should use custom URL when provided with all placeholders', () => {
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'linux' });
+
+      const version = '4.32.0';
+      const customUrl = 'https://internal-repo.company.com/liquibase/{version}/liquibase-{edition}-{version}.{extension}';
+      const url = getDownloadUrl(version, 'oss', customUrl);
+
+      expect(url).toBe('https://internal-repo.company.com/liquibase/4.32.0/liquibase-oss-4.32.0.tar.gz');
+
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    });
+
+    it('should replace version placeholder in custom URL', () => {
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'linux' });
+
+      const version = '4.33.1';
+      const customUrl = 'https://nexus.internal/repository/liquibase/{version}/liquibase-{version}.tar.gz';
+      const url = getDownloadUrl(version, 'oss', customUrl);
+
+      expect(url).toBe('https://nexus.internal/repository/liquibase/4.33.1/liquibase-4.33.1.tar.gz');
+
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    });
+
+    it('should replace platform placeholder for Windows', () => {
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'win32' });
+
+      const version = '4.32.0';
+      const customUrl = 'https://artifactory.company.com/{platform}/liquibase-{version}.{extension}';
+      const url = getDownloadUrl(version, 'oss', customUrl);
+
+      expect(url).toBe('https://artifactory.company.com/windows/liquibase-4.32.0.zip');
+
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    });
+
+    it('should replace platform placeholder for Unix', () => {
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'linux' });
+
+      const version = '4.32.0';
+      const customUrl = 'https://artifactory.company.com/{platform}/liquibase-{version}.{extension}';
+      const url = getDownloadUrl(version, 'oss', customUrl);
+
+      expect(url).toBe('https://artifactory.company.com/unix/liquibase-4.32.0.tar.gz');
+
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    });
+
+    it('should replace extension placeholder for Windows', () => {
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'win32' });
+
+      const version = '4.32.0';
+      const customUrl = 'https://internal.repo/liquibase-{version}.{extension}';
+      const url = getDownloadUrl(version, 'oss', customUrl);
+
+      expect(url).toBe('https://internal.repo/liquibase-4.32.0.zip');
+
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    });
+
+    it('should replace extension placeholder for Unix', () => {
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'linux' });
+
+      const version = '4.32.0';
+      const customUrl = 'https://internal.repo/liquibase-{version}.{extension}';
+      const url = getDownloadUrl(version, 'oss', customUrl);
+
+      expect(url).toBe('https://internal.repo/liquibase-4.32.0.tar.gz');
+
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    });
+
+    it('should replace edition placeholder', () => {
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'linux' });
+
+      const version = '4.32.0';
+      const customUrl = 'https://internal.repo/liquibase-{edition}-{version}.{extension}';
+
+      const ossUrl = getDownloadUrl(version, 'oss', customUrl);
+      expect(ossUrl).toBe('https://internal.repo/liquibase-oss-4.32.0.tar.gz');
+
+      const proUrl = getDownloadUrl(version, 'pro', customUrl);
+      expect(proUrl).toBe('https://internal.repo/liquibase-pro-4.32.0.tar.gz');
+
+      const secureUrl = getDownloadUrl(version, 'secure', customUrl);
+      expect(secureUrl).toBe('https://internal.repo/liquibase-secure-4.32.0.tar.gz');
+
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    });
+
+    it('should ignore custom URL when empty string', () => {
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'linux' });
+
+      const version = '4.32.0';
+      const url = getDownloadUrl(version, 'oss', '');
+
+      // Should use default Scarf-tracked URL when custom URL is empty
+      expect(url).toBe(`https://package.liquibase.com/downloads/community/gha/liquibase-${version}.tar.gz`);
+
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    });
+
+    it('should ignore custom URL when whitespace only', () => {
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'linux' });
+
+      const version = '4.32.0';
+      const url = getDownloadUrl(version, 'oss', '   ');
+
+      // Should use default Scarf-tracked URL when custom URL is whitespace only
+      expect(url).toBe(`https://package.liquibase.com/downloads/community/gha/liquibase-${version}.tar.gz`);
+
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    });
+
+    it('should throw error when custom URL missing version placeholder', () => {
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'linux' });
+
+      const version = '4.32.0';
+      const customUrl = 'https://internal.repo/liquibase.tar.gz'; // Missing {version}
+
+      expect(() => getDownloadUrl(version, 'oss', customUrl)).toThrow('Custom download URL must contain {version} placeholder');
+
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    });
+
+    it('should throw error when custom URL has invalid protocol', () => {
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'linux' });
+
+      const version = '4.32.0';
+      const customUrl = 'ftp://internal.repo/liquibase-{version}.tar.gz'; // Invalid protocol
+
+      expect(() => getDownloadUrl(version, 'oss', customUrl)).toThrow('Custom download URL must start with https:// or http://');
+
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    });
+
+    it('should accept HTTP URLs but warn', () => {
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'linux' });
+
+      const version = '4.32.0';
+      const customUrl = 'http://internal.repo/liquibase-{version}.tar.gz';
+
+      // Should not throw
+      const url = getDownloadUrl(version, 'oss', customUrl);
+      expect(url).toBe('http://internal.repo/liquibase-4.32.0.tar.gz');
+
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    });
+
+    it('should work with Nexus-style URLs', () => {
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'linux' });
+
+      const version = '4.32.0';
+      const customUrl = 'https://nexus.company.com/repository/raw-hosted/liquibase/{version}/liquibase-{version}.{extension}';
+      const url = getDownloadUrl(version, 'oss', customUrl);
+
+      expect(url).toBe('https://nexus.company.com/repository/raw-hosted/liquibase/4.32.0/liquibase-4.32.0.tar.gz');
+
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    });
+
+    it('should work with Artifactory-style URLs', () => {
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'win32' });
+
+      const version = '4.32.0';
+      const customUrl = 'https://artifactory.company.com/artifactory/libs-release/liquibase/{version}/liquibase-{version}.{extension}';
+      const url = getDownloadUrl(version, 'pro', customUrl);
+
+      expect(url).toBe('https://artifactory.company.com/artifactory/libs-release/liquibase/4.32.0/liquibase-4.32.0.zip');
+
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    });
   });
 });
 

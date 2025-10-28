@@ -33,6 +33,7 @@ steps:
 - **Version Control**: Install specific versions (4.32.0+) with exact version specification
 - **Edition Support**: Works with both Community and Secure editions
 - **Intelligent Caching**: Automatic tool caching for instant setup on subsequent runs (see [Caching Behavior](#caching-behavior))
+- **Custom Download Sources**: Download from internal artifact repositories (Nexus, Artifactory) for firewall-protected environments
 - **Enhanced Logging**: Clear progress indicators, path transparency, and migration guidance
 - **Path Safety**: Automatic transformation of absolute paths for GitHub Actions compatibility
 - **Performance**: Optimized installation for faster workflow runs
@@ -172,12 +173,71 @@ steps:
 - run: liquibase --version
 ```
 
+### Custom Download Source (For Internal/Firewall-Protected Environments)
+
+If your self-hosted runners are behind a firewall and need to download Liquibase from an internal repository (like Nexus or Artifactory), you can specify a custom download URL:
+
+#### Using Action Input
+
+```yaml
+steps:
+- uses: actions/checkout@v4
+- uses: liquibase/setup-liquibase@v2
+  with:
+    version: '4.32.0'
+    edition: 'oss'
+    download-url-base: 'https://nexus.company.com/repository/liquibase/{version}/liquibase-{version}.{extension}'
+- run: liquibase --version
+```
+
+#### Using Environment Variable
+
+```yaml
+env:
+  LIQUIBASE_DOWNLOAD_URL_BASE: 'https://artifactory.company.com/libs-release/liquibase/{version}/liquibase-{version}.{extension}'
+
+steps:
+- uses: actions/checkout@v4
+- uses: liquibase/setup-liquibase@v2
+  with:
+    version: '4.32.0'
+    edition: 'oss'
+- run: liquibase --version
+```
+
+#### Supported Placeholders
+
+The custom URL template supports the following placeholders:
+
+- `{version}` - **Required**. The Liquibase version (e.g., "4.32.0")
+- `{platform}` - Platform identifier: "windows" or "unix"
+- `{extension}` - File extension: "zip" (Windows) or "tar.gz" (Unix/macOS)
+- `{edition}` - Edition identifier: "oss", "pro", or "secure"
+
+#### Examples for Popular Artifact Repositories
+
+**Nexus Repository:**
+```yaml
+download-url-base: 'https://nexus.company.com/repository/raw-hosted/liquibase/{version}/liquibase-{version}.{extension}'
+```
+
+**Artifactory:**
+```yaml
+download-url-base: 'https://artifactory.company.com/artifactory/libs-release/liquibase/{version}/liquibase-{version}.{extension}'
+```
+
+**With Edition and Platform:**
+```yaml
+download-url-base: 'https://internal-repo.company.com/{platform}/liquibase-{edition}-{version}.{extension}'
+```
+
 ## Inputs
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `version` | Specific version of Liquibase to install (e.g., "4.32.0"). Must be 4.32.0 or higher. | Yes | |
 | `edition` | Edition to install: "community" (Community edition, formerly OSS) or "secure" (Secure edition). "oss" and "pro" are supported for backward compatibility. For Secure edition, set LIQUIBASE_LICENSE_KEY environment variable when running Liquibase commands. | Yes | |
+| `download-url-base` | Optional custom base URL for downloading Liquibase binaries from internal or alternative sources (e.g., Nexus, Artifactory). Use `{version}` as placeholder for version number, `{platform}` for platform (windows/unix), `{extension}` for file extension (zip/tar.gz), and `{edition}` for edition (community/oss/pro/secure). Can also be set via `LIQUIBASE_DOWNLOAD_URL_BASE` environment variable. Example: `https://internal-repo.company.com/liquibase/{version}/liquibase-{version}.{extension}`. Note: Caching is disabled when using custom URLs. | No | (uses official Liquibase download URLs) |
 
 ## Outputs
 
