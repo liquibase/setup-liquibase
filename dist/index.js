@@ -31106,6 +31106,8 @@ async function run() {
         // Extract input parameters from the GitHub Action context
         const version = core.getInput('version');
         const editionInput = core.getInput('edition');
+        // Get custom download URL (input takes precedence over environment variable)
+        const downloadUrlBase = core.getInput('download-url-base') || process.env.LIQUIBASE_DOWNLOAD_URL_BASE || '';
         // Validate required version input
         if (!version) {
             throw new Error('Version input is required. Must be a specific version (e.g., "4.32.0")');
@@ -31121,7 +31123,8 @@ async function run() {
         // Execute the main installation logic
         const result = await (0, installer_1.setupLiquibase)({
             version,
-            edition
+            edition,
+            downloadUrlBase
         });
         // Set output values that other workflow steps can reference
         core.setOutput('liquibase-version', result.version);
@@ -31215,7 +31218,7 @@ const semver = __importStar(__nccwpck_require__(2088));
  * @returns Promise resolving to the setup result with version and path
  */
 async function setupLiquibase(options) {
-    const { version, edition } = options;
+    const { version, edition, downloadUrlBase } = options;
     // Enhanced version validation
     if (!version) {
         throw new Error('Version is required');
@@ -31239,7 +31242,7 @@ async function setupLiquibase(options) {
     let toolPath;
     try {
         // Get the appropriate download URL for this version and edition
-        const downloadUrl = getDownloadUrl(resolvedVersion, edition);
+        const downloadUrl = getDownloadUrl(resolvedVersion, edition, downloadUrlBase);
         core.info(`📥 Downloading from: ${downloadUrl}`);
         // Download the Liquibase archive with error handling
         const downloadPath = await (0, tool_cache_1.downloadTool)(downloadUrl);
@@ -31294,20 +31297,74 @@ async function setupLiquibase(options) {
     };
 }
 /**
- * Constructs the download URL for a specific Liquibase version and edition
- * Uses official Liquibase download endpoints
+ * Validates a custom download URL template
  *
- * For Pro and Secure editions:
+ * @param urlTemplate - The custom URL template to validate
+ * @throws Error if the URL template is invalid
+ */
+function validateCustomUrl(urlTemplate) {
+    // Ensure URL uses HTTPS for security
+    if (!urlTemplate.startsWith('https://') && !urlTemplate.startsWith('http://')) {
+        throw new Error('Custom download URL must start with https:// or http://');
+    }
+    // Warn if not using HTTPS
+    if (!urlTemplate.startsWith('https://')) {
+        core.warning('Custom download URL is not using HTTPS. Consider using a secure connection.');
+    }
+    // Ensure URL contains version placeholder
+    if (!urlTemplate.includes('{version}')) {
+        throw new Error('Custom download URL must contain {version} placeholder');
+    }
+    // Validate URL format
+    try {
+        const testUrl = urlTemplate
+            .replace(/\{version\}/g, '4.32.0')
+            .replace(/\{platform\}/g, 'unix')
+            .replace(/\{extension\}/g, 'tar.gz')
+            .replace(/\{edition\}/g, 'oss');
+        new URL(testUrl);
+    }
+    catch (error) {
+        throw new Error(`Invalid custom download URL format: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+/**
+ * Constructs the download URL for a specific Liquibase version and edition
+ * Uses official Liquibase download endpoints or a custom URL if provided
+ *
+ * For Pro and Secure editions (default URLs):
  * - Versions > 4.33.0 use Secure download URLs
  * - Special test version '5-secure-release-test' uses Secure download URLs
  * - Versions <= 4.33.0 use legacy Pro download URLs
  *
+ * Custom URL support:
+ * - Supports {version} placeholder for version number
+ * - Supports {platform} placeholder for 'windows' or 'unix'
+ * - Supports {extension} placeholder for 'zip' or 'tar.gz'
+ * - Supports {edition} placeholder for 'oss', 'pro', or 'secure'
+ *
  * @param version - Exact version number to download
  * @param edition - Edition to download ('oss', 'pro', or 'secure')
- * @returns Download URL for the specified version from official Liquibase endpoints
+ * @param customUrlBase - Optional custom base URL template for downloading from internal repositories
+ * @returns Download URL for the specified version
  */
-function getDownloadUrl(version, edition) {
+function getDownloadUrl(version, edition, customUrlBase) {
     const isWindows = process.platform === 'win32';
+    const platform = isWindows ? 'windows' : 'unix';
+    const extension = isWindows ? 'zip' : 'tar.gz';
+    // If custom URL is provided, validate and use it
+    if (customUrlBase && customUrlBase.trim() !== '') {
+        validateCustomUrl(customUrlBase);
+        core.info(`🔧 Using custom download URL for internal/alternative repository`);
+        // Replace all placeholders in the custom URL
+        const customUrl = customUrlBase
+            .replace(/\{version\}/g, version)
+            .replace(/\{platform\}/g, platform)
+            .replace(/\{extension\}/g, extension)
+            .replace(/\{edition\}/g, edition);
+        return customUrl;
+    }
+    // Default behavior: use official Liquibase download endpoints
     // For Pro and Secure editions, use Secure URLs if version > 4.33.0
     if (edition === 'pro' || edition === 'secure') {
         const useSecureUrls = version === '5-secure-release-test' || semver.gt(version, '4.33.0');
