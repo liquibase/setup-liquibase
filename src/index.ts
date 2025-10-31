@@ -148,6 +148,9 @@ async function run(): Promise<void> {
     const version = core.getInput('version');
     const editionInput = core.getInput('edition');
 
+    // Get custom download URL (input takes precedence over environment variable)
+    const downloadUrlBase = core.getInput('download-url-base') || process.env.LIQUIBASE_DOWNLOAD_URL_BASE || '';
+
     // Validate required version input
     if (!version) {
       throw new Error('Version input is required. Must be a specific version (e.g., "4.32.0")');
@@ -165,7 +168,8 @@ async function run(): Promise<void> {
     // Execute the main installation logic
     const result = await setupLiquibase({
       version,
-      edition
+      edition,
+      downloadUrlBase
     });
 
     // Set output values that other workflow steps can reference
