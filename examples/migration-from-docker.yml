@@ -21,7 +21,7 @@ jobs:
       - uses: liquibase/setup-liquibase@v1
         with:
           version: '4.32.0'
-          edition: 'oss'
+          edition: 'community'
       
       - name: Show execution context (for debugging)
         run: |
@@ -48,7 +48,7 @@ jobs:
       - uses: liquibase/setup-liquibase@v1
         with:
           version: '4.32.0'
-          edition: 'oss'
+          edition: 'community'
         env:
           # These absolute paths will be automatically transformed:
           LIQUIBASE_LOG_FILE: /liquibase/changelog/liquibase.log
@@ -92,7 +92,7 @@ jobs:
       - uses: liquibase/setup-liquibase@v1
         with:
           version: '4.32.0'
-          edition: 'oss'
+          edition: 'community'
         env:
           # Point to downloaded JAR in workspace
           LIQUIBASE_CLASSPATH: lib/postgresql.jar
@@ -116,7 +116,7 @@ jobs:
       - uses: liquibase/setup-liquibase@v1
         with:
           version: '4.32.0'
-          edition: 'oss'
+          edition: 'community'
         env:
           # Environment-specific log files (will be transformed)
           LIQUIBASE_LOG_FILE: /liquibase/logs/${{ matrix.environment }}/liquibase.log
@@ -147,7 +147,7 @@ jobs:
       - uses: liquibase/setup-liquibase@v1
         with:
           version: '4.32.0'
-          edition: 'oss'
+          edition: 'community'
         env:
           LIQUIBASE_LOG_FILE: reports/liquibase.log
       
@@ -224,7 +224,7 @@ jobs:
       - uses: liquibase/setup-liquibase@v1
         with:
           version: '4.32.0'
-          edition: 'oss'
+          edition: 'community'
         env:
           LIQUIBASE_LOG_FILE: /liquibase/debug/liquibase.log
       

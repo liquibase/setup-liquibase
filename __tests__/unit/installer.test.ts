@@ -6,14 +6,37 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 describe('getDownloadUrl', () => {
-  it('should construct correct OSS URL for Unix-like systems', () => {
+  it('should construct correct Community URL for Unix-like systems', () => {
     const originalPlatform = process.platform;
     Object.defineProperty(process, 'platform', { value: 'linux' });
-    
+
+    const version = '4.32.0';
+    const url = getDownloadUrl(version, 'community');
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/download/v${version}/liquibase-${version}.tar.gz`);
+
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
+  });
+
+  it('should construct correct OSS URL for Unix-like systems (backward compatibility)', () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+
     const version = '4.32.0';
     const url = getDownloadUrl(version, 'oss');
     expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/download/v${version}/liquibase-${version}.tar.gz`);
-    
+
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
+  });
+
+  it('should return same URL for community and oss editions', () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+
+    const version = '4.32.0';
+    const communityUrl = getDownloadUrl(version, 'community');
+    const ossUrl = getDownloadUrl(version, 'oss');
+    expect(communityUrl).toBe(ossUrl);
+
     Object.defineProperty(process, 'platform', { value: originalPlatform });
   });
 
@@ -28,14 +51,25 @@ describe('getDownloadUrl', () => {
     Object.defineProperty(process, 'platform', { value: originalPlatform });
   });
 
-  it('should use zip extension for Windows OSS', () => {
+  it('should use zip extension for Windows Community', () => {
     const originalPlatform = process.platform;
     Object.defineProperty(process, 'platform', { value: 'win32' });
-    
+
+    const version = '4.32.0';
+    const url = getDownloadUrl(version, 'community');
+    expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/download/v${version}/liquibase-${version}.zip`);
+
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
+  });
+
+  it('should use zip extension for Windows OSS (backward compatibility)', () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+
     const version = '4.32.0';
     const url = getDownloadUrl(version, 'oss');
     expect(url).toBe(`https://package.liquibase.com/downloads/cli/liquibase/releases/download/v${version}/liquibase-${version}.zip`);
-    
+
     Object.defineProperty(process, 'platform', { value: originalPlatform });
   });
 
@@ -271,7 +305,7 @@ describe('setupLiquibase validation', () => {
     };
 
     await expect(setupLiquibase(options)).rejects.toThrow(
-      'Invalid edition: invalid. Must be \'oss\', \'secure\', or \'pro\' (for backward compatibility)'
+      'Invalid edition: invalid. Must be \'community\', \'secure\', \'oss\' (backward compatibility), or \'pro\' (backward compatibility)'
     );
   });
 
