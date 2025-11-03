@@ -32,6 +32,7 @@ steps:
 
 - **Version Control**: Install specific versions (4.32.0+) with exact version specification
 - **Edition Support**: Works with both Community and Secure editions
+- **Intelligent Caching**: Automatic tool caching for instant setup on subsequent runs (see [Caching Behavior](#caching-behavior))
 - **Enhanced Logging**: Clear progress indicators, path transparency, and migration guidance
 - **Path Safety**: Automatic transformation of absolute paths for GitHub Actions compatibility
 - **Performance**: Optimized installation for faster workflow runs
@@ -50,6 +51,71 @@ This action is production-ready with comprehensive testing and CI optimizations:
 - **CI/CD optimized** with memory management and timeout handling
 - **Real-world scenarios** tested with actual Liquibase installations
 - **Error handling** with descriptive messages for all failure cases
+
+## Caching Behavior
+
+This action automatically caches Liquibase installations using the `@actions/tool-cache` API, providing significant performance improvements especially on self-hosted runners.
+
+### How It Works
+
+1. **First Run** (Cache Miss):
+   - Downloads Liquibase from official sources (~10-30 seconds)
+   - Extracts and validates the installation
+   - Caches the installation in the GitHub Actions tool cache
+   - Total time: ~10-30 seconds depending on network speed
+
+2. **Subsequent Runs** (Cache Hit):
+   - Retrieves Liquibase from the tool cache instantly
+   - Skips download and extraction steps entirely
+   - Total time: <1 second
+
+### Cache Key Strategy
+
+Liquibase installations are cached with unique keys based on:
+- **Tool name**: `liquibase`
+- **Version**: Exact version number (e.g., `4.32.0`)
+- **Edition**: `community`, `secure`, `oss`, or `pro`
+
+This ensures that different versions and editions are cached separately, allowing you to use multiple versions across different workflows without conflicts.
+
+### Benefits
+
+- **Performance**: 10-30 seconds saved per workflow run after the first installation
+- **Bandwidth**: Reduces network usage by avoiding repeated downloads
+- **Reliability**: Eliminates download failures on subsequent runs
+- **Disk Space**: Prevents accumulation of temporary directories (especially important for self-hosted runners)
+
+### Cache Management
+
+**GitHub-hosted runners**: Caches are automatically cleaned up when runners are destroyed after each job. No manual intervention needed.
+
+**Self-hosted runners**: Caches persist across runs and are managed by the GitHub Actions runner. The tool cache is located in:
+- Linux/macOS: `$RUNNER_TOOL_CACHE` or `$HOME/.runner-tool-cache`
+- Windows: `%RUNNER_TOOL_CACHE%` or `%USERPROFILE%\.runner-tool-cache`
+
+To clear the cache manually on self-hosted runners if needed:
+```bash
+rm -rf $RUNNER_TOOL_CACHE/liquibase
+```
+
+### Example Workflow Output
+
+**First run:**
+```
+🚀 Setting up Liquibase COMMUNITY 4.32.0
+💾 Liquibase not found in cache, proceeding with fresh installation
+📥 Downloading from: https://package.liquibase.com/...
+📦 Extracting Liquibase archive...
+💾 Caching Liquibase installation for future workflow runs...
+✅ Installation completed successfully
+```
+
+**Subsequent runs:**
+```
+🚀 Setting up Liquibase COMMUNITY 4.32.0
+✨ Using cached Liquibase COMMUNITY 4.32.0 from tool cache
+✅ Liquibase installation validated successfully
+```
 
 ## Usage Examples
 

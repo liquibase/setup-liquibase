@@ -32,9 +32,16 @@ export interface LiquibaseSetupResult {
  * This function coordinates the entire installation process:
  * 1. Validates version and edition requirements
  * 2. Resolves the exact version to install
- * 3. Downloads and extracts Liquibase
- * 4. Validates the installation
- * 5. Adds Liquibase to the system PATH
+ * 3. Checks the tool cache for existing installation (cache hit = instant setup)
+ * 4. Downloads and extracts Liquibase (cache miss only)
+ * 5. Caches the installation for subsequent runs
+ * 6. Validates the installation
+ * 7. Adds Liquibase to the system PATH
+ *
+ * The tool cache provides significant performance improvements on self-hosted runners:
+ * - First run: Downloads and caches Liquibase (~10-30 seconds)
+ * - Subsequent runs: Instant retrieval from cache (<1 second)
+ * - Prevents disk space exhaustion from accumulated temp directories
  *
  * @param options - Configuration for the Liquibase setup
  * @returns Promise resolving to the setup result with version and path
