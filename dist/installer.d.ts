@@ -2,7 +2,8 @@
  * Liquibase Installation and Setup Module
  *
  * This module contains the core logic for:
- * - Downloading and installing Liquibase (OSS and Pro editions)
+ * - Downloading and installing Liquibase (Community and Secure editions)
+ * - Backward compatibility support for 'oss' and 'pro' edition aliases
  * - Version resolution and management
  * - Cross-platform support (Linux, Windows, macOS)
  * - Installation validation
@@ -13,8 +14,8 @@
 export interface LiquibaseSetupOptions {
     /** Specific version to install (e.g., "4.32.0") */
     version: string;
-    /** Edition to install: 'oss' for Open Source, 'secure' for Secure edition, or 'pro' for backward compatibility */
-    edition: 'oss' | 'pro' | 'secure';
+    /** Edition to install: 'community' for Community edition (OSS), 'secure' for Secure edition, 'pro' for backward compatibility, or 'oss' for backward compatibility */
+    edition: 'community' | 'oss' | 'pro' | 'secure';
 }
 /**
  * Result of a successful Liquibase setup operation
@@ -48,8 +49,11 @@ export declare function setupLiquibase(options: LiquibaseSetupOptions): Promise<
  * - Special test version '5-secure-release-test' uses Secure download URLs
  * - Versions <= 4.33.0 use legacy Pro download URLs
  *
+ * For Community and OSS editions:
+ * - Both 'community' and 'oss' use the same OSS download URLs for backward compatibility
+ *
  * @param version - Exact version number to download
- * @param edition - Edition to download ('oss', 'pro', or 'secure')
+ * @param edition - Edition to download ('community', 'oss', 'pro', or 'secure')
  * @returns Download URL for the specified version from official Liquibase endpoints
  */
 export declare function getDownloadUrl(version: string, edition: LiquibaseSetupOptions['edition']): string;

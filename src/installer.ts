@@ -1,8 +1,9 @@
 /**
  * Liquibase Installation and Setup Module
- * 
+ *
  * This module contains the core logic for:
- * - Downloading and installing Liquibase (OSS and Pro editions)
+ * - Downloading and installing Liquibase (Community and Secure editions)
+ * - Backward compatibility support for 'oss' and 'pro' edition aliases
  * - Version resolution and management
  * - Cross-platform support (Linux, Windows, macOS)
  * - Installation validation
@@ -24,8 +25,8 @@ import * as semver from 'semver';
 export interface LiquibaseSetupOptions {
   /** Specific version to install (e.g., "4.32.0") */
   version: string;
-  /** Edition to install: 'oss' for Open Source, 'secure' for Secure edition, or 'pro' for backward compatibility */
-  edition: 'oss' | 'pro' | 'secure';
+  /** Edition to install: 'community' for Community edition (OSS), 'secure' for Secure edition, 'pro' for backward compatibility, or 'oss' for backward compatibility */
+  edition: 'community' | 'oss' | 'pro' | 'secure';
 }
 
 /**
@@ -70,9 +71,9 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
   }
   
   // Enhanced edition validation with type guard
-  const validEditions: readonly LiquibaseSetupOptions['edition'][] = ['oss', 'pro', 'secure'] as const;
+  const validEditions: readonly LiquibaseSetupOptions['edition'][] = ['community', 'oss', 'pro', 'secure'] as const;
   if (!validEditions.includes(edition)) {
-    throw new Error(`Invalid edition: ${edition}. Must be 'oss', 'secure', or 'pro' (for backward compatibility)`);
+    throw new Error(`Invalid edition: ${edition}. Must be 'community', 'secure', 'oss' (backward compatibility), or 'pro' (backward compatibility)`);
   }
   
   // Use the specified version directly (no resolution needed since we only support specific versions)
@@ -155,8 +156,11 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
  * - Special test version '5-secure-release-test' uses Secure download URLs
  * - Versions <= 4.33.0 use legacy Pro download URLs
  *
+ * For Community and OSS editions:
+ * - Both 'community' and 'oss' use the same OSS download URLs for backward compatibility
+ *
  * @param version - Exact version number to download
- * @param edition - Edition to download ('oss', 'pro', or 'secure')
+ * @param edition - Edition to download ('community', 'oss', 'pro', or 'secure')
  * @returns Download URL for the specified version from official Liquibase endpoints
  */
 export function getDownloadUrl(version: string, edition: LiquibaseSetupOptions['edition']): string {
@@ -174,6 +178,7 @@ export function getDownloadUrl(version: string, edition: LiquibaseSetupOptions['
       return template.replace(/\{version\}/g, version);
     }
   } else {
+    // For both 'community' and 'oss' editions, use OSS download URLs
     const template = isWindows ? DOWNLOAD_URLS.OSS_WINDOWS_ZIP : DOWNLOAD_URLS.OSS_UNIX;
     return template.replace(/\{version\}/g, version);
   }

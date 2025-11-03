@@ -30911,22 +30911,25 @@ exports.MIN_SUPPORTED_VERSION = exports.DOWNLOAD_URLS = void 0;
  */
 exports.DOWNLOAD_URLS = {
     /**
-     * OSS download URL templates from liquibase.com/download-oss
-     * Note: OSS uses 'v' prefix in version path
+     * Community edition download URL templates from liquibase.com/download-oss
+     * Used by 'community' edition (primary) and 'oss' edition (backward compatibility alias)
+     * Note: Community/OSS URLs use 'v' prefix in version path
      */
     OSS_WINDOWS_INSTALLER: 'https://package.liquibase.com/downloads/cli/liquibase/releases/download/v{version}/liquibase-windows-x64-installer-{version}.exe',
     OSS_WINDOWS_ZIP: 'https://package.liquibase.com/downloads/cli/liquibase/releases/download/v{version}/liquibase-{version}.zip',
     OSS_UNIX: 'https://package.liquibase.com/downloads/cli/liquibase/releases/download/v{version}/liquibase-{version}.tar.gz',
     /**
-     * Pro download URL templates from liquibase.com/download-pro
-     * Note: Pro does NOT use 'v' prefix in version path
+     * Legacy Pro download URL templates from liquibase.com/download-pro
+     * Used only for 'pro' edition (backward compatibility) with versions <= 4.33.0
+     * Note: Pro URLs do NOT use 'v' prefix in version path
      */
     PRO_WINDOWS_INSTALLER: 'https://package.liquibase.com/downloads/cli/liquibase/releases/pro/{version}/liquibase-pro-windows-x64-installer-{version}.exe',
     PRO_WINDOWS_ZIP: 'https://package.liquibase.com/downloads/cli/liquibase/releases/pro/{version}/liquibase-pro-{version}.zip',
     PRO_UNIX: 'https://package.liquibase.com/downloads/cli/liquibase/releases/pro/{version}/liquibase-pro-{version}.tar.gz',
     /**
-     * Secure download URL templates
-     * Note: Secure does NOT use 'v' prefix in version path
+     * Secure edition download URL templates
+     * Used by 'secure' edition (primary) and 'pro' edition (backward compatibility) with versions > 4.33.0
+     * Note: Secure URLs do NOT use 'v' prefix in version path
      */
     SECURE_WINDOWS_INSTALLER: 'https://package.liquibase.com/downloads/cli/liquibase/releases/secure/{version}/liquibase-secure-windows-x64-installer-{version}.exe',
     SECURE_WINDOWS_ZIP: 'https://package.liquibase.com/downloads/cli/liquibase/releases/secure/{version}/liquibase-secure-{version}.zip',
@@ -31093,7 +31096,7 @@ async function transformLiquibaseEnvironmentVariables() {
  * Moved to module level for better performance (avoid redeclaration on each execution)
  */
 function isValidEdition(edition) {
-    return edition === 'oss' || edition === 'pro' || edition === 'secure';
+    return edition === 'community' || edition === 'oss' || edition === 'pro' || edition === 'secure';
 }
 /**
  * Main execution function for the GitHub Action
@@ -31112,12 +31115,12 @@ async function run() {
         }
         // Validate required edition input using type guard
         if (!editionInput) {
-            throw new Error('Edition input is required. Must be "oss", "secure", or "pro" (for backward compatibility)');
+            throw new Error('Edition input is required. Must be "community", "secure", "oss" (backward compatibility), or "pro" (backward compatibility)');
         }
         if (!isValidEdition(editionInput)) {
-            throw new Error(`Invalid edition: "${editionInput}". Must be "oss", "secure", or "pro" (for backward compatibility)`);
+            throw new Error(`Invalid edition: "${editionInput}". Must be "community", "secure", "oss" (backward compatibility), or "pro" (backward compatibility)`);
         }
-        const edition = editionInput; // Now TypeScript knows it's 'oss' | 'pro' | 'secure'
+        const edition = editionInput; // Now TypeScript knows it's 'community' | 'oss' | 'pro' | 'secure'
         // Execute the main installation logic
         const result = await (0, installer_1.setupLiquibase)({
             version,
@@ -31151,7 +31154,8 @@ if (require.main === require.cache[eval('__filename')]) {
  * Liquibase Installation and Setup Module
  *
  * This module contains the core logic for:
- * - Downloading and installing Liquibase (OSS and Pro editions)
+ * - Downloading and installing Liquibase (Community and Secure editions)
+ * - Backward compatibility support for 'oss' and 'pro' edition aliases
  * - Version resolution and management
  * - Cross-platform support (Linux, Windows, macOS)
  * - Installation validation
@@ -31229,9 +31233,9 @@ async function setupLiquibase(options) {
         throw new Error(`Version ${version} is not supported. Minimum supported version is ${config_1.MIN_SUPPORTED_VERSION}`);
     }
     // Enhanced edition validation with type guard
-    const validEditions = ['oss', 'pro', 'secure'];
+    const validEditions = ['community', 'oss', 'pro', 'secure'];
     if (!validEditions.includes(edition)) {
-        throw new Error(`Invalid edition: ${edition}. Must be 'oss', 'secure', or 'pro' (for backward compatibility)`);
+        throw new Error(`Invalid edition: ${edition}. Must be 'community', 'secure', 'oss' (backward compatibility), or 'pro' (backward compatibility)`);
     }
     // Use the specified version directly (no resolution needed since we only support specific versions)
     const resolvedVersion = version;
@@ -31302,8 +31306,11 @@ async function setupLiquibase(options) {
  * - Special test version '5-secure-release-test' uses Secure download URLs
  * - Versions <= 4.33.0 use legacy Pro download URLs
  *
+ * For Community and OSS editions:
+ * - Both 'community' and 'oss' use the same OSS download URLs for backward compatibility
+ *
  * @param version - Exact version number to download
- * @param edition - Edition to download ('oss', 'pro', or 'secure')
+ * @param edition - Edition to download ('community', 'oss', 'pro', or 'secure')
  * @returns Download URL for the specified version from official Liquibase endpoints
  */
 function getDownloadUrl(version, edition) {
@@ -31321,6 +31328,7 @@ function getDownloadUrl(version, edition) {
         }
     }
     else {
+        // For both 'community' and 'oss' editions, use OSS download URLs
         const template = isWindows ? config_1.DOWNLOAD_URLS.OSS_WINDOWS_ZIP : config_1.DOWNLOAD_URLS.OSS_UNIX;
         return template.replace(/\{version\}/g, version);
     }

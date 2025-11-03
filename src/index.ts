@@ -132,8 +132,8 @@ export async function transformLiquibaseEnvironmentVariables(): Promise<void> {
  * Type guard function to validate edition input
  * Moved to module level for better performance (avoid redeclaration on each execution)
  */
-function isValidEdition(edition: string): edition is 'oss' | 'pro' | 'secure' {
-  return edition === 'oss' || edition === 'pro' || edition === 'secure';
+function isValidEdition(edition: string): edition is 'community' | 'oss' | 'pro' | 'secure' {
+  return edition === 'community' || edition === 'oss' || edition === 'pro' || edition === 'secure';
 }
 
 /**
@@ -155,12 +155,12 @@ async function run(): Promise<void> {
 
     // Validate required edition input using type guard
     if (!editionInput) {
-      throw new Error('Edition input is required. Must be "oss", "secure", or "pro" (for backward compatibility)');
+      throw new Error('Edition input is required. Must be "community", "secure", "oss" (backward compatibility), or "pro" (backward compatibility)');
     }
     if (!isValidEdition(editionInput)) {
-      throw new Error(`Invalid edition: "${editionInput}". Must be "oss", "secure", or "pro" (for backward compatibility)`);
+      throw new Error(`Invalid edition: "${editionInput}". Must be "community", "secure", "oss" (backward compatibility), or "pro" (backward compatibility)`);
     }
-    const edition = editionInput; // Now TypeScript knows it's 'oss' | 'pro' | 'secure'
+    const edition = editionInput; // Now TypeScript knows it's 'community' | 'oss' | 'pro' | 'secure'
 
     // Execute the main installation logic
     const result = await setupLiquibase({

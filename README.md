@@ -3,15 +3,15 @@
 Set up your GitHub Actions workflow with a specific version of Liquibase.
 
 > [!IMPORTANT]
-> **Liquibase 5.0+ OSS Edition Changes**: Starting with Liquibase 5.0, the Open Source (OSS) edition no longer includes database drivers and extensions. You'll need to use the Liquibase Package Manager (LPM) to install required drivers.
+> **Liquibase 5.0+ Community Edition Changes**: Starting with Liquibase 5.0, the Community edition (formerly known as OSS) no longer includes database drivers and extensions. You'll need to use the Liquibase Package Manager (LPM) to install required drivers.
 >
 > **Want drivers and extensions included?** Upgrade to the **Secure edition** which includes most drivers (except non-redistributable ones like MySQL), extensions, and additional enterprise features. See [Secure Edition Support](#secure-edition-support) for details.
 >
-> For complete guidance on using LPM with OSS, see the [Liquibase 5.0 Getting Started Guide](https://docs.liquibase.com/secure/get-started-5-0) and [Using LPM with OSS Edition](#using-lpm-with-oss-edition) section below.
+> For complete guidance on using LPM with the Community edition, see the [Liquibase 5.0 Getting Started Guide](https://docs.liquibase.com/secure/get-started-5-0) and [Using LPM with Community Edition](#using-lpm-with-community-edition) section below.
 
 This action provides the following functionality for GitHub Actions users:
 - Download and install a specific version of Liquibase
-- Support for both Liquibase OSS and Secure editions
+- Support for both Liquibase Community and Secure editions
 - Add Liquibase to the PATH
 - Simple, reliable Liquibase installation for CI/CD workflows
 - Cross-platform support (Linux, Windows, macOS)
@@ -24,14 +24,14 @@ steps:
 - uses: liquibase/setup-liquibase@v2
   with:
     version: '4.32.0'
-    edition: 'oss'
+    edition: 'community'
 - run: liquibase --version
 ```
 
 ## Features
 
 - **Version Control**: Install specific versions (4.32.0+) with exact version specification
-- **Edition Support**: Works with both OSS and Secure editions
+- **Edition Support**: Works with both Community and Secure editions
 - **Enhanced Logging**: Clear progress indicators, path transparency, and migration guidance
 - **Path Safety**: Automatic transformation of absolute paths for GitHub Actions compatibility
 - **Performance**: Optimized installation for faster workflow runs
@@ -61,11 +61,11 @@ steps:
 - uses: liquibase/setup-liquibase@v2
   with:
     version: '4.32.0'
-    edition: 'oss'
+    edition: 'community'
 - run: liquibase --version
 ```
 
-### Liquibase OSS with Specific Version
+### Liquibase Community Edition with Specific Version
 
 ```yaml
 steps:
@@ -73,7 +73,7 @@ steps:
 - uses: liquibase/setup-liquibase@v2
   with:
     version: '4.32.0'
-    edition: 'oss'
+    edition: 'community'
 - run: liquibase update --changelog-file=changelog.xml --url=jdbc:h2:mem:test
 ```
 
@@ -107,7 +107,7 @@ steps:
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `version` | Specific version of Liquibase to install (e.g., "4.32.0"). Must be 4.32.0 or higher. | Yes | |
-| `edition` | Edition to install: "oss" (Open Source) or "secure" (Secure edition). "pro" is supported for backward compatibility. For Secure edition, set LIQUIBASE_LICENSE_KEY environment variable when running Liquibase commands. | Yes | |
+| `edition` | Edition to install: "community" (Community edition, formerly OSS) or "secure" (Secure edition). "oss" and "pro" are supported for backward compatibility. For Secure edition, set LIQUIBASE_LICENSE_KEY environment variable when running Liquibase commands. | Yes | |
 
 ## Outputs
 
@@ -124,17 +124,17 @@ This action supports Liquibase versions 4.32.0 and higher:
 
 The minimum supported version is `4.32.0` to ensure compatibility with the official Liquibase download endpoints used by this action.
 
-**Important for Liquibase 5.0+ with OSS edition**: Starting with version 5.0.0, the OSS edition requires the Liquibase Package Manager (LPM) to install database drivers and extensions. See the [Liquibase 5.0+ OSS Edition Changes](#liquibase-50-oss-edition-changes) section below for details.
+**Important for Liquibase 5.0+ with Community edition**: Starting with version 5.0.0, the Community edition requires the Liquibase Package Manager (LPM) to install database drivers and extensions. See the [Liquibase 5.0+ Community Edition Changes](#liquibase-50-community-edition-changes) section below for details.
 
-## Liquibase 5.0+ OSS Edition Changes
+## Liquibase 5.0+ Community Edition Changes
 
-**Important for OSS Users**: Starting with Liquibase 5.0, the Open Source (OSS) edition ships without database drivers and extensions to provide a lighter, more modular experience.
+**Important for Community Edition Users**: Starting with Liquibase 5.0, the Community edition (formerly known as OSS) ships without database drivers and extensions to provide a lighter, more modular experience.
 
-If you're using Liquibase 5.0+ with `edition: 'oss'`, you'll need to use the **Liquibase Package Manager (LPM)** to install required drivers and extensions for your specific database.
+If you're using Liquibase 5.0+ with `edition: 'community'` (or `edition: 'oss'` for backwards compatibility), you'll need to use the **Liquibase Package Manager (LPM)** to install required drivers and extensions for your specific database.
 
 ### What This Means for GitHub Actions
 
-When using `edition: 'oss'` with Liquibase 5.0 or later:
+When using `edition: 'community'` with Liquibase 5.0 or later:
 - ✅ Liquibase core is installed and ready to use
 - ❌ Database drivers (PostgreSQL, MySQL, Oracle, etc.) are **not included**
 - ❌ Extensions are **not included**
@@ -147,7 +147,7 @@ steps:
 - uses: liquibase/setup-liquibase@v2
   with:
     version: '5.0.0'
-    edition: 'oss'
+    edition: 'community'
 
 # Install PostgreSQL driver using LPM
 - name: Install PostgreSQL Driver
@@ -161,7 +161,7 @@ For complete guidance on using LPM, see:
 - 📚 [Liquibase 5.0 Getting Started Guide](https://docs.liquibase.com/secure/get-started-5-0)
 - 📦 [Liquibase Package Manager Repository](https://github.com/liquibase/liquibase-package-manager)
 
-See the [Using LPM with OSS Edition](#using-lpm-with-oss-edition) section below for detailed examples.
+See the [Using LPM with Community Edition](#using-lpm-with-community-edition) section below for detailed examples.
 
 ## Action Versioning
 
@@ -218,16 +218,16 @@ jobs:
     - uses: liquibase/setup-liquibase@v2
       with:
         version: '4.32.0'
-        edition: 'oss'
+        edition: 'community'
     
     - run: liquibase --version
 ```
 
 **Note**: GitHub-hosted runners (ubuntu-latest, windows-latest, macos-latest) already have Java installed and do not need the setup-java step.
 
-## Using LPM with OSS Edition
+## Using LPM with Community Edition
 
-The Liquibase Package Manager (LPM) is integrated into Liquibase 5.0+ and is essential for OSS users to manage database drivers and extensions. LPM is accessible via the `liquibase lpm` command.
+The Liquibase Package Manager (LPM) is integrated into Liquibase 5.0+ and is essential for Community edition users to manage database drivers and extensions. LPM is accessible via the `liquibase lpm` command.
 
 ### Basic Example
 
@@ -238,7 +238,7 @@ steps:
 - uses: liquibase/setup-liquibase@v2
   with:
     version: '5.0.0'
-    edition: 'oss'
+    edition: 'community'
 
 - name: Install PostgreSQL Driver
   run: liquibase lpm add postgresql --global
@@ -268,7 +268,7 @@ Additional resources:
 
 ## Secure Edition Support
 
-The action supports both Liquibase OSS and Secure editions. The Secure edition can be installed by specifying `edition: 'secure'`. Note that `edition: 'pro'` is still supported for backward compatibility.
+The action supports both Liquibase Community and Secure editions. The Secure edition can be installed by specifying `edition: 'secure'`. Note that `edition: 'oss'` and `edition: 'pro'` are still supported for backward compatibility.
 
 ### Secure License Management
 
@@ -365,7 +365,7 @@ jobs:
     - uses: liquibase/setup-liquibase@v2
       with:
         version: '4.32.0'
-        edition: 'oss'
+        edition: 'community'
         
     - name: Run Liquibase Update
       run: |
@@ -562,7 +562,7 @@ jobs:
     - uses: liquibase/setup-liquibase@v2
       with:
         version: ${{ matrix.liquibase-version }}
-        edition: 'oss'
+        edition: 'community'
         
     - name: Test Migration
       run: |
@@ -601,7 +601,7 @@ The action provides comprehensive logging and automatic path transformation for 
 
 ### What You'll See
 ```
-🚀 Setting up Liquibase OSS 4.32.0
+🚀 Setting up Liquibase COMMUNITY 4.32.0
 📥 Downloading from: https://github.com/liquibase/liquibase/releases/...
 📦 Extracting Liquibase archive...
 📦 Installing Liquibase to temporary directory...
@@ -609,7 +609,7 @@ The action provides comprehensive logging and automatic path transformation for 
 🔧 Added Liquibase to system PATH
 
 🎯 Liquibase configuration:
- Edition: OSS
+ Edition: COMMUNITY
  Version: 4.32.0
  Install Path: /tmp/liquibase-extract-abc123
  Execution Context: /actions-runner/_work/your-repo/your-repo
@@ -654,7 +654,7 @@ If you're migrating from the official Liquibase GitHub Actions, here's how to co
 - uses: liquibase/setup-liquibase@v2
   with:
     version: '4.32.0'
-    edition: 'oss'
+    edition: 'community'
 - run: liquibase update \
     --changelog-file=changelog.xml \
     --url=jdbc:h2:mem:test \
