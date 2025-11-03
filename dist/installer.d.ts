@@ -2,7 +2,8 @@
  * Liquibase Installation and Setup Module
  *
  * This module contains the core logic for:
- * - Downloading and installing Liquibase (OSS and Pro editions)
+ * - Downloading and installing Liquibase (Community and Secure editions)
+ * - Backward compatibility support for 'oss' and 'pro' edition aliases
  * - Version resolution and management
  * - Cross-platform support (Linux, Windows, macOS)
  * - Installation validation
