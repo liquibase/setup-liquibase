@@ -480,6 +480,8 @@ jobs:
           echo "To test Pro edition, add PRO_LICENSE_KEY secret to the repository"
         fi
     
+    # Download MySQL driver for realistic classpath testing
+    # Note: MySQL driver is non-redistributable and not included in any Liquibase edition
     - name: Download MySQL driver for realistic classpath testing
       if: steps.check-license.outputs.has_license == 'true'
       run: |
