@@ -31249,8 +31249,9 @@ async function setupLiquibase(options) {
     core.info(`🚀 Setting up Liquibase ${edition.toUpperCase()} ${resolvedVersion}`);
     let toolPath;
     // Check if Liquibase is already cached
-    const toolName = 'liquibase';
-    const cachedPath = (0, tool_cache_1.find)(toolName, resolvedVersion, edition);
+    // Include edition in tool name for proper cache key isolation
+    const toolName = `liquibase-${edition}`;
+    const cachedPath = (0, tool_cache_1.find)(toolName, resolvedVersion);
     if (cachedPath) {
         // Cache hit - use existing installation
         core.info(`✨ Using cached Liquibase ${edition.toUpperCase()} ${resolvedVersion} from tool cache`);
@@ -31271,7 +31272,7 @@ async function setupLiquibase(options) {
             const extractPath = await extractLiquibase(downloadPath);
             // Cache the extracted directory for future runs
             core.info(`💾 Caching Liquibase installation for future workflow runs...`);
-            toolPath = await (0, tool_cache_1.cacheDir)(extractPath, toolName, resolvedVersion, edition);
+            toolPath = await (0, tool_cache_1.cacheDir)(extractPath, toolName, resolvedVersion);
             core.debug(`Cached at: ${toolPath}`);
             core.info(`✅ Installation completed successfully`);
         }

@@ -72,11 +72,15 @@ This action automatically caches Liquibase installations using the `@actions/too
 ### Cache Key Strategy
 
 Liquibase installations are cached with unique keys based on:
-- **Tool name**: `liquibase`
+- **Tool name**: `liquibase-<edition>` (e.g., `liquibase-community`, `liquibase-secure`)
 - **Version**: Exact version number (e.g., `4.32.0`)
-- **Edition**: `community`, `secure`, `oss`, or `pro`
 
 This ensures that different versions and editions are cached separately, allowing you to use multiple versions across different workflows without conflicts.
+
+**Example cache keys:**
+- `liquibase-community/4.32.0/x64`
+- `liquibase-secure/4.33.0/x64`
+- `liquibase-community/4.34.0/x64`
 
 ### Benefits
 

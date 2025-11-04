@@ -91,8 +91,9 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
   let toolPath: string;
 
   // Check if Liquibase is already cached
-  const toolName = 'liquibase';
-  const cachedPath = find(toolName, resolvedVersion, edition);
+  // Include edition in tool name for proper cache key isolation
+  const toolName = `liquibase-${edition}`;
+  const cachedPath = find(toolName, resolvedVersion);
 
   if (cachedPath) {
     // Cache hit - use existing installation
@@ -117,7 +118,7 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
 
       // Cache the extracted directory for future runs
       core.info(`💾 Caching Liquibase installation for future workflow runs...`);
-      toolPath = await cacheDir(extractPath, toolName, resolvedVersion, edition);
+      toolPath = await cacheDir(extractPath, toolName, resolvedVersion);
       core.debug(`Cached at: ${toolPath}`);
 
       core.info(`✅ Installation completed successfully`);
