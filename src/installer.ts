@@ -15,7 +15,7 @@ import * as io from '@actions/io';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
-import { downloadTool, extractZip } from '@actions/tool-cache';
+import { downloadTool, extractZip, cacheDir, find } from '@actions/tool-cache';
 import { DOWNLOAD_URLS, MIN_SUPPORTED_VERSION } from './config';
 import * as semver from 'semver';
 
@@ -41,14 +41,21 @@ export interface LiquibaseSetupResult {
 
 /**
  * Main function to set up Liquibase in the GitHub Actions environment
- * 
+ *
  * This function coordinates the entire installation process:
  * 1. Validates version and edition requirements
  * 2. Resolves the exact version to install
- * 3. Downloads and extracts Liquibase
- * 4. Validates the installation
- * 5. Adds Liquibase to the system PATH
- * 
+ * 3. Checks the tool cache for existing installation (cache hit = instant setup)
+ * 4. Downloads and extracts Liquibase (cache miss only)
+ * 5. Caches the installation for subsequent runs
+ * 6. Validates the installation
+ * 7. Adds Liquibase to the system PATH
+ *
+ * The tool cache provides significant performance improvements on self-hosted runners:
+ * - First run: Downloads and caches Liquibase (~10-30 seconds)
+ * - Subsequent runs: Instant retrieval from cache (<1 second)
+ * - Prevents disk space exhaustion from accumulated temp directories
+ *
  * @param options - Configuration for the Liquibase setup
  * @returns Promise resolving to the setup result with version and path
  */
@@ -80,22 +87,41 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
   const resolvedVersion = version;
   
   core.info(`🚀 Setting up Liquibase ${edition.toUpperCase()} ${resolvedVersion}`);
-  
+
   let toolPath: string;
-  
-  try {
-    // Get the appropriate download URL for this version and edition
-    const downloadUrl = getDownloadUrl(resolvedVersion, edition);
-    core.info(`📥 Downloading from: ${downloadUrl}`);
-    
-    // Download the Liquibase archive with error handling
-    const downloadPath = await downloadTool(downloadUrl);
-    core.info(`📦 Extracting Liquibase archive...`);
-    
-    // Extract the archive to a temporary directory
-    toolPath = await extractLiquibase(downloadPath);
-    
-    core.info(`✅ Installation completed successfully`);
+
+  // Check if Liquibase is already cached
+  // Include edition in tool name for proper cache key isolation
+  const toolName = `liquibase-${edition}`;
+  const cachedPath = find(toolName, resolvedVersion);
+
+  if (cachedPath) {
+    // Cache hit - use existing installation
+    core.info(`✨ Using cached Liquibase ${edition.toUpperCase()} ${resolvedVersion} from tool cache`);
+    core.debug(`Cache location: ${cachedPath}`);
+    toolPath = cachedPath;
+  } else {
+    // Cache miss - download and install
+    core.info(`💾 Liquibase not found in cache, proceeding with fresh installation`);
+
+    try {
+      // Get the appropriate download URL for this version and edition
+      const downloadUrl = getDownloadUrl(resolvedVersion, edition);
+      core.info(`📥 Downloading from: ${downloadUrl}`);
+
+      // Download the Liquibase archive with error handling
+      const downloadPath = await downloadTool(downloadUrl);
+      core.info(`📦 Extracting Liquibase archive...`);
+
+      // Extract the archive to a temporary directory
+      const extractPath = await extractLiquibase(downloadPath);
+
+      // Cache the extracted directory for future runs
+      core.info(`💾 Caching Liquibase installation for future workflow runs...`);
+      toolPath = await cacheDir(extractPath, toolName, resolvedVersion);
+      core.debug(`Cached at: ${toolPath}`);
+
+      core.info(`✅ Installation completed successfully`);
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes('404') || error.message.includes('Not Found')) {
@@ -107,8 +133,9 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
       }
     }
     throw new Error(`Failed to download and install Liquibase: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
-  
+
   // Construct the path to the Liquibase executable
   const liquibaseBinPath = path.join(toolPath, 'liquibase');
   

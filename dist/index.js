@@ -31211,9 +31211,16 @@ const semver = __importStar(__nccwpck_require__(2088));
  * This function coordinates the entire installation process:
  * 1. Validates version and edition requirements
  * 2. Resolves the exact version to install
- * 3. Downloads and extracts Liquibase
- * 4. Validates the installation
- * 5. Adds Liquibase to the system PATH
+ * 3. Checks the tool cache for existing installation (cache hit = instant setup)
+ * 4. Downloads and extracts Liquibase (cache miss only)
+ * 5. Caches the installation for subsequent runs
+ * 6. Validates the installation
+ * 7. Adds Liquibase to the system PATH
+ *
+ * The tool cache provides significant performance improvements on self-hosted runners:
+ * - First run: Downloads and caches Liquibase (~10-30 seconds)
+ * - Subsequent runs: Instant retrieval from cache (<1 second)
+ * - Prevents disk space exhaustion from accumulated temp directories
  *
  * @param options - Configuration for the Liquibase setup
  * @returns Promise resolving to the setup result with version and path
@@ -31241,30 +31248,48 @@ async function setupLiquibase(options) {
     const resolvedVersion = version;
     core.info(`🚀 Setting up Liquibase ${edition.toUpperCase()} ${resolvedVersion}`);
     let toolPath;
-    try {
-        // Get the appropriate download URL for this version and edition
-        const downloadUrl = getDownloadUrl(resolvedVersion, edition);
-        core.info(`📥 Downloading from: ${downloadUrl}`);
-        // Download the Liquibase archive with error handling
-        const downloadPath = await (0, tool_cache_1.downloadTool)(downloadUrl);
-        core.info(`📦 Extracting Liquibase archive...`);
-        // Extract the archive to a temporary directory
-        toolPath = await extractLiquibase(downloadPath);
-        core.info(`✅ Installation completed successfully`);
+    // Check if Liquibase is already cached
+    // Include edition in tool name for proper cache key isolation
+    const toolName = `liquibase-${edition}`;
+    const cachedPath = (0, tool_cache_1.find)(toolName, resolvedVersion);
+    if (cachedPath) {
+        // Cache hit - use existing installation
+        core.info(`✨ Using cached Liquibase ${edition.toUpperCase()} ${resolvedVersion} from tool cache`);
+        core.debug(`Cache location: ${cachedPath}`);
+        toolPath = cachedPath;
     }
-    catch (error) {
-        if (error instanceof Error) {
-            if (error.message.includes('404') || error.message.includes('Not Found')) {
-                throw new Error(`Liquibase ${edition} version ${resolvedVersion} not found. Please check that this version exists and is available for download.`);
-            }
-            else if (error.message.includes('ENOTFOUND') || error.message.includes('network')) {
-                throw new Error(`Network error downloading Liquibase. Please check your internet connection and try again.`);
-            }
-            else if (error.message.includes('EACCES') || error.message.includes('permission')) {
-                throw new Error(`Permission denied while installing Liquibase. Please check that the runner has sufficient permissions.`);
-            }
+    else {
+        // Cache miss - download and install
+        core.info(`💾 Liquibase not found in cache, proceeding with fresh installation`);
+        try {
+            // Get the appropriate download URL for this version and edition
+            const downloadUrl = getDownloadUrl(resolvedVersion, edition);
+            core.info(`📥 Downloading from: ${downloadUrl}`);
+            // Download the Liquibase archive with error handling
+            const downloadPath = await (0, tool_cache_1.downloadTool)(downloadUrl);
+            core.info(`📦 Extracting Liquibase archive...`);
+            // Extract the archive to a temporary directory
+            const extractPath = await extractLiquibase(downloadPath);
+            // Cache the extracted directory for future runs
+            core.info(`💾 Caching Liquibase installation for future workflow runs...`);
+            toolPath = await (0, tool_cache_1.cacheDir)(extractPath, toolName, resolvedVersion);
+            core.debug(`Cached at: ${toolPath}`);
+            core.info(`✅ Installation completed successfully`);
         }
-        throw new Error(`Failed to download and install Liquibase: ${error instanceof Error ? error.message : String(error)}`);
+        catch (error) {
+            if (error instanceof Error) {
+                if (error.message.includes('404') || error.message.includes('Not Found')) {
+                    throw new Error(`Liquibase ${edition} version ${resolvedVersion} not found. Please check that this version exists and is available for download.`);
+                }
+                else if (error.message.includes('ENOTFOUND') || error.message.includes('network')) {
+                    throw new Error(`Network error downloading Liquibase. Please check your internet connection and try again.`);
+                }
+                else if (error.message.includes('EACCES') || error.message.includes('permission')) {
+                    throw new Error(`Permission denied while installing Liquibase. Please check that the runner has sufficient permissions.`);
+                }
+            }
+            throw new Error(`Failed to download and install Liquibase: ${error instanceof Error ? error.message : String(error)}`);
+        }
     }
     // Construct the path to the Liquibase executable
     const liquibaseBinPath = path.join(toolPath, 'liquibase');
