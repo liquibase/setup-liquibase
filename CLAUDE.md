@@ -55,7 +55,7 @@ Single GitHub Action that installs Liquibase (Community or Secure editions) and 
 3. **Configuration** (`src/config.ts`)
    - Central location for all URLs and constants
    - Download URL templates for Community/Pro/Secure editions (Scarf-tracked for analytics)
-   - Scarf packages: `liquibase-oss-gha`, `liquibase-pro-gha`, `liquibase-secure-gha`
+   - Scarf packages: `liquibase-community-gha`, `liquibase-pro-gha`, `liquibase-secure-gha`
    - Minimum version enforcement (4.32.0)
 
 ### Important Implementation Details
@@ -192,13 +192,13 @@ Gets transformed to:
 The installer uses Scarf-tracked download URLs for analytics (DAT-21375). URLs route through `package.liquibase.com` with Scarf package tracking.
 
 **Scarf Packages:**
-- `liquibase-oss-gha`: Community/OSS edition downloads
+- `liquibase-community-gha`: Community edition downloads
 - `liquibase-pro-gha`: Pro edition downloads (legacy, versions ≤4.33.0)
 - `liquibase-secure-gha`: Secure edition downloads
 
 **For 'community' and 'oss' editions:**
-- Both use OSS Scarf-tracked URLs (treated as aliases for backward compatibility)
-- Example: `https://package.liquibase.com/downloads/oss/gha/liquibase-4.32.0.tar.gz`
+- Both use Community Scarf-tracked URLs (treated as aliases for backward compatibility)
+- Example: `https://package.liquibase.com/downloads/community/gha/liquibase-4.32.0.tar.gz`
 
 **For 'pro' and 'secure' editions:**
 - Versions > 4.33.0: Use Secure Scarf-tracked URLs

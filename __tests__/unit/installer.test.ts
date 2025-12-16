@@ -12,7 +12,7 @@ describe('getDownloadUrl', () => {
 
     const version = '4.32.0';
     const url = getDownloadUrl(version, 'community');
-    expect(url).toBe(`https://package.liquibase.com/downloads/oss/gha/liquibase-${version}.tar.gz`);
+    expect(url).toBe(`https://package.liquibase.com/downloads/community/gha/liquibase-${version}.tar.gz`);
 
     Object.defineProperty(process, 'platform', { value: originalPlatform });
   });
@@ -23,7 +23,7 @@ describe('getDownloadUrl', () => {
 
     const version = '4.32.0';
     const url = getDownloadUrl(version, 'oss');
-    expect(url).toBe(`https://package.liquibase.com/downloads/oss/gha/liquibase-${version}.tar.gz`);
+    expect(url).toBe(`https://package.liquibase.com/downloads/community/gha/liquibase-${version}.tar.gz`);
 
     Object.defineProperty(process, 'platform', { value: originalPlatform });
   });
@@ -57,7 +57,7 @@ describe('getDownloadUrl', () => {
 
     const version = '4.32.0';
     const url = getDownloadUrl(version, 'community');
-    expect(url).toBe(`https://package.liquibase.com/downloads/oss/gha/liquibase-${version}.zip`);
+    expect(url).toBe(`https://package.liquibase.com/downloads/community/gha/liquibase-${version}.zip`);
 
     Object.defineProperty(process, 'platform', { value: originalPlatform });
   });
@@ -68,7 +68,7 @@ describe('getDownloadUrl', () => {
 
     const version = '4.32.0';
     const url = getDownloadUrl(version, 'oss');
-    expect(url).toBe(`https://package.liquibase.com/downloads/oss/gha/liquibase-${version}.zip`);
+    expect(url).toBe(`https://package.liquibase.com/downloads/community/gha/liquibase-${version}.zip`);
 
     Object.defineProperty(process, 'platform', { value: originalPlatform });
   });
@@ -201,7 +201,7 @@ describe('getDownloadUrl', () => {
 
     const version = '4.32.0';
     const url = getDownloadUrl(version, 'oss');
-    expect(url).toBe(`https://package.liquibase.com/downloads/oss/gha/liquibase-${version}.tar.gz`);
+    expect(url).toBe(`https://package.liquibase.com/downloads/community/gha/liquibase-${version}.tar.gz`);
 
     Object.defineProperty(process, 'platform', { value: originalPlatform });
   });
