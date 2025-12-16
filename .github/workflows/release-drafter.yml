@@ -70,7 +70,7 @@ jobs:
           permission-packages: write
 
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           token: ${{ steps.get-token.outputs.token }}
@@ -97,7 +97,7 @@ jobs:
         run: npm run package
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: build-artifacts-${{ matrix.os }}
           path: |
@@ -141,7 +141,7 @@ jobs:
           permission-issues: write
 
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           token: ${{ steps.get-token.outputs.token }}
@@ -187,7 +187,7 @@ jobs:
           permission-packages: write
 
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           token: ${{ steps.get-token.outputs.token }}
@@ -302,7 +302,7 @@ jobs:
           echo "✅ Build output verified successfully for GitHub Actions"
 
       - name: Download build artifacts from Ubuntu
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: build-artifacts-ubuntu-latest
           path: /tmp/artifacts
@@ -626,7 +626,7 @@ jobs:
           permission-actions: write
 
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           token: ${{ steps.get-token.outputs.token }}
           fetch-depth: 0
