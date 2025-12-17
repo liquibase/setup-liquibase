@@ -21,7 +21,7 @@ on:
       liquibase_version:
         description: 'Liquibase version to test (optional)'
         required: false
-        default: '4.32.0'
+        default: '5.0.0'
         type: string
   schedule:
     # Run weekly on Sundays at 2 AM UTC for regular health checks
@@ -50,9 +50,9 @@ jobs:
         include:
           # Test additional versions on Ubuntu for version compatibility
           - os: ubuntu-latest
-            version: '4.33.0'
+            version: '5.0.1'
           - os: ubuntu-latest
-            version: '4.32.0'
+            version: '5.0.0'
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v6
@@ -61,7 +61,7 @@ jobs:
       id: setup-liquibase
       uses: ./
       with:
-        version: ${{ inputs.liquibase_version || matrix.version || '4.32.0' }}
+        version: ${{ inputs.liquibase_version || matrix.version || '5.0.0' }}
         edition: 'community'
     
     - name: Verify Installation and Platform Compatibility
@@ -155,7 +155,7 @@ jobs:
       id: setup-integration
       uses: ./
       with:
-        version: ${{ inputs.liquibase_version || '4.32.0' }}
+        version: ${{ inputs.liquibase_version || '5.0.0' }}
         edition: 'community'
       env:
         # Test path transformation logging with common problematic paths
@@ -258,8 +258,8 @@ jobs:
         PATH_OUTPUT="${{ steps.setup-integration.outputs.liquibase-path }}"
         
         # Validate outputs
-        if [[ "$VERSION_OUTPUT" != *"${{ inputs.liquibase_version || '4.32.0' }}"* ]]; then
-          echo "❌ Version output mismatch: expected ${{ inputs.liquibase_version || '4.32.0' }}, got $VERSION_OUTPUT"
+        if [[ "$VERSION_OUTPUT" != *"${{ inputs.liquibase_version || '5.0.0' }}"* ]]; then
+          echo "❌ Version output mismatch: expected ${{ inputs.liquibase_version || '5.0.0' }}, got $VERSION_OUTPUT"
           exit 1
         fi
         echo "✅ Version output validated: $VERSION_OUTPUT"
@@ -382,7 +382,7 @@ jobs:
       continue-on-error: true
       id: invalid-edition
       with:
-        version: ${{ inputs.liquibase_version || '4.32.0' }}
+        version: ${{ inputs.liquibase_version || '5.0.0' }}
         edition: 'invalid-edition'
     
     - name: Verify Invalid Edition Failed
@@ -433,11 +433,11 @@ jobs:
         echo "✅ Invalid inputs properly rejected"
         echo "✅ Appropriate error messages provided"
 
-  # Pro edition comprehensive testing
-  pro-edition-tests:
-    name: Pro Edition Comprehensive Tests
+  # Secure edition comprehensive testing
+  secure-edition-tests:
+    name: Secure Edition Comprehensive Tests
     runs-on: ubuntu-latest
-    if: inputs.test_scope == 'full' || inputs.test_scope == 'pro-edition' || github.event_name == 'schedule'
+    if: inputs.test_scope == 'full' || inputs.test_scope == 'secure-edition' || github.event_name == 'schedule'
     
     steps:
     - name: Checkout Repository
@@ -468,16 +468,16 @@ jobs:
         npm ci
         npm run build
     
-    - name: Check Pro License Availability
+    - name: Check Secure License Availability
       id: check-license
       run: |
-        if [ -n "${{ env.PRO_LICENSE_KEY }}" ]; then
+        if [ -n "${{ env.LIQUIBASE_LICENSE_KEY }}" ]; then
           echo "has_license=true" >> $GITHUB_OUTPUT
-          echo "✅ Pro license key available for testing"
+          echo "✅ Liquibase license key available for testing"
         else
           echo "has_license=false" >> $GITHUB_OUTPUT
-          echo "⚠️ Pro license key not available - skipping Pro tests"
-          echo "To test Pro edition, add PRO_LICENSE_KEY secret to the repository"
+          echo "⚠️ Liquibase license key not available - skipping Secure tests"
+          echo "To test Secure edition, add LIQUIBASE_LICENSE_KEY secret to the repository"
         fi
     
     # Download MySQL driver for realistic classpath testing
@@ -489,102 +489,102 @@ jobs:
         curl -L -o liquibase/lib/mysql-connector-j-9.0.0.jar \
           https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/9.0.0/mysql-connector-j-9.0.0.jar
     
-    - name: Test Pro Edition Installation (enhanced logging demo)
-      if: steps.check-license.outputs.has_license == 'true'
-      id: setup-pro
-      uses: ./
-      with:
-        version: ${{ inputs.liquibase_version || '4.32.0' }}
-        edition: 'pro'
-      env:
-        LIQUIBASE_LICENSE_KEY: ${{ env.PRO_LICENSE_KEY }}
-        # Test Pro edition with path transformation using real MySQL driver
-        LIQUIBASE_LOG_FILE: /liquibase/pro-logs/liquibase-pro.log
-        LIQUIBASE_CLASSPATH: /liquibase/lib/mysql-connector-j-9.0.0.jar
-    
-    - name: Verify Pro Installation and Features
-      if: steps.check-license.outputs.has_license == 'true'
-      run: |
-        echo "=== Pro Edition Feature Testing ==="
-        
-        # Test Pro installation
-        liquibase --version
-        echo "✅ Pro edition installed successfully"
-        
-        # Test Pro-specific commands (basic validation)
-        echo "Testing Pro-specific functionality..."
-        
-        # Note: Many Pro features require specific database setups and licenses
-        # This provides basic validation that Pro edition is properly installed
-        
-        # Validate outputs
-        VERSION_OUTPUT="${{ steps.setup-pro.outputs.liquibase-version }}"
-        PATH_OUTPUT="${{ steps.setup-pro.outputs.liquibase-path }}"
-        
-        if [ -z "$VERSION_OUTPUT" ]; then
-          echo "❌ Pro version output not set"
-          exit 1
-        fi
-        echo "✅ Pro version output: $VERSION_OUTPUT"
-        
-        if [ -z "$PATH_OUTPUT" ]; then
-          echo "❌ Pro path output not set"
-          exit 1
-        fi
-        echo "✅ Pro path output: $PATH_OUTPUT"
-        
-        echo "✅ Pro edition tests completed successfully"
-    
-    - name: Test Secure Edition Installation (backward compatibility test)
+    - name: Test Secure Edition Installation (enhanced logging demo)
       if: steps.check-license.outputs.has_license == 'true'
       id: setup-secure
       uses: ./
       with:
-        version: ${{ inputs.liquibase_version || '4.32.0' }}
+        version: ${{ inputs.liquibase_version || '5.0.0' }}
         edition: 'secure'
       env:
-        LIQUIBASE_LICENSE_KEY: ${{ env.PRO_LICENSE_KEY }}
-        # Test that secure edition works with same environment variables
+        LIQUIBASE_LICENSE_KEY: ${{ env.LIQUIBASE_LICENSE_KEY }}
+        # Test Secure edition with path transformation using real MySQL driver
         LIQUIBASE_LOG_FILE: /liquibase/secure-logs/liquibase-secure.log
         LIQUIBASE_CLASSPATH: /liquibase/lib/mysql-connector-j-9.0.0.jar
     
-    - name: Verify Secure Edition Installation and Compatibility
+    - name: Verify Secure Installation and Features
       if: steps.check-license.outputs.has_license == 'true'
       run: |
         echo "=== Secure Edition Feature Testing ==="
-        
-        # Test Secure installation (should be identical to Pro)
+
+        # Test Secure installation
         liquibase --version
         echo "✅ Secure edition installed successfully"
-        
-        # Validate that secure edition produces identical results to pro edition
-        echo "Testing Secure edition compatibility with Pro..."
-        
+
+        # Test Secure-specific commands (basic validation)
+        echo "Testing Secure-specific functionality..."
+
+        # Note: Many Secure features require specific database setups and licenses
+        # This provides basic validation that Secure edition is properly installed
+
         # Validate outputs
         VERSION_OUTPUT="${{ steps.setup-secure.outputs.liquibase-version }}"
         PATH_OUTPUT="${{ steps.setup-secure.outputs.liquibase-path }}"
-        
+
         if [ -z "$VERSION_OUTPUT" ]; then
           echo "❌ Secure version output not set"
           exit 1
         fi
         echo "✅ Secure version output: $VERSION_OUTPUT"
-        
+
         if [ -z "$PATH_OUTPUT" ]; then
           echo "❌ Secure path output not set"
           exit 1
         fi
         echo "✅ Secure path output: $PATH_OUTPUT"
-        
-        # Verify that secure edition uses the same binaries as pro edition
-        PRO_VERSION="${{ steps.setup-pro.outputs.liquibase-version }}"
-        if [ "$VERSION_OUTPUT" != "$PRO_VERSION" ]; then
-          echo "❌ Secure and Pro versions should be identical: Secure=$VERSION_OUTPUT, Pro=$PRO_VERSION"
+
+        echo "✅ Secure edition tests completed successfully"
+    
+    - name: Test Pro Edition Installation (backward compatibility test)
+      if: steps.check-license.outputs.has_license == 'true'
+      id: setup-pro-compat
+      uses: ./
+      with:
+        version: ${{ inputs.liquibase_version || '5.0.0' }}
+        edition: 'pro'
+      env:
+        LIQUIBASE_LICENSE_KEY: ${{ env.LIQUIBASE_LICENSE_KEY }}
+        # Test that pro edition (backward compat) works with same environment variables
+        LIQUIBASE_LOG_FILE: /liquibase/pro-logs/liquibase-pro.log
+        LIQUIBASE_CLASSPATH: /liquibase/lib/mysql-connector-j-9.0.0.jar
+
+    - name: Verify Pro Edition Installation and Backward Compatibility
+      if: steps.check-license.outputs.has_license == 'true'
+      run: |
+        echo "=== Pro Edition Backward Compatibility Testing ==="
+
+        # Test Pro installation (should be identical to Secure)
+        liquibase --version
+        echo "✅ Pro edition installed successfully (backward compatibility)"
+
+        # Validate that pro edition produces identical results to secure edition
+        echo "Testing Pro edition backward compatibility with Secure..."
+
+        # Validate outputs
+        VERSION_OUTPUT="${{ steps.setup-pro-compat.outputs.liquibase-version }}"
+        PATH_OUTPUT="${{ steps.setup-pro-compat.outputs.liquibase-path }}"
+
+        if [ -z "$VERSION_OUTPUT" ]; then
+          echo "❌ Pro (compat) version output not set"
           exit 1
         fi
-        echo "✅ Secure edition uses identical binaries to Pro edition"
-        
-        echo "✅ Secure edition tests completed successfully"
+        echo "✅ Pro (compat) version output: $VERSION_OUTPUT"
+
+        if [ -z "$PATH_OUTPUT" ]; then
+          echo "❌ Pro (compat) path output not set"
+          exit 1
+        fi
+        echo "✅ Pro (compat) path output: $PATH_OUTPUT"
+
+        # Verify that pro edition uses the same binaries as secure edition
+        SECURE_VERSION="${{ steps.setup-secure.outputs.liquibase-version }}"
+        if [ "$VERSION_OUTPUT" != "$SECURE_VERSION" ]; then
+          echo "❌ Pro and Secure versions should be identical: Pro=$VERSION_OUTPUT, Secure=$SECURE_VERSION"
+          exit 1
+        fi
+        echo "✅ Pro edition uses identical binaries to Secure edition (backward compatibility verified)"
+
+        echo "✅ Pro edition backward compatibility tests completed successfully"
 
   # Performance validation
   performance-tests:
@@ -613,7 +613,7 @@ jobs:
       id: fresh-install
       uses: ./
       with:
-        version: ${{ inputs.liquibase_version || '4.32.0' }}
+        version: ${{ inputs.liquibase_version || '5.0.0' }}
         edition: 'community'
     
     - name: Measure Fresh Install Performance
@@ -628,7 +628,7 @@ jobs:
       id: second-install
       uses: ./
       with:
-        version: ${{ inputs.liquibase_version || '4.32.0' }}
+        version: ${{ inputs.liquibase_version || '5.0.0' }}
         edition: 'community'
             
     - name: Measure Second Install Performance
@@ -700,7 +700,7 @@ jobs:
   # Summary job
   uat-summary:
     name: UAT Test Summary
-    needs: [cross-platform-tests, integration-tests, error-handling-tests, pro-edition-tests, performance-tests]
+    needs: [cross-platform-tests, integration-tests, error-handling-tests, secure-edition-tests, performance-tests]
     runs-on: ubuntu-latest
     if: always()
     
@@ -720,7 +720,7 @@ jobs:
         if [ -n "${{ inputs.liquibase_version }}" ]; then
           echo "**Liquibase Version**: ${{ inputs.liquibase_version }}" >> $GITHUB_STEP_SUMMARY
         else
-          echo "**Liquibase Version**: 4.32.0 (default)" >> $GITHUB_STEP_SUMMARY
+          echo "**Liquibase Version**: 5.0.0 (default)" >> $GITHUB_STEP_SUMMARY
         fi
         
         echo "" >> $GITHUB_STEP_SUMMARY
@@ -757,9 +757,9 @@ jobs:
         fi
         
         # Pro/Secure edition tests
-        if [[ "${{ needs.pro-edition-tests.result }}" == "success" ]]; then
+        if [[ "${{ needs.secure-edition-tests.result }}" == "success" ]]; then
           echo "| Pro/Secure Edition Tests | ✅ PASSED | License validation, Pro features, Secure compatibility |" >> $GITHUB_STEP_SUMMARY
-        elif [[ "${{ needs.pro-edition-tests.result }}" == "skipped" ]]; then
+        elif [[ "${{ needs.secure-edition-tests.result }}" == "skipped" ]]; then
           echo "| Pro/Secure Edition Tests | ⏩ SKIPPED | License unavailable or scope limited |" >> $GITHUB_STEP_SUMMARY
         else
           echo "| Pro/Secure Edition Tests | ❌ FAILED | Pro/Secure edition issues |" >> $GITHUB_STEP_SUMMARY
@@ -781,7 +781,7 @@ jobs:
         FAILED_JOBS=0
         SKIPPED_JOBS=0
         
-        for result in "${{ needs.cross-platform-tests.result }}" "${{ needs.integration-tests.result }}" "${{ needs.error-handling-tests.result }}" "${{ needs.pro-edition-tests.result }}" "${{ needs.performance-tests.result }}"; do
+        for result in "${{ needs.cross-platform-tests.result }}" "${{ needs.integration-tests.result }}" "${{ needs.error-handling-tests.result }}" "${{ needs.secure-edition-tests.result }}" "${{ needs.performance-tests.result }}"; do
           if [[ "$result" == "success" ]]; then
             SUCCESSFUL_JOBS=$((SUCCESSFUL_JOBS + 1))
           elif [[ "$result" == "failure" ]]; then
