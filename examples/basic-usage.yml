@@ -9,7 +9,7 @@ jobs:
       
       - uses: liquibase/setup-liquibase@v2
         with:
-          version: '5.0.0'
+          version: '5.0.1'
           edition: 'community'
       
       - name: Run Liquibase Update

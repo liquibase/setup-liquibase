@@ -14,13 +14,13 @@ jobs:
       
       # Docker equivalent:
       # docker run --rm -v $(pwd):/liquibase/changelog \
-      #   liquibase/liquibase:5.0.0 update \
+      #   liquibase/liquibase:5.0.1 update \
       #   --changelog-file=/liquibase/changelog/changelog.xml \
       #   --url=jdbc:h2:mem:test --username=sa --password=
 
       - uses: liquibase/setup-liquibase@v2
         with:
-          version: '5.0.0'
+          version: '5.0.1'
           edition: 'community'
       
       - name: Show execution context (for debugging)
@@ -47,7 +47,7 @@ jobs:
       
       - uses: liquibase/setup-liquibase@v2
         with:
-          version: '5.0.0'
+          version: '5.0.1'
           edition: 'community'
         env:
           # These absolute paths will be automatically transformed:
@@ -81,7 +81,7 @@ jobs:
       # docker run --rm \
       #   -v $(pwd):/liquibase/changelog \
       #   -v /path/to/custom-driver.jar:/liquibase/lib/custom-driver.jar \
-      #   liquibase/liquibase:5.0.0
+      #   liquibase/liquibase:5.0.1
 
       - name: Download custom database driver
         run: |
@@ -91,7 +91,7 @@ jobs:
       
       - uses: liquibase/setup-liquibase@v2
         with:
-          version: '5.0.0'
+          version: '5.0.1'
           edition: 'community'
         env:
           # Point to downloaded JAR in workspace
@@ -115,7 +115,7 @@ jobs:
       
       - uses: liquibase/setup-liquibase@v2
         with:
-          version: '5.0.0'
+          version: '5.0.1'
           edition: 'community'
         env:
           # Environment-specific log files (will be transformed)
@@ -146,7 +146,7 @@ jobs:
       
       - uses: liquibase/setup-liquibase@v2
         with:
-          version: '5.0.0'
+          version: '5.0.1'
           edition: 'community'
         env:
           LIQUIBASE_LOG_FILE: reports/liquibase.log
@@ -194,7 +194,7 @@ jobs:
 
       - uses: liquibase/setup-liquibase@v2
         with:
-          version: '5.0.0'
+          version: '5.0.3'
           edition: 'secure'
         env:
           LIQUIBASE_LOG_FILE: /liquibase/secure-logs/liquibase.log
@@ -223,7 +223,7 @@ jobs:
       
       - uses: liquibase/setup-liquibase@v2
         with:
-          version: '5.0.0'
+          version: '5.0.1'
           edition: 'community'
         env:
           LIQUIBASE_LOG_FILE: /liquibase/debug/liquibase.log
