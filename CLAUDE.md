@@ -54,8 +54,8 @@ Single GitHub Action that installs Liquibase (Community or Secure editions) and 
 
 3. **Configuration** (`src/config.ts`)
    - Central location for all URLs and constants
-   - Download URL templates for Community/Pro/Secure editions
-   - Note: Community/OSS URLs use 'v' prefix, Pro/Secure URLs do not
+   - Download URL templates for Community/Pro/Secure editions (Scarf-tracked for analytics)
+   - Scarf packages: `liquibase-community-gha`, `liquibase-pro-gha`, `liquibase-secure-gha`
    - Minimum version enforcement (4.32.0)
 
 ### Important Implementation Details
@@ -189,19 +189,26 @@ Gets transformed to:
 ## Edition-Specific Download Logic
 
 ### Current Implementation (v2.0.0+)
-The installer uses different download URLs based on edition and version:
+The installer uses Scarf-tracked download URLs for analytics (DAT-21375). URLs route through `package.liquibase.com` with Scarf package tracking.
+
+**Scarf Packages:**
+- `liquibase-community-gha`: Community edition downloads
+- `liquibase-pro-gha`: Pro edition downloads (legacy, versions ≤4.33.0)
+- `liquibase-secure-gha`: Secure edition downloads
 
 **For 'community' and 'oss' editions:**
-- Both use Community/OSS download URLs with 'v' prefix (treated as aliases for backward compatibility)
-- Example: `https://package.liquibase.com/downloads/cli/liquibase/releases/download/v4.32.0/liquibase-4.32.0.tar.gz`
+- Both use Community Scarf-tracked URLs (treated as aliases for backward compatibility)
+- Example: `https://package.liquibase.com/downloads/community/gha/liquibase-4.32.0.tar.gz`
 
 **For 'pro' and 'secure' editions:**
-- Versions > 4.33.0: Use Secure download URLs (no 'v' prefix)
-- Versions <= 4.33.0: Use legacy Pro download URLs (no 'v' prefix)
+- Versions > 4.33.0: Use Secure Scarf-tracked URLs
+- Versions <= 4.33.0: Use legacy Pro Scarf-tracked URLs
 - Special handling for test version '5-secure-release-test'
+- Example (Pro): `https://package.liquibase.com/downloads/pro/gha/liquibase-pro-4.32.0.tar.gz`
+- Example (Secure): `https://package.liquibase.com/downloads/secure/gha/liquibase-secure-4.34.0.tar.gz`
 
 ### Code Reference
-See `getDownloadUrl()` function in `src/installer.ts:162` for the complete logic.
+See `getDownloadUrl()` function in `src/installer.ts:193` for the complete logic.
 
 ## Troubleshooting Common Development Issues
 
