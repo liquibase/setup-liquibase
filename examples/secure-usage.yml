@@ -11,7 +11,7 @@ jobs:
 
       - uses: liquibase/setup-liquibase@v2
         with:
-          version: '5.0.0'
+          version: '5.0.3'
           edition: 'secure'
 
       - name: Run Secure Features

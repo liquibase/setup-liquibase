@@ -112,7 +112,7 @@ jobs:
       id: setup-liquibase
       uses: ./
       with:
-        version: '5.0.0'
+        version: '5.0.1'
         edition: 'community'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

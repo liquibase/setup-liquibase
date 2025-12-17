@@ -18,10 +18,16 @@ on:
         - integration
         - performance
         - error-handling
-      liquibase_version:
-        description: 'Liquibase version to test (optional)'
+        - secure-edition
+      community_version:
+        description: 'Community edition version to test'
         required: false
-        default: '5.0.0'
+        default: '5.0.1'
+        type: string
+      secure_version:
+        description: 'Secure edition version to test'
+        required: false
+        default: '5.0.3'
         type: string
   schedule:
     # Run weekly on Sundays at 2 AM UTC for regular health checks
@@ -61,7 +67,7 @@ jobs:
       id: setup-liquibase
       uses: ./
       with:
-        version: ${{ inputs.liquibase_version || matrix.version || '5.0.0' }}
+        version: ${{ inputs.community_version || matrix.version || '5.0.1' }}
         edition: 'community'
     
     - name: Verify Installation and Platform Compatibility
@@ -155,7 +161,7 @@ jobs:
       id: setup-integration
       uses: ./
       with:
-        version: ${{ inputs.liquibase_version || '5.0.0' }}
+        version: ${{ inputs.community_version || '5.0.1' }}
         edition: 'community'
       env:
         # Test path transformation logging with common problematic paths
@@ -258,8 +264,8 @@ jobs:
         PATH_OUTPUT="${{ steps.setup-integration.outputs.liquibase-path }}"
         
         # Validate outputs
-        if [[ "$VERSION_OUTPUT" != *"${{ inputs.liquibase_version || '5.0.0' }}"* ]]; then
-          echo "❌ Version output mismatch: expected ${{ inputs.liquibase_version || '5.0.0' }}, got $VERSION_OUTPUT"
+        if [[ "$VERSION_OUTPUT" != *"${{ inputs.community_version || '5.0.1' }}"* ]]; then
+          echo "❌ Version output mismatch: expected ${{ inputs.community_version || '5.0.1' }}, got $VERSION_OUTPUT"
           exit 1
         fi
         echo "✅ Version output validated: $VERSION_OUTPUT"
@@ -382,7 +388,7 @@ jobs:
       continue-on-error: true
       id: invalid-edition
       with:
-        version: ${{ inputs.liquibase_version || '5.0.0' }}
+        version: ${{ inputs.community_version || '5.0.1' }}
         edition: 'invalid-edition'
     
     - name: Verify Invalid Edition Failed
@@ -494,7 +500,7 @@ jobs:
       id: setup-secure
       uses: ./
       with:
-        version: ${{ inputs.liquibase_version || '5.0.0' }}
+        version: ${{ inputs.secure_version || '5.0.3' }}
         edition: 'secure'
       env:
         LIQUIBASE_LICENSE_KEY: ${{ env.LIQUIBASE_LICENSE_KEY }}
@@ -540,7 +546,7 @@ jobs:
       id: setup-pro-compat
       uses: ./
       with:
-        version: ${{ inputs.liquibase_version || '5.0.0' }}
+        version: ${{ inputs.secure_version || '5.0.3' }}
         edition: 'pro'
       env:
         LIQUIBASE_LICENSE_KEY: ${{ env.LIQUIBASE_LICENSE_KEY }}
@@ -613,7 +619,7 @@ jobs:
       id: fresh-install
       uses: ./
       with:
-        version: ${{ inputs.liquibase_version || '5.0.0' }}
+        version: ${{ inputs.community_version || '5.0.1' }}
         edition: 'community'
     
     - name: Measure Fresh Install Performance
@@ -628,7 +634,7 @@ jobs:
       id: second-install
       uses: ./
       with:
-        version: ${{ inputs.liquibase_version || '5.0.0' }}
+        version: ${{ inputs.community_version || '5.0.1' }}
         edition: 'community'
             
     - name: Measure Second Install Performance
@@ -717,10 +723,15 @@ jobs:
           echo "**Test Scope**: Scheduled (full)" >> $GITHUB_STEP_SUMMARY
         fi
         
-        if [ -n "${{ inputs.liquibase_version }}" ]; then
-          echo "**Liquibase Version**: ${{ inputs.liquibase_version }}" >> $GITHUB_STEP_SUMMARY
+        if [ -n "${{ inputs.community_version }}" ]; then
+          echo "**Community Version**: ${{ inputs.community_version }}" >> $GITHUB_STEP_SUMMARY
         else
-          echo "**Liquibase Version**: 5.0.0 (default)" >> $GITHUB_STEP_SUMMARY
+          echo "**Community Version**: 5.0.1 (default)" >> $GITHUB_STEP_SUMMARY
+        fi
+        if [ -n "${{ inputs.secure_version }}" ]; then
+          echo "**Secure Version**: ${{ inputs.secure_version }}" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "**Secure Version**: 5.0.3 (default)" >> $GITHUB_STEP_SUMMARY
         fi
         
         echo "" >> $GITHUB_STEP_SUMMARY
