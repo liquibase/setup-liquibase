@@ -19,7 +19,12 @@ inputs:
   edition:
     description: 'Edition to install: "community" (Community edition, formerly known as OSS) or "secure" (Secure edition with additional features). "oss" and "pro" are supported for backward compatibility. For Secure/Pro editions, set LIQUIBASE_LICENSE_KEY environment variable when running Liquibase commands.'
     required: true
-  
+
+  download-url-base:
+    description: 'Optional custom base URL for downloading Liquibase binaries from internal or alternative sources (e.g., Nexus, Artifactory). Use {version} as placeholder for version number, {platform} for platform (windows/unix), and {extension} for file extension (zip/tar.gz). Example: https://internal-repo.company.com/liquibase/{version}/liquibase-{version}.{extension}. Can also be set via LIQUIBASE_DOWNLOAD_URL_BASE environment variable.'
+    required: false
+    default: ''
+
 
 # Output values that other workflow steps can use
 outputs:

@@ -31108,6 +31108,8 @@ async function run() {
         // Extract input parameters from the GitHub Action context
         const version = core.getInput('version');
         const editionInput = core.getInput('edition');
+        // Get custom download URL (input takes precedence over environment variable)
+        const downloadUrlBase = core.getInput('download-url-base') || process.env.LIQUIBASE_DOWNLOAD_URL_BASE || '';
         // Validate required version input
         if (!version) {
             throw new Error('Version input is required. Must be a specific version (e.g., "4.32.0")');
@@ -31123,7 +31125,8 @@ async function run() {
         // Execute the main installation logic
         const result = await (0, installer_1.setupLiquibase)({
             version,
-            edition
+            edition,
+            downloadUrlBase
         });
         // Set output values that other workflow steps can reference
         core.setOutput('liquibase-version', result.version);
@@ -31225,7 +31228,7 @@ const semver = __importStar(__nccwpck_require__(2088));
  * @returns Promise resolving to the setup result with version and path
  */
 async function setupLiquibase(options) {
-    const { version, edition } = options;
+    const { version, edition, downloadUrlBase } = options;
     // Enhanced version validation
     if (!version) {
         throw new Error('Version is required');
@@ -31247,10 +31250,10 @@ async function setupLiquibase(options) {
     const resolvedVersion = version;
     core.info(`🚀 Setting up Liquibase ${edition.toUpperCase()} ${resolvedVersion}`);
     let toolPath;
-    // Check if Liquibase is already cached
+    // Check if Liquibase is already cached (only when not using custom URL)
     // Include edition in tool name for proper cache key isolation
     const toolName = `liquibase-${edition}`;
-    const cachedPath = (0, tool_cache_1.find)(toolName, resolvedVersion);
+    const cachedPath = downloadUrlBase ? null : (0, tool_cache_1.find)(toolName, resolvedVersion);
     if (cachedPath) {
         // Cache hit - use existing installation
         core.info(`✨ Using cached Liquibase ${edition.toUpperCase()} ${resolvedVersion} from tool cache`);
@@ -31259,20 +31262,27 @@ async function setupLiquibase(options) {
     }
     else {
         // Cache miss - download and install
-        core.info(`💾 Liquibase not found in cache, proceeding with fresh installation`);
+        if (!downloadUrlBase) {
+            core.info(`💾 Liquibase not found in cache, proceeding with fresh installation`);
+        }
         try {
             // Get the appropriate download URL for this version and edition
-            const downloadUrl = getDownloadUrl(resolvedVersion, edition);
+            const downloadUrl = getDownloadUrl(resolvedVersion, edition, downloadUrlBase);
             core.info(`📥 Downloading from: ${downloadUrl}`);
             // Download the Liquibase archive with error handling
             const downloadPath = await (0, tool_cache_1.downloadTool)(downloadUrl);
             core.info(`📦 Extracting Liquibase archive...`);
             // Extract the archive to a temporary directory
             const extractPath = await extractLiquibase(downloadPath);
-            // Cache the extracted directory for future runs
-            core.info(`💾 Caching Liquibase installation for future workflow runs...`);
-            toolPath = await (0, tool_cache_1.cacheDir)(extractPath, toolName, resolvedVersion);
-            core.debug(`Cached at: ${toolPath}`);
+            // Cache the extracted directory for future runs (only when not using custom URL)
+            if (!downloadUrlBase) {
+                core.info(`💾 Caching Liquibase installation for future workflow runs...`);
+                toolPath = await (0, tool_cache_1.cacheDir)(extractPath, toolName, resolvedVersion);
+                core.debug(`Cached at: ${toolPath}`);
+            }
+            else {
+                toolPath = extractPath;
+            }
             core.info(`✅ Installation completed successfully`);
         }
         catch (error) {
@@ -31322,10 +31332,42 @@ async function setupLiquibase(options) {
     };
 }
 /**
- * Constructs the download URL for a specific Liquibase version and edition
- * Uses official Liquibase download endpoints
+ * Validates a custom download URL template
  *
- * For Pro and Secure editions:
+ * @param urlTemplate - The custom URL template to validate
+ * @throws Error if the URL template is invalid
+ */
+function validateCustomUrl(urlTemplate) {
+    // Ensure URL uses HTTPS for security
+    if (!urlTemplate.startsWith('https://') && !urlTemplate.startsWith('http://')) {
+        throw new Error('Custom download URL must start with https:// or http://');
+    }
+    // Warn if not using HTTPS
+    if (!urlTemplate.startsWith('https://')) {
+        core.warning('Custom download URL is not using HTTPS. Consider using a secure connection.');
+    }
+    // Ensure URL contains version placeholder
+    if (!urlTemplate.includes('{version}')) {
+        throw new Error('Custom download URL must contain {version} placeholder');
+    }
+    // Validate URL format
+    try {
+        const testUrl = urlTemplate
+            .replace(/\{version\}/g, '4.32.0')
+            .replace(/\{platform\}/g, 'unix')
+            .replace(/\{extension\}/g, 'tar.gz')
+            .replace(/\{edition\}/g, 'oss');
+        new URL(testUrl);
+    }
+    catch (error) {
+        throw new Error(`Invalid custom download URL format: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+/**
+ * Constructs the download URL for a specific Liquibase version and edition
+ * Uses official Liquibase download endpoints or a custom URL if provided
+ *
+ * For Pro and Secure editions (default URLs):
  * - Versions > 4.33.0 use Secure download URLs
  * - Special test version '5-secure-release-test' uses Secure download URLs
  * - Versions <= 4.33.0 use legacy Pro download URLs
@@ -31333,12 +31375,35 @@ async function setupLiquibase(options) {
  * For Community and OSS editions:
  * - Both 'community' and 'oss' use the same OSS download URLs for backward compatibility
  *
+ * Custom URL support:
+ * - Supports {version} placeholder for version number
+ * - Supports {platform} placeholder for 'windows' or 'unix'
+ * - Supports {extension} placeholder for 'zip' or 'tar.gz'
+ * - Supports {edition} placeholder for 'community', 'oss', 'pro', or 'secure'
+ *
  * @param version - Exact version number to download
  * @param edition - Edition to download ('community', 'oss', 'pro', or 'secure')
- * @returns Download URL for the specified version from official Liquibase endpoints
+ * @param customUrlBase - Optional custom base URL template for downloading from internal repositories
+ * @returns Download URL for the specified version
  */
-function getDownloadUrl(version, edition) {
+function getDownloadUrl(version, edition, customUrlBase) {
     const isWindows = process.platform === 'win32';
+    const platform = isWindows ? 'windows' : 'unix';
+    const extension = isWindows ? 'zip' : 'tar.gz';
+    // If custom URL is provided, validate and use it
+    if (customUrlBase && customUrlBase.trim() !== '') {
+        const trimmedUrlBase = customUrlBase.trim();
+        validateCustomUrl(trimmedUrlBase);
+        core.info(`🔧 Using custom download URL for internal/alternative repository`);
+        // Replace all placeholders in the custom URL
+        const customUrl = trimmedUrlBase
+            .replace(/\{version\}/g, version)
+            .replace(/\{platform\}/g, platform)
+            .replace(/\{extension\}/g, extension)
+            .replace(/\{edition\}/g, edition);
+        return customUrl;
+    }
+    // Default behavior: use official Liquibase download endpoints
     // For Pro and Secure editions, use Secure URLs if version > 4.33.0
     if (edition === 'pro' || edition === 'secure') {
         const useSecureUrls = version === '5-secure-release-test' || semver.gt(version, '4.33.0');
@@ -31425,7 +31490,7 @@ async function validateInstallation(liquibasePath) {
         if (!fs.existsSync(executable)) {
             throw new Error(`Liquibase executable not found at ${executable}`);
         }
-        // Note: Environment variable path validation and transformation 
+        // Note: Environment variable path validation and transformation
         // is now handled in index.ts at action startup
         // Run 'liquibase --version' to verify the installation works
         let stdoutOutput = '';
