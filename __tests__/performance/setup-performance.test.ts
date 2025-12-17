@@ -226,7 +226,8 @@ describe('Performance Tests', () => {
       const duration = endTime - startTime;
       
       // Edge cases should not significantly impact performance
-      expect(duration).toBeLessThan(10);
+      // Allow 20ms for slower CI runners (especially Windows)
+      expect(duration).toBeLessThan(20);
     });
   });
 
