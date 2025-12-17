@@ -122,17 +122,17 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
       core.debug(`Cached at: ${toolPath}`);
 
       core.info(`✅ Installation completed successfully`);
-  } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('404') || error.message.includes('Not Found')) {
-        throw new Error(`Liquibase ${edition} version ${resolvedVersion} not found. Please check that this version exists and is available for download.`);
-      } else if (error.message.includes('ENOTFOUND') || error.message.includes('network')) {
-        throw new Error(`Network error downloading Liquibase. Please check your internet connection and try again.`);
-      } else if (error.message.includes('EACCES') || error.message.includes('permission')) {
-        throw new Error(`Permission denied while installing Liquibase. Please check that the runner has sufficient permissions.`);
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message.includes('404') || error.message.includes('Not Found')) {
+          throw new Error(`Liquibase ${edition} version ${resolvedVersion} not found. Please check that this version exists and is available for download.`);
+        } else if (error.message.includes('ENOTFOUND') || error.message.includes('network')) {
+          throw new Error(`Network error downloading Liquibase. Please check your internet connection and try again.`);
+        } else if (error.message.includes('EACCES') || error.message.includes('permission')) {
+          throw new Error(`Permission denied while installing Liquibase. Please check that the runner has sufficient permissions.`);
+        }
       }
-    }
-    throw new Error(`Failed to download and install Liquibase: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`Failed to download and install Liquibase: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
