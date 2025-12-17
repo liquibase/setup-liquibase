@@ -1,26 +1,26 @@
-name: Pro Edition Usage
+name: Secure Edition Usage
 on: [push]
 
 jobs:
-  pro-operations:
+  secure-operations:
     runs-on: ubuntu-latest
     env:
       LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
     steps:
       - uses: actions/checkout@v4
-      
-      - uses: liquibase/setup-liquibase@v1
+
+      - uses: liquibase/setup-liquibase@v2
         with:
-          version: '4.32.0'
-          edition: 'pro'
-      
-      - name: Run Pro Features
+          version: '5.0.0'
+          edition: 'secure'
+
+      - name: Run Secure Features
         run: |
           # Generate diff report
           liquibase diff-changelog \
             --reference-url=jdbc:postgresql://localhost/reference_db \
             --url=jdbc:postgresql://localhost/target_db \
             --changelog-file=diff.xml
-          
+
           # Run quality checks
-          liquibase checks run --changelog-file=changelog.xml 
+          liquibase checks run --changelog-file=changelog.xml

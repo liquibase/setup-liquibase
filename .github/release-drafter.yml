@@ -141,8 +141,8 @@ template: |
     - name: Setup Liquibase
       uses: liquibase/setup-liquibase@$RESOLVED_VERSION
       with:
-        version: '4.32.0'
-        edition: 'oss'
+        version: '5.0.0'
+        edition: 'community'
   ```
 
   ### Build Information

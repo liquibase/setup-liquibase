@@ -14,13 +14,13 @@ jobs:
       
       # Docker equivalent:
       # docker run --rm -v $(pwd):/liquibase/changelog \
-      #   liquibase/liquibase:4.32.0 update \
+      #   liquibase/liquibase:5.0.0 update \
       #   --changelog-file=/liquibase/changelog/changelog.xml \
       #   --url=jdbc:h2:mem:test --username=sa --password=
-      
-      - uses: liquibase/setup-liquibase@v1
+
+      - uses: liquibase/setup-liquibase@v2
         with:
-          version: '4.32.0'
+          version: '5.0.0'
           edition: 'community'
       
       - name: Show execution context (for debugging)
@@ -45,9 +45,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - uses: liquibase/setup-liquibase@v1
+      - uses: liquibase/setup-liquibase@v2
         with:
-          version: '4.32.0'
+          version: '5.0.0'
           edition: 'community'
         env:
           # These absolute paths will be automatically transformed:
@@ -81,17 +81,17 @@ jobs:
       # docker run --rm \
       #   -v $(pwd):/liquibase/changelog \
       #   -v /path/to/custom-driver.jar:/liquibase/lib/custom-driver.jar \
-      #   liquibase/liquibase:4.32.0
-      
+      #   liquibase/liquibase:5.0.0
+
       - name: Download custom database driver
         run: |
           mkdir -p lib
           # Example: Download PostgreSQL driver
           wget https://jdbc.postgresql.org/download/postgresql-42.7.0.jar -O lib/postgresql.jar
       
-      - uses: liquibase/setup-liquibase@v1
+      - uses: liquibase/setup-liquibase@v2
         with:
-          version: '4.32.0'
+          version: '5.0.0'
           edition: 'community'
         env:
           # Point to downloaded JAR in workspace
@@ -113,9 +113,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - uses: liquibase/setup-liquibase@v1
+      - uses: liquibase/setup-liquibase@v2
         with:
-          version: '4.32.0'
+          version: '5.0.0'
           edition: 'community'
         env:
           # Environment-specific log files (will be transformed)
@@ -144,9 +144,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - uses: liquibase/setup-liquibase@v1
+      - uses: liquibase/setup-liquibase@v2
         with:
-          version: '4.32.0'
+          version: '5.0.0'
           edition: 'community'
         env:
           LIQUIBASE_LOG_FILE: reports/liquibase.log
@@ -181,9 +181,9 @@ jobs:
           path: reports/
           retention-days: 30
 
-  # Example 6: Pro edition with license
-  pro-edition:
-    name: Pro Edition Usage
+  # Example 6: Secure edition with license
+  secure-edition:
+    name: Secure Edition Usage
     runs-on: ubuntu-latest
     if: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
     env:
@@ -191,17 +191,17 @@ jobs:
       LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
     steps:
       - uses: actions/checkout@v4
-      
-      - uses: liquibase/setup-liquibase@v1
+
+      - uses: liquibase/setup-liquibase@v2
         with:
-          version: '4.32.0'
-          edition: 'pro'
+          version: '5.0.0'
+          edition: 'secure'
         env:
-          LIQUIBASE_LOG_FILE: /liquibase/pro-logs/liquibase.log
-      
-      - name: Run Pro-specific operations
+          LIQUIBASE_LOG_FILE: /liquibase/secure-logs/liquibase.log
+
+      - name: Run Secure-specific operations
         run: |
-          # Generate diff changelog (Pro feature)
+          # Generate diff changelog (Secure feature)
           liquibase diff-changelog \
             --reference-url=jdbc:h2:mem:reference \
             --reference-username=sa \
@@ -210,8 +210,8 @@ jobs:
             --username=sa \
             --password= \
             --changelog-file=diff-changelog.xml
-          
-          echo "Pro edition operations completed"
+
+          echo "Secure edition operations completed"
           echo "Log file: $LIQUIBASE_LOG_FILE"
 
   # Example 7: Troubleshooting and debugging
@@ -221,9 +221,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - uses: liquibase/setup-liquibase@v1
+      - uses: liquibase/setup-liquibase@v2
         with:
-          version: '4.32.0'
+          version: '5.0.0'
           edition: 'community'
         env:
           LIQUIBASE_LOG_FILE: /liquibase/debug/liquibase.log
