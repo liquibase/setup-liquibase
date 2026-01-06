@@ -31433,7 +31433,11 @@ async function extractLiquibase(downloadPath) {
     try {
         if (platform === 'win32') {
             // Extract ZIP archives (Windows)
-            return await (0, tool_cache_1.extractZip)(downloadPath);
+            // Workaround for PowerShell 5.1 requiring .zip extension
+            // See: https://github.com/actions/toolkit/issues/1287
+            const zipPath = `${downloadPath}.zip`;
+            await fs.promises.rename(downloadPath, zipPath);
+            return await (0, tool_cache_1.extractZip)(zipPath);
         }
         else {
             // For both macOS and Linux, use a direct exec approach instead of tool-cache
