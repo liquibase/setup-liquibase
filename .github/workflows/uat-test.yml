@@ -52,7 +52,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, blacksmith-2vcpu-windows-2025, macos-latest]
         include:
           # Test additional versions on Ubuntu for version compatibility
           - os: ubuntu-latest
@@ -81,7 +81,7 @@ jobs:
         
         # Test 2: PATH and executable location
         echo "2. Testing executable location and PATH..."
-        if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+        if [[ "${{ matrix.os }}" == "blacksmith-2vcpu-windows-2025" ]]; then
           echo "Testing Windows executable resolution..."
           cmd //c "where liquibase"
           LIQUIBASE_PATH=$(cmd //c "where liquibase" | head -1 | tr -d '\r')
