@@ -382,6 +382,38 @@ steps:
       --password=${{ secrets.DB_PASSWORD }}
 ```
 
+### Handling Already-Installed Packages
+
+> **Note**: The `lpm add` command returns exit code 1 when a package is already installed. This can cause CI/CD workflows to fail on subsequent runs.
+
+#### Recommended: Use `--skip-existing` Flag
+
+```yaml
+- name: Install PostgreSQL Driver
+  run: liquibase lpm add postgresql --global --skip-existing
+```
+
+This ensures the command succeeds (exit 0) even if packages are already installed.
+
+#### Alternative: Ignore Exit Code
+
+**Linux/macOS:**
+```yaml
+- name: Install PostgreSQL Driver
+  run: liquibase lpm add postgresql --global || true
+```
+
+**Windows PowerShell:**
+```yaml
+- name: Install PostgreSQL Driver
+  shell: pwsh
+  run: |
+    liquibase lpm add postgresql --global
+    exit 0
+```
+
+> **Tracking**: [setup-liquibase#119](https://github.com/liquibase/setup-liquibase/issues/119)
+
 ### Learn More
 
 For complete documentation on using LPM, including:
