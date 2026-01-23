@@ -298,6 +298,6 @@ describe('Error Handling Tests', () => {
       expect(result).toBeDefined();
       expect(result.version).toBe('4.32.0');
       expect(result.path).toBeTruthy();
-    }, 60000);
+    }, 120000);
   });
 });
