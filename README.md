@@ -800,4 +800,4 @@ We welcome contributions! Please see our [Contributing Guide](.github/CONTRIBUTI
 
 ## License
 
-This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the FSL-1.1-ALv2 License - see the [LICENSE](LICENSE) file for details.
