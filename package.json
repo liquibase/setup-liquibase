@@ -25,7 +25,7 @@
     "migration"
   ],
   "author": "Liquibase",
-  "license": "Apache-2.0",
+  "license": "FSL-1.1-ALv2",
   "dependencies": {
     "@actions/core": "^2.0.2",
     "@actions/exec": "^2.0.0",
