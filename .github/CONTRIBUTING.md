@@ -47,7 +47,7 @@ We use GitHub issues to track public bugs. Report a bug by [opening a new issue]
 
 ### Prerequisites
 
-- Node.js 20 or later
+- Node.js 24 or later
 - npm (comes with Node.js)
 
 ### Setup Instructions

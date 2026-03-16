@@ -36,5 +36,5 @@ outputs:
 
 # Action execution configuration
 runs:
-  using: 'node20'        # Use Node.js 20 runtime
+  using: 'node24'        # Use Node.js 24 runtime
   main: 'dist/index.js'  # Entry point for the compiled action

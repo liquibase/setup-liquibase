@@ -80,7 +80,7 @@ Single GitHub Action that installs Liquibase (Community or Secure editions) and 
 ### GitHub Action Configuration
 
 - **action.yml**: Defines inputs (version, edition) and outputs (liquibase-version, liquibase-path)
-- **Node Runtime**: Uses Node.js 20
+- **Node Runtime**: Uses Node.js 24
 - **Icon**: Database icon with blue color for marketplace
 
 ## Release Automation
@@ -146,7 +146,7 @@ This action replaces the `github-action-generator` approach:
 ### Quality Standards
 - **Testing**: 83 comprehensive tests across platforms
 - **Performance**: <1ms URL generation, <20MB memory usage
-- **Compatibility**: Node.js 20, GitHub Actions runtime
+- **Compatibility**: Node.js 24, GitHub Actions runtime
 - **Documentation**: Production-ready README and examples
 
 ### Maintenance Notes
@@ -221,7 +221,7 @@ See `getDownloadUrl()` function in `src/installer.ts:193` for the complete logic
 - **Problem**: Action fails with ES module errors in GitHub Actions runtime
 - **Solution**: Verify `dist/index.js` contains CommonJS `require()` statements, not ES6 `import` statements
 - **Check**: The release workflow includes automated verification in the "Verify build output" step
-- **Why**: GitHub Actions Node.js 20 runtime requires CommonJS format
+- **Why**: GitHub Actions Node.js 24 runtime requires CommonJS format
 
 ### Extraction Failures on macOS/Linux
 - **Problem**: Tar extraction fails with cryptic errors
@@ -238,7 +238,7 @@ See `getDownloadUrl()` function in `src/installer.ts:193` for the complete logic
 - **`dist/index.js`**: Bundled action entry point (committed to repository, built via `@vercel/ncc`)
 - **`action.yml`**: GitHub Action metadata defining inputs, outputs, and runtime
 - **`jest.config.js`**: Jest configuration with memory management and cross-platform settings
-- **`tsconfig.json`**: TypeScript compiler configuration targeting ES2019/Node.js 20
+- **`tsconfig.json`**: TypeScript compiler configuration targeting ES2024/Node.js 24
 - **`.github/workflows/release-drafter.yml`**: Single workflow handling draft updates and releases
 - **`.github/workflows/test.yml`**: PR validation testing across multiple platforms
 - **`CHANGELOG.md`**: Auto-generated from commit history during releases
