@@ -1,9 +1,9 @@
 {
   // TypeScript configuration for setup-liquibase GitHub Action
   "compilerOptions": {
-    // Target ES2019 for Node.js 20 compatibility in GitHub Actions
-    "target": "ES2019",
-    "lib": ["ES2019"],
+    // Target ES2024 for Node.js 24 compatibility in GitHub Actions
+    "target": "ES2024",
+    "lib": ["ES2024"],
     
     // Use CommonJS modules for Node.js compatibility
     "module": "commonjs",

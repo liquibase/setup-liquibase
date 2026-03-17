@@ -33,9 +33,9 @@ jobs:
     - name: Setup Node.js Environment
       uses: actions/setup-node@v6
       with:
-        node-version: '20'
+        node-version: '24'
         cache: 'npm'
-    
+
     # Install all npm dependencies using package-lock.json for reproducible builds
     - name: Install Dependencies
       run: npm ci
@@ -92,9 +92,9 @@ jobs:
     - name: Setup Node.js Environment
       uses: actions/setup-node@v6
       with:
-        node-version: '20'
+        node-version: '24'
         cache: 'npm'
-    
+
     # Install dependencies required for building the action
     - name: Install Dependencies
       run: npm ci
