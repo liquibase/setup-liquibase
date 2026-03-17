@@ -1,10 +1,10 @@
-import { vi } from 'vitest';
-import { getDownloadUrl, setupLiquibase } from '../../src/installer.js';
-import { transformLiquibaseEnvironmentVariables } from '../../src/index.js';
-import { MIN_SUPPORTED_VERSION } from '../../src/config.js';
-import * as os from 'os';
-import * as path from 'path';
-import * as fs from 'fs';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { getDownloadUrl, setupLiquibase } from '../../src/installer';
+import { transformLiquibaseEnvironmentVariables } from '../../src/index';
+import { MIN_SUPPORTED_VERSION } from '../../src/config';
+import * as os from 'node:os';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
 
 describe('getDownloadUrl', () => {
   it('should construct correct Community URL for Unix-like systems', () => {
@@ -437,26 +437,6 @@ describe('setupLiquibase validation', () => {
   });
 
   it('should accept secure edition as valid', async () => {
-    // Mock the download and validation functions to avoid actual network calls
-    const mockDownloadTool = vi.fn().mockResolvedValue('/mock/download/path');
-    const mockExtractZip = vi.fn().mockResolvedValue('/mock/extract/path');
-    const mockMkdirP = vi.fn().mockResolvedValue(undefined);
-    const mockExec = vi.fn().mockResolvedValue(0);
-
-    vi.doMock('@actions/tool-cache', () => ({
-      downloadTool: mockDownloadTool,
-      extractZip: mockExtractZip,
-    }));
-    vi.doMock('@actions/io', () => ({
-      mkdirP: mockMkdirP,
-    }));
-    vi.doMock('@actions/exec', () => ({
-      exec: mockExec,
-    }));
-    vi.doMock('fs', () => ({
-      existsSync: vi.fn().mockReturnValue(true),
-    }));
-
     const options = {
       version: '4.32.0',
       edition: 'secure' as const,
@@ -471,11 +451,9 @@ describe('setupLiquibase validation', () => {
         if (error instanceof Error && error.message.includes('Invalid edition')) {
           throw error;
         }
-        // Ignore other errors (like network/download errors in mocked environment)
+        // Ignore other errors (like network/download errors in test environment)
       }
     }).not.toThrow();
-
-    vi.clearAllMocks();
   });
 
   it('should reject invalid version format', async () => {

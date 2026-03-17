@@ -7,9 +7,10 @@
  * OPTIMIZATION: Separated unit tests (no downloads) from integration tests (minimal downloads)
  */
 
-import { setupLiquibase } from '../../src/installer.js';
-import { getDownloadUrl } from '../../src/installer.js';
-import { MIN_SUPPORTED_VERSION } from '../../src/config.js';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { setupLiquibase } from '../../src/installer';
+import { getDownloadUrl } from '../../src/installer';
+import { MIN_SUPPORTED_VERSION } from '../../src/config';
 
 describe('Error Handling Tests', () => {
   /**

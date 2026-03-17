@@ -2,14 +2,14 @@
   "name": "setup-liquibase",
   "version": "2.0.0",
   "description": "Set up your GitHub Actions workflow with a specific version of Liquibase",
-  "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "build": "ncc build src/index.ts -o dist --source-map --license licenses.txt",
-    "test": "vitest run",
-    "test:ci": "vitest run --no-coverage",
-    "test:memory": "cross-env NODE_OPTIONS=\"--max-old-space-size=4096\" vitest run",
-    "test:debug": "vitest run --reporter=verbose",
+    "build": "ncc build src/main.ts -o dist --source-map --license licenses.txt",
+    "test": "vitest run --pool=forks",
+    "test:ci": "vitest run --pool=forks --no-coverage",
+    "test:memory": "NODE_OPTIONS='--max-old-space-size=4096' vitest run --pool=forks",
+    "test:coverage": "vitest run --pool=forks --coverage",
+    "test:debug": "vitest run --pool=forks --reporter=verbose",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write src/**/*.ts",
     "package": "npm run build && npm test"
@@ -28,11 +28,11 @@
   "author": "Liquibase",
   "license": "FSL-1.1-ALv2",
   "dependencies": {
-    "@actions/core": "^2.0.2",
-    "@actions/exec": "^2.0.0",
-    "@actions/http-client": "^3.0.2",
-    "@actions/io": "^2.0.0",
-    "@actions/tool-cache": "^3.0.0",
+    "@actions/core": "^3.0.0",
+    "@actions/exec": "^3.0.0",
+    "@actions/http-client": "^4.0.0",
+    "@actions/io": "^3.0.2",
+    "@actions/tool-cache": "^4.0.0",
     "semver": "^7.7.4"
   },
   "devDependencies": {
@@ -43,13 +43,11 @@
     "@typescript-eslint/eslint-plugin": "^8.57.1",
     "@typescript-eslint/parser": "^8.34.1",
     "@vercel/ncc": "^0.38.4",
-    "@vitest/coverage-v8": "^3.0.0",
-    "cross-env": "^10.1.0",
     "eslint": "^10.0.3",
-    "eslint-plugin-vitest": "^0.5.0",
     "prettier": "^3.8.1",
     "typescript": "^5.9.3",
-    "vitest": "^3.0.0"
+    "vitest": "^3.0.0",
+    "@vitest/coverage-v8": "^3.0.0"
   },
   "overrides": {
     "inflight": "npm:@isaacs/inflight@^1.0.6",

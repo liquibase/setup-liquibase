@@ -2,24 +2,19 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    globals: true,
+    include: ['__tests__/**/*.test.ts'],
     environment: 'node',
-    include: ['**/__tests__/**/*.test.ts'],
+    pool: 'forks',
+    poolOptions: { forks: { maxForks: process.env.CI ? 1 : 2 } },
+    testTimeout: 30000,
+    clearMocks: true,
+    restoreMocks: true,
+    mockReset: true,
     coverage: {
       include: ['src/**/*.ts'],
       exclude: ['src/**/*.d.ts'],
       reporter: ['text', 'lcov'],
     },
-    testTimeout: 30000,
-    clearMocks: true,
-    restoreMocks: true,
-    setupFiles: ['./__tests__/setup.ts'],
-    pool: 'forks',
-    poolOptions: {
-      forks: {
-        maxForks: 1,
-      },
-    },
-    reporters: ['verbose'],
+    setupFiles: ['__tests__/setup.ts'],
   },
 });

@@ -17,9 +17,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 
 ### Core Commands
 - `npm ci` - Install dependencies (use instead of npm install)
-- `npm run build` - Build TypeScript to JavaScript bundle (dist/index.js)
-- `npm run test` - Run all tests with memory optimization
-- `npm run test:ci` - Run tests in CI mode (limited workers, no coverage)
+- `npm run build` - Build TypeScript to JavaScript bundle (dist/index.js) — entry: `src/main.ts`
+- `npm run test` - Run all tests with Vitest (pool=forks)
+- `npm run test:ci` - Run tests in CI mode (no coverage)
 - `npm run lint` - Run ESLint on TypeScript files
 - `npm run format` - Format code with Prettier
 - `npm run package` - Build and test in one command
@@ -29,8 +29,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 - Run tests with pattern: `npm test -- --testNamePattern="should validate"`
 - Run tests with debug logging: `npm run test:debug`
 - Memory optimization for tests: Use `npm run test:memory` with `--max-old-space-size=4096`
-- CI tests use `--maxWorkers=1` to prevent resource exhaustion and cross-platform issues
-- Tests run serially by default (`--maxWorkers=1`) with forced exit to avoid hanging processes
+- CI tests use `pool=forks` with `maxForks=1` to prevent resource exhaustion and cross-platform issues
+- Test runner: **Vitest** (replaced Jest + ts-jest; see `vitest.config.ts`)
 
 ## Architecture Overview
 
@@ -74,7 +74,7 @@ Single GitHub Action that installs Liquibase (Community or Secure editions) and 
 - **Integration Tests** (`__tests__/integration/`): Test real installations
 - **Performance Tests** (`__tests__/performance/`): Verify memory/speed constraints
 - **Error Handling Tests**: Validate failure scenarios
-- Tests use Jest with ts-jest for TypeScript support
+- Tests use **Vitest** with native ESM/TypeScript support (no ts-jest needed)
 - CI workflow tests across Ubuntu, Windows, and macOS
 
 ### GitHub Action Configuration
@@ -214,7 +214,7 @@ See `getDownloadUrl()` function in `src/installer.ts:193` for the complete logic
 
 ### Test Hangs or Memory Issues
 - **Problem**: Tests hang or run out of memory during execution
-- **Solution**: Tests are configured with `--maxWorkers=1` and `--forceExit` flags. Use `npm run test:memory` for increased heap space
+- **Solution**: Tests use Vitest `pool=forks` (subprocess isolation) with `maxForks=1` in CI. Use `npm run test:memory` for increased heap space
 - **Root Cause**: Cross-platform subprocess management can cause hanging handles, especially on Windows
 
 ### Build Verification for GitHub Actions
@@ -235,10 +235,11 @@ See `getDownloadUrl()` function in `src/installer.ts:193` for the complete logic
 
 ## Key Files and Their Purpose
 
-- **`dist/index.js`**: Bundled action entry point (committed to repository, built via `@vercel/ncc`)
+- **`dist/index.js`**: Bundled CJS action entry point (committed to repository, built via `@vercel/ncc` from `src/main.ts`)
+- **`src/main.ts`**: Thin ESM entry point that calls `run()` — this is the ncc build target
 - **`action.yml`**: GitHub Action metadata defining inputs, outputs, and runtime
-- **`jest.config.js`**: Jest configuration with memory management and cross-platform settings
-- **`tsconfig.json`**: TypeScript compiler configuration targeting ES2024/Node.js 24
+- **`vitest.config.ts`**: Vitest configuration (replaced jest.config.js)
+- **`tsconfig.json`**: TypeScript compiler configuration targeting ES2024/Node.js 24 with `module: ESNext` + `moduleResolution: Bundler`
 - **`.github/workflows/release-drafter.yml`**: Single workflow handling draft updates and releases
 - **`.github/workflows/test.yml`**: PR validation testing across multiple platforms
 - **`CHANGELOG.md`**: Auto-generated from commit history during releases

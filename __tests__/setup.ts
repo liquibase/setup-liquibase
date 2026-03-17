@@ -5,10 +5,10 @@
  * and memory management in CI/CD environments.
  */
 
-import { vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
-import * as os from 'os';
-import * as path from 'path';
-import * as fs from 'fs';
+import { beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
+import * as os from 'node:os';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
 
 // Enable garbage collection if available (requires --expose-gc flag)
 if (typeof global.gc === 'function') {
@@ -47,11 +47,8 @@ afterAll(() => {
 
 // Clean up any lingering timers or processes
 afterEach(() => {
-  // Clear all timers
+  // Clear all timers (vitest config handles mock reset via clearMocks/mockReset)
   vi.clearAllTimers();
-
-  // Reset all mocks
-  vi.clearAllMocks();
 
   // Force process cleanup if needed
   if (process.env.CI && typeof global.gc === 'function') {
@@ -109,7 +106,7 @@ export const testUtils = {
       heapUsed: Math.round(usage.heapUsed / 1024 / 1024), // MB
       heapTotal: Math.round(usage.heapTotal / 1024 / 1024), // MB
       external: Math.round(usage.external / 1024 / 1024), // MB
-      rss: Math.round(usage.rss / 1024 / 1024) // MB
+      rss: Math.round(usage.rss / 1024 / 1024), // MB
     };
   },
 
@@ -122,9 +119,11 @@ export const testUtils = {
    * Create a temporary directory for testing
    */
   createTempDir: () => {
-    const tempDir = path.join(os.tmpdir(), `setup-liquibase-test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+    const tempDir = path.join(
+      os.tmpdir(),
+      `setup-liquibase-test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    );
     fs.mkdirSync(tempDir, { recursive: true });
-
     return tempDir;
   },
 
@@ -132,14 +131,12 @@ export const testUtils = {
    * Clean up temporary directory
    */
   cleanupTempDir: (tempDir: string) => {
-    if (fs.existsSync(tempDir)) {
-      try {
-        fs.rmSync(tempDir, { recursive: true, force: true });
-      } catch (error) {
-        console.warn(`Failed to cleanup temp dir ${tempDir}:`, error);
-      }
+    try {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    } catch (error) {
+      console.warn(`Failed to cleanup temp dir ${tempDir}:`, error);
     }
-  }
+  },
 };
 
 // Default export for convenience

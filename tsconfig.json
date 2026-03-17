@@ -5,7 +5,7 @@
     "target": "ES2024",
     "lib": ["ES2024"],
 
-    // ESM source — ncc/webpack bundles to CJS for dist/index.js
+    // Use ESNext modules for ESM source (ncc/webpack bundles to CJS for GitHub Actions runtime)
     "module": "ESNext",
     "moduleResolution": "Bundler",
 
@@ -25,7 +25,10 @@
     // Generate declaration files and source maps for debugging
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+
+    // Enable isolated modules for Vitest/transpiler compatibility
+    "isolatedModules": true
   },
 
   // Include all TypeScript files in the src directory

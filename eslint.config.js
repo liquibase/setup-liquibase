@@ -1,12 +1,11 @@
-import js from '@eslint/js';
-import { FlatCompat } from '@eslint/eslintrc';
-import eslintPluginVitest from 'eslint-plugin-vitest';
-import eslintPluginTs from '@typescript-eslint/eslint-plugin';
-import parserTs from '@typescript-eslint/parser';
+const js = require('@eslint/js');
+const { FlatCompat } = require('@eslint/eslintrc');
+const eslintPluginTs = require('@typescript-eslint/eslint-plugin');
+const parserTs = require('@typescript-eslint/parser');
 
 const compat = new FlatCompat();
 
-export default [
+module.exports = [
   js.configs.recommended,
   ...compat.extends('plugin:@typescript-eslint/recommended'),
   {
@@ -20,10 +19,7 @@ export default [
     },
     plugins: {
       '@typescript-eslint': eslintPluginTs,
-      vitest: eslintPluginVitest,
     },
-    rules: {
-      ...eslintPluginVitest.configs.recommended.rules,
-    },
+    rules: {},
   },
 ];
