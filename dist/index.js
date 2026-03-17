@@ -37107,7 +37107,7 @@ async function extractLiquibase(downloadPath) {
         }
         catch (fallbackError) {
             core.debug(`Fallback extraction also failed: ${fallbackError instanceof Error ? fallbackError.stack : String(fallbackError)}`);
-            throw new Error(`Failed to extract Liquibase archive: ${(0, config_1.getErrorMessage)(error)}`, { cause: fallbackError });
+            throw new Error(`Failed to extract Liquibase archive. Primary: ${(0, config_1.getErrorMessage)(error)}. Fallback: ${(0, config_1.getErrorMessage)(fallbackError)}`, { cause: fallbackError });
         }
     }
 }

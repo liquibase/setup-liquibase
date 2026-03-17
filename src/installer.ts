@@ -344,7 +344,7 @@ async function extractLiquibase(downloadPath: string): Promise<string> {
       return tempDir;
     } catch (fallbackError) {
       core.debug(`Fallback extraction also failed: ${fallbackError instanceof Error ? fallbackError.stack : String(fallbackError)}`);
-      throw new Error(`Failed to extract Liquibase archive: ${getErrorMessage(error)}`, { cause: fallbackError });
+      throw new Error(`Failed to extract Liquibase archive. Primary: ${getErrorMessage(error)}. Fallback: ${getErrorMessage(fallbackError)}`, { cause: fallbackError });
     }
   }
 }
