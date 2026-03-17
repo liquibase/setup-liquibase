@@ -35,6 +35,8 @@
     "semver": "^7.7.4"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.0.0",
+    "@eslint/js": "^10.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.5.0",
     "@types/semver": "^7.7.1",
@@ -52,6 +54,7 @@
   "overrides": {
     "inflight": "npm:@isaacs/inflight@^1.0.6",
     "glob": "^10.0.0",
-    "rimraf": "^5.0.0"
+    "rimraf": "^5.0.0",
+    "flatted": ">=3.4.0"
   }
 }
