@@ -36528,6 +36528,7 @@ module.exports = {
  */
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.MIN_SUPPORTED_VERSION = exports.DOWNLOAD_URLS = void 0;
+exports.getErrorMessage = getErrorMessage;
 /**
  * Download URL templates for Liquibase distributions
  * Using Scarf-tracked endpoints for analytics (DAT-21375)
@@ -36561,6 +36562,12 @@ exports.DOWNLOAD_URLS = {
  * Minimum supported version for this action
  */
 exports.MIN_SUPPORTED_VERSION = '4.32.0';
+/**
+ * Extracts a string message from an unknown caught value.
+ */
+function getErrorMessage(error) {
+    return error instanceof Error ? error.message : String(error);
+}
 
 
 /***/ }),
@@ -36616,6 +36623,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.transformLiquibaseEnvironmentVariables = transformLiquibaseEnvironmentVariables;
 const core = __importStar(__nccwpck_require__(7484));
 const installer_1 = __nccwpck_require__(7651);
+const config_1 = __nccwpck_require__(2973);
 const path = __importStar(__nccwpck_require__(6928));
 const fs = __importStar(__nccwpck_require__(9896));
 const io = __importStar(__nccwpck_require__(4994));
@@ -36699,7 +36707,7 @@ async function transformLiquibaseEnvironmentVariables() {
             }
         }
         catch (error) {
-            core.warning(`Failed to transform ${envVarName} path '${originalPath}': ${error instanceof Error ? error.message : String(error)}`);
+            core.warning(`Failed to transform ${envVarName} path '${originalPath}': ${(0, config_1.getErrorMessage)(error)}`);
         }
     }
     if (transformedPaths.length > 0) {
@@ -36758,7 +36766,7 @@ async function run() {
     }
     catch (error) {
         // Handle any errors by failing the action with a descriptive message
-        core.setFailed(error instanceof Error ? error.message : String(error));
+        core.setFailed((0, config_1.getErrorMessage)(error));
     }
 }
 // Execute the main function only when this module is run directly
@@ -36920,7 +36928,7 @@ async function setupLiquibase(options) {
                     throw new Error(`Permission denied while installing Liquibase. Please check that the runner has sufficient permissions.`, { cause: error });
                 }
             }
-            throw new Error(`Failed to download and install Liquibase: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
+            throw new Error(`Failed to download and install Liquibase: ${(0, config_1.getErrorMessage)(error)}`, { cause: error });
         }
     }
     // Construct the path to the Liquibase executable
@@ -36983,7 +36991,7 @@ function validateCustomUrl(urlTemplate) {
         new URL(testUrl);
     }
     catch (error) {
-        throw new Error(`Invalid custom download URL format: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
+        throw new Error(`Invalid custom download URL format: ${(0, config_1.getErrorMessage)(error)}`, { cause: error });
     }
 }
 /**
@@ -37099,7 +37107,7 @@ async function extractLiquibase(downloadPath) {
         }
         catch (fallbackError) {
             core.debug(`Fallback extraction also failed: ${fallbackError instanceof Error ? fallbackError.stack : String(fallbackError)}`);
-            throw new Error(`Failed to extract Liquibase archive: ${error instanceof Error ? error.message : String(error)}`, { cause: fallbackError });
+            throw new Error(`Failed to extract Liquibase archive: ${(0, config_1.getErrorMessage)(error)}`, { cause: fallbackError });
         }
     }
 }
@@ -37179,7 +37187,7 @@ async function validateInstallation(liquibasePath) {
         if (error instanceof Error && error.message.includes('Liquibase validation failed with exit code')) {
             throw error; // Already has detailed error info
         }
-        throw new Error(`Failed to validate Liquibase installation: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
+        throw new Error(`Failed to validate Liquibase installation: ${(0, config_1.getErrorMessage)(error)}`, { cause: error });
     }
 }
 

@@ -16,7 +16,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
 import { downloadTool, extractZip, cacheDir, find } from '@actions/tool-cache';
-import { DOWNLOAD_URLS, MIN_SUPPORTED_VERSION } from './config';
+import { DOWNLOAD_URLS, MIN_SUPPORTED_VERSION, getErrorMessage } from './config';
 import * as semver from 'semver';
 
 /**
@@ -140,7 +140,7 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
           throw new Error(`Permission denied while installing Liquibase. Please check that the runner has sufficient permissions.`, { cause: error });
         }
       }
-      throw new Error(`Failed to download and install Liquibase: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
+      throw new Error(`Failed to download and install Liquibase: ${getErrorMessage(error)}`, { cause: error });
     }
   }
 
@@ -213,7 +213,7 @@ function validateCustomUrl(urlTemplate: string): void {
       .replace(/\{edition\}/g, 'oss');
     new URL(testUrl);
   } catch (error) {
-    throw new Error(`Invalid custom download URL format: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
+    throw new Error(`Invalid custom download URL format: ${getErrorMessage(error)}`, { cause: error });
   }
 }
 
@@ -344,7 +344,7 @@ async function extractLiquibase(downloadPath: string): Promise<string> {
       return tempDir;
     } catch (fallbackError) {
       core.debug(`Fallback extraction also failed: ${fallbackError instanceof Error ? fallbackError.stack : String(fallbackError)}`);
-      throw new Error(`Failed to extract Liquibase archive: ${error instanceof Error ? error.message : String(error)}`, { cause: fallbackError });
+      throw new Error(`Failed to extract Liquibase archive: ${getErrorMessage(error)}`, { cause: fallbackError });
     }
   }
 }
@@ -436,6 +436,6 @@ async function validateInstallation(liquibasePath: string): Promise<void> {
     if (error instanceof Error && error.message.includes('Liquibase validation failed with exit code')) {
       throw error; // Already has detailed error info
     }
-    throw new Error(`Failed to validate Liquibase installation: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
+    throw new Error(`Failed to validate Liquibase installation: ${getErrorMessage(error)}`, { cause: error });
   }
 }

@@ -10,6 +10,7 @@
 
 import * as core from '@actions/core';
 import { setupLiquibase } from './installer';
+import { getErrorMessage } from './config';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as io from '@actions/io';
@@ -112,7 +113,7 @@ export async function transformLiquibaseEnvironmentVariables(): Promise<void> {
       }
       
     } catch (error) {
-      core.warning(`Failed to transform ${envVarName} path '${originalPath}': ${error instanceof Error ? error.message : String(error)}`);
+      core.warning(`Failed to transform ${envVarName} path '${originalPath}': ${getErrorMessage(error)}`);
     }
   }
   
@@ -179,7 +180,7 @@ async function run(): Promise<void> {
     core.info(`✅ setup-liquibase completed successfully!`);
   } catch (error) {
     // Handle any errors by failing the action with a descriptive message
-    core.setFailed(error instanceof Error ? error.message : String(error));
+    core.setFailed(getErrorMessage(error));
   }
 }
 

@@ -42,3 +42,10 @@ export const DOWNLOAD_URLS = {
  * Minimum supported version for this action
  */
 export const MIN_SUPPORTED_VERSION = '4.32.0';
+
+/**
+ * Extracts a string message from an unknown caught value.
+ */
+export function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
