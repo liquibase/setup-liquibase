@@ -4,35 +4,33 @@
     // Target ES2024 for Node.js 24 compatibility in GitHub Actions
     "target": "ES2024",
     "lib": ["ES2024"],
-    
-    // Use CommonJS modules for Node.js compatibility
-    "module": "commonjs",
-    
+
+    // ESM source — ncc/webpack bundles to CJS for dist/index.js
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+
     // Output compiled JavaScript to lib directory
     "outDir": "lib",
     "rootDir": "src",
-    
+
     // Enable strict type checking for better code quality
     "strict": true,
     "noImplicitAny": true,
-    
+
     // Module resolution and compatibility settings
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    
+
     // Generate declaration files and source maps for debugging
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true,
-    
-    // Enable isolated modules for ts-jest compatibility
-    "isolatedModules": true
+    "sourceMap": true
   },
-  
+
   // Include all TypeScript files in the src directory
   "include": ["src/**/*"],
-  
+
   // Exclude unnecessary directories and files from compilation
   "exclude": ["node_modules", "**/*.test.ts", "lib", "dist"]
 }

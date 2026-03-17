@@ -1,15 +1,14 @@
-const js = require('@eslint/js');
-const { FlatCompat } = require('@eslint/eslintrc');
-const eslintPluginJest = require('eslint-plugin-jest');
-const eslintPluginTs = require('@typescript-eslint/eslint-plugin');
-const parserTs = require('@typescript-eslint/parser');
+import js from '@eslint/js';
+import { FlatCompat } from '@eslint/eslintrc';
+import eslintPluginVitest from 'eslint-plugin-vitest';
+import eslintPluginTs from '@typescript-eslint/eslint-plugin';
+import parserTs from '@typescript-eslint/parser';
 
 const compat = new FlatCompat();
 
-module.exports = [
+export default [
   js.configs.recommended,
   ...compat.extends('plugin:@typescript-eslint/recommended'),
-  ...compat.extends('plugin:jest/recommended'),
   {
     files: ['**/*.ts'],
     languageOptions: {
@@ -21,10 +20,10 @@ module.exports = [
     },
     plugins: {
       '@typescript-eslint': eslintPluginTs,
-      jest: eslintPluginJest,
+      vitest: eslintPluginVitest,
     },
     rules: {
-      // Add or override rules here
+      ...eslintPluginVitest.configs.recommended.rules,
     },
   },
-]; 
+];

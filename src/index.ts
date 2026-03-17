@@ -9,11 +9,12 @@
  */
 
 import * as core from '@actions/core';
-import { setupLiquibase } from './installer';
-import { getErrorMessage } from './config';
+import { setupLiquibase } from './installer.js';
+import { getErrorMessage } from './config.js';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as io from '@actions/io';
+import { fileURLToPath } from 'url';
 
 /**
  * Proactively transforms any problematic Liquibase environment variables 
@@ -186,6 +187,7 @@ async function run(): Promise<void> {
 
 // Execute the main function only when this module is run directly
 // This prevents auto-execution when imported by tests or other modules
-if (require.main === module) {
+const __filename = fileURLToPath(import.meta.url);
+if (process.argv[1] === __filename) {
   run();
 }

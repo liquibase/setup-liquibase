@@ -6,8 +6,8 @@
  * OPTIMIZATION: Separated unit tests (path logic only) from integration tests (minimal downloads)
  */
 
-import { setupLiquibase } from '../../src/installer';
-import { transformLiquibaseEnvironmentVariables } from '../../src/index';
+import { setupLiquibase } from '../../src/installer.js';
+import { transformLiquibaseEnvironmentVariables } from '../../src/index.js';
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';

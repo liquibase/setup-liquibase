@@ -5,7 +5,7 @@
  * to ensure it meets acceptable performance standards.
  */
 
-import { getDownloadUrl } from '../../src/installer';
+import { getDownloadUrl } from '../../src/installer.js';
 
 // Cleanup helper for performance tests
 const cleanupResources = () => {

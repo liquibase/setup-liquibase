@@ -2,13 +2,14 @@
   "name": "setup-liquibase",
   "version": "2.0.0",
   "description": "Set up your GitHub Actions workflow with a specific version of Liquibase",
+  "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "build": "ncc build src/index.ts -o dist --source-map --license licenses.txt",
-    "test": "jest --maxWorkers=1 --forceExit",
-    "test:ci": "jest --ci --maxWorkers=1 --forceExit --no-coverage",
-    "test:memory": "cross-env NODE_OPTIONS=\"--max-old-space-size=4096\" jest --maxWorkers=1 --forceExit",
-    "test:debug": "jest --maxWorkers=1 --detectOpenHandles --forceExit",
+    "test": "vitest run",
+    "test:ci": "vitest run --no-coverage",
+    "test:memory": "cross-env NODE_OPTIONS=\"--max-old-space-size=4096\" vitest run",
+    "test:debug": "vitest run --reporter=verbose",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write src/**/*.ts",
     "package": "npm run build && npm test"
@@ -37,19 +38,18 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.0.0",
     "@eslint/js": "^10.0.0",
-    "@types/jest": "^30.0.0",
     "@types/node": "^25.5.0",
     "@types/semver": "^7.7.1",
     "@typescript-eslint/eslint-plugin": "^8.57.1",
     "@typescript-eslint/parser": "^8.34.1",
     "@vercel/ncc": "^0.38.4",
+    "@vitest/coverage-v8": "^3.0.0",
     "cross-env": "^10.1.0",
     "eslint": "^10.0.3",
-    "eslint-plugin-jest": "^29.15.0",
-    "jest": "^30.3.0",
+    "eslint-plugin-vitest": "^0.5.0",
     "prettier": "^3.8.1",
-    "ts-jest": "^29.4.6",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.0.0"
   },
   "overrides": {
     "inflight": "npm:@isaacs/inflight@^1.0.6",

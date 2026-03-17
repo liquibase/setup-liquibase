@@ -16,7 +16,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
 import { downloadTool, extractZip, cacheDir, find } from '@actions/tool-cache';
-import { DOWNLOAD_URLS, MIN_SUPPORTED_VERSION, getErrorMessage } from './config';
+import { DOWNLOAD_URLS, MIN_SUPPORTED_VERSION, getErrorMessage } from './config.js';
 import * as semver from 'semver';
 
 /**

@@ -7,9 +7,9 @@
  * OPTIMIZATION: Separated unit tests (no downloads) from integration tests (minimal downloads)
  */
 
-import { setupLiquibase } from '../../src/installer';
-import { getDownloadUrl } from '../../src/installer';
-import { MIN_SUPPORTED_VERSION } from '../../src/config';
+import { setupLiquibase } from '../../src/installer.js';
+import { getDownloadUrl } from '../../src/installer.js';
+import { MIN_SUPPORTED_VERSION } from '../../src/config.js';
 
 describe('Error Handling Tests', () => {
   /**
@@ -206,7 +206,7 @@ describe('Error Handling Tests', () => {
       for (const testCase of testCases) {
         try {
           await setupLiquibase(testCase.options);
-          fail('Expected error to be thrown');
+          throw new Error('Expected error to be thrown');
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           

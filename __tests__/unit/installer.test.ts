@@ -1,6 +1,7 @@
-import { getDownloadUrl, setupLiquibase } from '../../src/installer';
-import { transformLiquibaseEnvironmentVariables } from '../../src/index';
-import { MIN_SUPPORTED_VERSION } from '../../src/config';
+import { vi } from 'vitest';
+import { getDownloadUrl, setupLiquibase } from '../../src/installer.js';
+import { transformLiquibaseEnvironmentVariables } from '../../src/index.js';
+import { MIN_SUPPORTED_VERSION } from '../../src/config.js';
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -437,23 +438,23 @@ describe('setupLiquibase validation', () => {
 
   it('should accept secure edition as valid', async () => {
     // Mock the download and validation functions to avoid actual network calls
-    const mockDownloadTool = jest.fn().mockResolvedValue('/mock/download/path');
-    const mockExtractZip = jest.fn().mockResolvedValue('/mock/extract/path');
-    const mockMkdirP = jest.fn().mockResolvedValue(undefined);
-    const mockExec = jest.fn().mockResolvedValue(0);
-    
-    jest.doMock('@actions/tool-cache', () => ({
+    const mockDownloadTool = vi.fn().mockResolvedValue('/mock/download/path');
+    const mockExtractZip = vi.fn().mockResolvedValue('/mock/extract/path');
+    const mockMkdirP = vi.fn().mockResolvedValue(undefined);
+    const mockExec = vi.fn().mockResolvedValue(0);
+
+    vi.doMock('@actions/tool-cache', () => ({
       downloadTool: mockDownloadTool,
       extractZip: mockExtractZip,
     }));
-    jest.doMock('@actions/io', () => ({
+    vi.doMock('@actions/io', () => ({
       mkdirP: mockMkdirP,
     }));
-    jest.doMock('@actions/exec', () => ({
+    vi.doMock('@actions/exec', () => ({
       exec: mockExec,
     }));
-    jest.doMock('fs', () => ({
-      existsSync: jest.fn().mockReturnValue(true),
+    vi.doMock('fs', () => ({
+      existsSync: vi.fn().mockReturnValue(true),
     }));
 
     const options = {
@@ -474,7 +475,7 @@ describe('setupLiquibase validation', () => {
       }
     }).not.toThrow();
 
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should reject invalid version format', async () => {

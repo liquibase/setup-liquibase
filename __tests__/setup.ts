@@ -1,9 +1,14 @@
 /**
- * Jest setup file for setup-liquibase tests
- * 
+ * Vitest setup file for setup-liquibase tests
+ *
  * This file configures the test environment for optimal performance
  * and memory management in CI/CD environments.
  */
+
+import { vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+import * as os from 'os';
+import * as path from 'path';
+import * as fs from 'fs';
 
 // Enable garbage collection if available (requires --expose-gc flag)
 if (typeof global.gc === 'function') {
@@ -11,15 +16,12 @@ if (typeof global.gc === 'function') {
   beforeEach(() => {
     global.gc!();
   });
-  
+
   // Force garbage collection after each test suite
   afterEach(() => {
     global.gc!();
   });
 }
-
-// Set longer timeout for CI environments
-jest.setTimeout(30000);
 
 // Mock console methods to reduce noise in CI logs
 const originalConsoleLog = console.log;
@@ -29,8 +31,8 @@ const originalConsoleError = console.error;
 beforeAll(() => {
   // Only show important logs in CI
   if (process.env.CI) {
-    console.log = jest.fn();
-    console.warn = jest.fn();
+    console.log = vi.fn();
+    console.warn = vi.fn();
     // Keep error logs for debugging
     console.error = originalConsoleError;
   }
@@ -46,11 +48,11 @@ afterAll(() => {
 // Clean up any lingering timers or processes
 afterEach(() => {
   // Clear all timers
-  jest.clearAllTimers();
-  
+  vi.clearAllTimers();
+
   // Reset all mocks
-  jest.clearAllMocks();
-  
+  vi.clearAllMocks();
+
   // Force process cleanup if needed
   if (process.env.CI && typeof global.gc === 'function') {
     global.gc!();
@@ -75,7 +77,7 @@ if (process.env.NODE_ENV === 'test' && process.env.DEBUG_MEMORY) {
     const memUsage = process.memoryUsage();
     console.log(`Memory before test: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`);
   });
-  
+
   afterEach(() => {
     const memUsage = process.memoryUsage();
     console.log(`Memory after test: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`);
@@ -97,7 +99,7 @@ export const testUtils = {
       global.gc!();
     }
   },
-  
+
   /**
    * Get current memory usage
    */
@@ -110,38 +112,29 @@ export const testUtils = {
       rss: Math.round(usage.rss / 1024 / 1024) // MB
     };
   },
-  
+
   /**
    * Wait for a specified amount of time
    */
   sleep: (ms: number) => new Promise(resolve => setTimeout(resolve, ms)),
-  
+
   /**
    * Create a temporary directory for testing
    */
   createTempDir: () => {
-    const os = require('os');
-    const path = require('path');
-    const fs = require('fs');
-    
     const tempDir = path.join(os.tmpdir(), `setup-liquibase-test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
     fs.mkdirSync(tempDir, { recursive: true });
-    
+
     return tempDir;
   },
-  
+
   /**
    * Clean up temporary directory
    */
   cleanupTempDir: (tempDir: string) => {
-    const fs = require('fs');
-    const path = require('path');
-    
     if (fs.existsSync(tempDir)) {
-      // Recursive delete
-      const rmSync = fs.rmSync || fs.rmdirSync;
       try {
-        rmSync(tempDir, { recursive: true, force: true });
+        fs.rmSync(tempDir, { recursive: true, force: true });
       } catch (error) {
         console.warn(`Failed to cleanup temp dir ${tempDir}:`, error);
       }

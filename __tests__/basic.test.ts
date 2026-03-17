@@ -9,8 +9,8 @@
  */
 
 import * as semver from 'semver';
-import { MIN_SUPPORTED_VERSION } from '../src/config';
-import { getDownloadUrl } from '../src/installer';
+import { MIN_SUPPORTED_VERSION } from '../src/config.js';
+import { getDownloadUrl } from '../src/installer.js';
 
 describe('Basic Functionality Validation', () => {
   /**

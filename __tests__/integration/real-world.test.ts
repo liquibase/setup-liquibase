@@ -5,8 +5,8 @@
  * when using the action in production workflows.
  */
 
-import { setupLiquibase } from '../../src/installer';
-import { getDownloadUrl } from '../../src/installer';
+import { setupLiquibase } from '../../src/installer.js';
+import { getDownloadUrl } from '../../src/installer.js';
 import * as path from 'path';
 import * as fs from 'fs';
 
