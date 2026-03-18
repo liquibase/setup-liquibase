@@ -12,9 +12,9 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as io from '@actions/io';
-import * as path from 'path';
-import * as fs from 'fs';
-import * as os from 'os';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
 import { downloadTool, extractZip, cacheDir, find } from '@actions/tool-cache';
 import { DOWNLOAD_URLS, MIN_SUPPORTED_VERSION, getErrorMessage } from './config';
 import * as semver from 'semver';

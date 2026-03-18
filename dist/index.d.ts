@@ -12,3 +12,8 @@
  * immediately when the action starts, regardless of how they're set in the workflow
  */
 export declare function transformLiquibaseEnvironmentVariables(): Promise<void>;
+/**
+ * Main execution function for the GitHub Action
+ * Orchestrates the entire Liquibase setup process
+ */
+export declare function run(): Promise<void>;

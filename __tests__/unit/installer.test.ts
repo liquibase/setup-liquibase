@@ -1,9 +1,10 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { getDownloadUrl, setupLiquibase } from '../../src/installer';
 import { transformLiquibaseEnvironmentVariables } from '../../src/index';
 import { MIN_SUPPORTED_VERSION } from '../../src/config';
-import * as os from 'os';
-import * as path from 'path';
-import * as fs from 'fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
 
 describe('getDownloadUrl', () => {
   it('should construct correct Community URL for Unix-like systems', () => {
@@ -436,26 +437,6 @@ describe('setupLiquibase validation', () => {
   });
 
   it('should accept secure edition as valid', async () => {
-    // Mock the download and validation functions to avoid actual network calls
-    const mockDownloadTool = jest.fn().mockResolvedValue('/mock/download/path');
-    const mockExtractZip = jest.fn().mockResolvedValue('/mock/extract/path');
-    const mockMkdirP = jest.fn().mockResolvedValue(undefined);
-    const mockExec = jest.fn().mockResolvedValue(0);
-    
-    jest.doMock('@actions/tool-cache', () => ({
-      downloadTool: mockDownloadTool,
-      extractZip: mockExtractZip,
-    }));
-    jest.doMock('@actions/io', () => ({
-      mkdirP: mockMkdirP,
-    }));
-    jest.doMock('@actions/exec', () => ({
-      exec: mockExec,
-    }));
-    jest.doMock('fs', () => ({
-      existsSync: jest.fn().mockReturnValue(true),
-    }));
-
     const options = {
       version: '4.32.0',
       edition: 'secure' as const,
@@ -470,11 +451,9 @@ describe('setupLiquibase validation', () => {
         if (error instanceof Error && error.message.includes('Invalid edition')) {
           throw error;
         }
-        // Ignore other errors (like network/download errors in mocked environment)
+        // Ignore other errors (like network/download errors in test environment)
       }
     }).not.toThrow();
-
-    jest.clearAllMocks();
   });
 
   it('should reject invalid version format', async () => {

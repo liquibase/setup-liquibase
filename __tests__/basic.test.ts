@@ -8,6 +8,7 @@
  * validate the actual action behavior across multiple platforms.
  */
 
+import { describe, it, expect } from 'vitest';
 import * as semver from 'semver';
 import { MIN_SUPPORTED_VERSION } from '../src/config';
 import { getDownloadUrl } from '../src/installer';

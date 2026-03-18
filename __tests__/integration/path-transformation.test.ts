@@ -6,11 +6,12 @@
  * OPTIMIZATION: Separated unit tests (path logic only) from integration tests (minimal downloads)
  */
 
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { setupLiquibase } from '../../src/installer';
 import { transformLiquibaseEnvironmentVariables } from '../../src/index';
-import * as os from 'os';
-import * as path from 'path';
-import * as fs from 'fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
 
 describe('Path Transformation Tests', () => {
   /**

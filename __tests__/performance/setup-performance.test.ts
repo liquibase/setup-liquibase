@@ -5,20 +5,11 @@
  * to ensure it meets acceptable performance standards.
  */
 
+import { describe, it, expect, afterEach } from 'vitest';
 import { getDownloadUrl } from '../../src/installer';
+import testUtils from '../setup';
 
-// Cleanup helper for performance tests
-const cleanupResources = () => {
-  // Force garbage collection if available
-  if (global.gc) {
-    global.gc();
-  }
-  
-  // Clear any pending timers
-  if (typeof global.clearTimeout === 'function') {
-    // Clear any test-created timers (not a real cleanup, but helps with consistency)
-  }
-};
+const cleanupResources = testUtils.forceGC;
 
 describe('Performance Tests', () => {
   // Cleanup after each test to prevent memory accumulation

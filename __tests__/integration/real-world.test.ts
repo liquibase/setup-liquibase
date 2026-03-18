@@ -5,10 +5,11 @@
  * when using the action in production workflows.
  */
 
+import { describe, it, expect } from 'vitest';
 import { setupLiquibase } from '../../src/installer';
 import { getDownloadUrl } from '../../src/installer';
-import * as path from 'path';
-import * as fs from 'fs';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
 
 describe('Real-world Integration Scenarios', () => {
   /**
