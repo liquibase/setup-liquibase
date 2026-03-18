@@ -5,7 +5,7 @@
  * when using the action in production workflows.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { setupLiquibase } from '../../src/installer';
 import { getDownloadUrl } from '../../src/installer';
 import * as path from 'node:path';

@@ -35054,8 +35054,10 @@ async function transformLiquibaseEnvironmentVariables() {
                     if (rootParts.length > 0) {
                         const rootDir = rootParts[0];
                         if (restrictedRootDirs.includes(rootDir)) {
-                            // Create a proper workspace-relative path using Node.js path module
-                            const relativePath = external_node_path_namespaceObject.join('.', processedPath.substring(1)); // Remove leading slash and join with '.'
+                            // Strip leading slash and sanitize segments to prevent directory traversal
+                            const safeParts = normalizedPath.split('/').filter(p => p.length > 0 && p !== '..' && p !== '.');
+                            const trailingSep = normalizedPath.endsWith('/') ? '/' : '';
+                            const relativePath = (safeParts.length > 0 ? safeParts.join('/') : '.') + trailingSep;
                             processedPath = relativePath;
                             wasTransformed = true;
                             transformedPaths.push(`${envVarName}: '${singlePath}' → '${relativePath}'`);
