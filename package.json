@@ -7,7 +7,7 @@
     "build": "ncc build src/main.ts -o dist --source-map --license licenses.txt",
     "test": "vitest run --pool=forks",
     "test:ci": "vitest run --pool=forks --no-coverage",
-    "test:memory": "NODE_OPTIONS='--max-old-space-size=4096' vitest run --pool=forks",
+    "test:memory": "node --max-old-space-size=4096 ./node_modules/vitest/vitest.mjs run --pool=forks",
     "test:coverage": "vitest run --pool=forks --coverage",
     "test:debug": "vitest run --pool=forks --reporter=verbose",
     "lint": "eslint src/**/*.ts",
