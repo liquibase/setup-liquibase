@@ -80,8 +80,8 @@ export async function transformLiquibaseEnvironmentVariables(): Promise<void> {
             if (restrictedRootDirs.includes(rootDir)) {
               // Strip leading slash and sanitize segments to prevent directory traversal
               const safeParts = normalizedPath.split('/').filter(p => p.length > 0 && p !== '..' && p !== '.');
-              const trailingSep = normalizedPath.endsWith('/') ? '/' : '';
-              const relativePath = (safeParts.length > 0 ? safeParts.join('/') : '.') + trailingSep;
+              const trailingSep = normalizedPath.endsWith('/') ? path.sep : '';
+              const relativePath = (safeParts.length > 0 ? path.join(...safeParts) : '.') + trailingSep;
               processedPath = relativePath;
               wasTransformed = true;
 
