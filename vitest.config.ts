@@ -7,7 +7,6 @@ export default defineConfig({
     pool: 'forks',
     poolOptions: { forks: { maxForks: process.env.CI ? 1 : 2 } },
     testTimeout: 30000,
-    clearMocks: true,
     restoreMocks: true,
     mockReset: true,
     coverage: {
