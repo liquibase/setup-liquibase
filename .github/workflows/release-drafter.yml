@@ -60,7 +60,7 @@ jobs:
 
       - name: Get GitHub App token
         id: get-token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ env.LIQUIBASE_GITHUB_APP_ID }}
           private-key: ${{ env.LIQUIBASE_GITHUB_APP_PRIVATE_KEY }}
@@ -129,7 +129,7 @@ jobs:
 
       - name: Get GitHub App token
         id: get-token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ env.LIQUIBASE_GITHUB_APP_ID }}
           private-key: ${{ env.LIQUIBASE_GITHUB_APP_PRIVATE_KEY }}
@@ -177,7 +177,7 @@ jobs:
 
       - name: Get GitHub App token
         id: get-token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ env.LIQUIBASE_GITHUB_APP_ID }}
           private-key: ${{ env.LIQUIBASE_GITHUB_APP_PRIVATE_KEY }}
@@ -617,7 +617,7 @@ jobs:
 
       - name: Get GitHub App token
         id: get-token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ env.LIQUIBASE_GITHUB_APP_ID }}
           private-key: ${{ env.LIQUIBASE_GITHUB_APP_PRIVATE_KEY }}
