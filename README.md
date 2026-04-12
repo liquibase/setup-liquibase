@@ -231,6 +231,32 @@ download-url-base: 'https://artifactory.company.com/artifactory/libs-release/liq
 download-url-base: 'https://internal-repo.company.com/{platform}/liquibase-{edition}-{version}.{extension}'
 ```
 
+### Testing with RC/Pre-release Builds
+
+To test Release Candidate (RC) or other pre-release builds, use the `download-url-base` input pointing to the repository hosting those builds. This enables non-semver version strings that are not available through the default download URLs.
+
+```yaml
+- uses: liquibase/setup-liquibase@v2
+  with:
+    version: '5.1.0-RC114'
+    edition: 'secure'
+    download-url-base: 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-{version}.{extension}'
+```
+
+Non-semver version strings are also supported when the exact build identifier is known:
+
+```yaml
+- uses: liquibase/setup-liquibase@v2
+  with:
+    version: '5-secure-release-test'
+    edition: 'secure'
+    download-url-base: 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-{version}.{extension}'
+```
+
+> **Note**: The `download-url-base` input is required when using non-semver version strings.
+> Without it, the action enforces strict semantic versioning (e.g., `4.32.0`) to ensure
+> compatibility with the default Liquibase download endpoints.
+
 ## Inputs
 
 | Input | Description | Required | Default |

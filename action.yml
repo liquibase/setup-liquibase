@@ -13,7 +13,7 @@ branding:
 # Input parameters that users can configure when using this action
 inputs:
   version:
-    description: 'Specific version of Liquibase to install (e.g., "4.32.0"). Must be 4.32.0 or higher.'
+    description: 'Version of Liquibase to install (e.g., "4.32.0"). Must be a valid semver version 4.32.0 or higher when using default download URLs. Non-semver versions (e.g., RC builds like "5.1.0-RC114") are supported when download-url-base is provided.'
     required: true
   
   edition:
