@@ -629,11 +629,17 @@ jobs:
 
     - name: Get secrets from vault
       id: vault-secrets
-      uses: aws-actions/aws-secretsmanager-get-secrets@3a411b6ec5cace3d626412dd917e7bfeac242cfa # v3.0.0
+      uses: aws-actions/aws-secretsmanager-get-secrets@a9a7eb4e2f2871d30dc5b892576fde60a2ecc802 # v2.0.10
       with:
         secret-ids: |
           ,/vault/liquibase
         parse-json-secrets: true
+
+    - name: Configure AWS credentials for prod S3 access
+      uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
+      with:
+        role-to-assume: ${{ env.AWS_PROD_GITHUB_OIDC_ROLE_ARN_LIQUIBASE_PRO }}
+        aws-region: us-east-1
 
     - name: Check Secure License Availability
       id: check-license

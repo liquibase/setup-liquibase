@@ -233,14 +233,14 @@ download-url-base: 'https://internal-repo.company.com/{platform}/liquibase-{edit
 
 ### Testing with RC/Pre-release Builds
 
-RC builds are published to S3 at `repo.liquibase.com/non-releases/secure/` and require a custom `download-url-base` since they are not available through the default download endpoints.
+RC builds of the Secure edition are published to a private S3 bucket and are only accessible to internal Liquibase teams with AWS credentials. Use `download-url-base` to point the action at an internally accessible endpoint serving the RC artifacts.
 
 ```yaml
 - uses: liquibase/setup-liquibase@v2
   with:
     version: '5.1.0-RC111'
     edition: 'secure'
-    download-url-base: 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-secure-{version}.{extension}'
+    download-url-base: 'https://your-internal-endpoint/{version}/liquibase-secure-{version}.{extension}'
   env:
     LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
 ```
@@ -252,14 +252,16 @@ Semver-compatible RC versions (like `5.1.0-RC111`) pass standard version validat
   with:
     version: '5-secure-release-test'
     edition: 'secure'
-    download-url-base: 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-secure-{version}.{extension}'
+    download-url-base: 'https://your-internal-endpoint/{version}/liquibase-secure-{version}.{extension}'
   env:
     LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
 ```
 
-> **Note**: The `download-url-base` input is required for RC builds because they are hosted
-> separately from the default Liquibase download endpoints. Non-semver version strings
-> additionally require `download-url-base` to bypass strict semantic version validation.
+> **Note**: RC builds require `download-url-base` because they are not available through the
+> default Liquibase download endpoints. The S3 bucket hosting RC builds (`repo.liquibase.com/non-releases/`)
+> requires AWS authentication — workflows must configure AWS credentials before the action can
+> download from it. Non-semver version strings additionally require `download-url-base` to
+> bypass strict semantic version validation.
 
 ## Inputs
 
