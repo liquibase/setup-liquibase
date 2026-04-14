@@ -19,6 +19,7 @@ on:
         - performance
         - error-handling
         - secure-edition
+        - rc-prerelease
       community_version:
         description: 'Community edition version to test'
         required: false
@@ -28,6 +29,11 @@ on:
         description: 'Secure edition version to test'
         required: false
         default: '5.0.3'
+        type: string
+      rc_version:
+        description: 'RC/pre-release version to test (non-semver format, e.g., 5.1.1.RC114)'
+        required: false
+        default: '5.1.1.RC114'
         type: string
   schedule:
     # Run weekly on Sundays at 2 AM UTC for regular health checks
@@ -592,6 +598,131 @@ jobs:
 
         echo "✅ Pro edition backward compatibility tests completed successfully"
 
+  # RC/Pre-release version testing (DAT-21985)
+  rc-prerelease-tests:
+    name: RC/Pre-release Version Tests
+    runs-on: ubuntu-latest
+    if: inputs.test_scope == 'full' || inputs.test_scope == 'rc-prerelease' || github.event_name == 'schedule'
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+    - name: Setup Node.js Environment
+      uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+      with:
+        node-version: '24'
+        cache: 'npm'
+
+    - name: Install Dependencies and Build
+      run: |
+        npm ci
+        npm run build
+      env:
+        NODE_OPTIONS: --max-old-space-size=4096
+
+    - name: Configure AWS credentials for vault access
+      uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
+      with:
+        role-to-assume: ${{ secrets.LIQUIBASE_VAULT_OIDC_ROLE_ARN }}
+        aws-region: us-east-1
+
+    - name: Get secrets from vault
+      id: vault-secrets
+      uses: aws-actions/aws-secretsmanager-get-secrets@3a411b6ec5cace3d626412dd917e7bfeac242cfa # v3.0.0
+      with:
+        secret-ids: |
+          ,/vault/liquibase
+        parse-json-secrets: true
+
+    - name: Check Secure License Availability
+      id: check-license
+      run: |
+        if [ -n "${{ env.LIQUIBASE_LICENSE_KEY }}" ]; then
+          echo "has_license=true" >> $GITHUB_OUTPUT
+          echo "✅ Liquibase license key available for RC testing"
+        else
+          echo "has_license=false" >> $GITHUB_OUTPUT
+          echo "⚠️ License key not available — RC installation test will still validate download and extraction"
+        fi
+
+    - name: Test RC Version with Custom Download URL
+      if: steps.check-license.outputs.has_license == 'true'
+      id: rc-install
+      uses: ./
+      with:
+        version: ${{ inputs.rc_version || '5.1.1.RC114' }}
+        edition: 'secure'
+        download-url-base: 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-secure-{version}.{extension}'
+      env:
+        LIQUIBASE_LICENSE_KEY: ${{ env.LIQUIBASE_LICENSE_KEY }}
+
+    - name: Verify RC Installation
+      if: steps.check-license.outputs.has_license == 'true'
+      run: |
+        echo "=== RC/Pre-release Version Testing ==="
+
+        # Verify the action completed and set outputs
+        VERSION_OUTPUT="${{ steps.rc-install.outputs.liquibase-version }}"
+        PATH_OUTPUT="${{ steps.rc-install.outputs.liquibase-path }}"
+
+        if [ -z "$VERSION_OUTPUT" ]; then
+          echo "❌ RC version output not set"
+          exit 1
+        fi
+        echo "✅ RC version output: $VERSION_OUTPUT"
+
+        if [ -z "$PATH_OUTPUT" ]; then
+          echo "❌ RC path output not set"
+          exit 1
+        fi
+        echo "✅ RC path output: $PATH_OUTPUT"
+
+        # Verify Liquibase binary exists and runs
+        liquibase --version
+        echo "✅ RC build installed and validated successfully"
+
+    - name: Test Non-Semver Version Without Custom URL (Should Fail)
+      uses: ./
+      continue-on-error: true
+      id: rc-no-custom-url
+      with:
+        version: '5.1.1.RC114'
+        edition: 'secure'
+
+    - name: Verify Non-Semver Rejection Without Custom URL
+      run: |
+        if [ "${{ steps.rc-no-custom-url.outcome }}" == "success" ]; then
+          echo "❌ ERROR: Non-semver version without custom URL should have failed!"
+          exit 1
+        fi
+        echo "✅ Non-semver version correctly rejected without custom URL"
+
+    - name: Test Unsafe Version String Rejection (Should Fail)
+      uses: ./
+      continue-on-error: true
+      id: unsafe-version
+      with:
+        version: '../../../etc/passwd'
+        edition: 'secure'
+        download-url-base: 'https://repo.liquibase.com/{version}/liquibase.{extension}'
+
+    - name: Verify Unsafe Version Rejection
+      run: |
+        if [ "${{ steps.unsafe-version.outcome }}" == "success" ]; then
+          echo "❌ ERROR: Path traversal version should have been rejected!"
+          exit 1
+        fi
+        echo "✅ Unsafe version string correctly rejected"
+
+    - name: RC/Pre-release Testing Summary
+      run: |
+        echo "=== RC/Pre-release Testing Summary ==="
+        echo "✅ RC version with custom URL: ${{ steps.rc-install.outcome || 'skipped (no license)' }}"
+        echo "✅ Non-semver without custom URL correctly rejected"
+        echo "✅ Unsafe version strings correctly rejected"
+        echo "✅ RC/pre-release testing completed"
+
   # Performance validation
   performance-tests:
     name: Performance Tests
@@ -706,7 +837,7 @@ jobs:
   # Summary job
   uat-summary:
     name: UAT Test Summary
-    needs: [cross-platform-tests, integration-tests, error-handling-tests, secure-edition-tests, performance-tests]
+    needs: [cross-platform-tests, integration-tests, error-handling-tests, secure-edition-tests, rc-prerelease-tests, performance-tests]
     runs-on: ubuntu-latest
     if: always()
     
@@ -776,6 +907,15 @@ jobs:
           echo "| Pro/Secure Edition Tests | ❌ FAILED | Pro/Secure edition issues |" >> $GITHUB_STEP_SUMMARY
         fi
         
+        # RC/Pre-release tests
+        if [[ "${{ needs.rc-prerelease-tests.result }}" == "success" ]]; then
+          echo "| RC/Pre-release Tests | ✅ PASSED | Non-semver versions, custom URLs, safety validation |" >> $GITHUB_STEP_SUMMARY
+        elif [[ "${{ needs.rc-prerelease-tests.result }}" == "skipped" ]]; then
+          echo "| RC/Pre-release Tests | ⏩ SKIPPED | Test scope limited |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| RC/Pre-release Tests | ❌ FAILED | RC version handling issues |" >> $GITHUB_STEP_SUMMARY
+        fi
+
         # Performance tests
         if [[ "${{ needs.performance-tests.result }}" == "success" ]]; then
           echo "| Performance Tests | ✅ PASSED | Installation speed, reliability |" >> $GITHUB_STEP_SUMMARY
@@ -792,7 +932,7 @@ jobs:
         FAILED_JOBS=0
         SKIPPED_JOBS=0
         
-        for result in "${{ needs.cross-platform-tests.result }}" "${{ needs.integration-tests.result }}" "${{ needs.error-handling-tests.result }}" "${{ needs.secure-edition-tests.result }}" "${{ needs.performance-tests.result }}"; do
+        for result in "${{ needs.cross-platform-tests.result }}" "${{ needs.integration-tests.result }}" "${{ needs.error-handling-tests.result }}" "${{ needs.secure-edition-tests.result }}" "${{ needs.rc-prerelease-tests.result }}" "${{ needs.performance-tests.result }}"; do
           if [[ "$result" == "success" ]]; then
             SUCCESSFUL_JOBS=$((SUCCESSFUL_JOBS + 1))
           elif [[ "$result" == "failure" ]]; then

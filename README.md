@@ -238,19 +238,23 @@ To test Release Candidate (RC) or other pre-release builds, use the `download-ur
 ```yaml
 - uses: liquibase/setup-liquibase@v2
   with:
-    version: '5.1.0-RC114'
+    version: '5.1.1.RC114'
     edition: 'secure'
-    download-url-base: 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-{version}.{extension}'
+    download-url-base: 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-secure-{version}.{extension}'
+  env:
+    LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
 ```
 
-Non-semver version strings are also supported when the exact build identifier is known:
+Semver-compatible pre-release versions (e.g., `5.1.0-RC114`) also work and are supported both with and without a custom download URL. Non-semver version strings require `download-url-base`:
 
 ```yaml
 - uses: liquibase/setup-liquibase@v2
   with:
     version: '5-secure-release-test'
     edition: 'secure'
-    download-url-base: 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-{version}.{extension}'
+    download-url-base: 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-secure-{version}.{extension}'
+  env:
+    LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
 ```
 
 > **Note**: The `download-url-base` input is required when using non-semver version strings.
