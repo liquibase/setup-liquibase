@@ -635,12 +635,6 @@ jobs:
           ,/vault/liquibase
         parse-json-secrets: true
 
-    - name: Configure AWS credentials for prod S3 access
-      uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
-      with:
-        role-to-assume: ${{ env.AWS_PROD_GITHUB_OIDC_ROLE_ARN_LIQUIBASE_PRO }}
-        aws-region: us-east-1
-
     - name: Check Secure License Availability
       id: check-license
       run: |
@@ -651,6 +645,13 @@ jobs:
           echo "has_license=false" >> $GITHUB_OUTPUT
           echo "⚠️ License key not available — RC installation test will still validate download and extraction"
         fi
+
+    - name: Configure AWS credentials for prod S3 access
+      if: steps.check-license.outputs.has_license == 'true'
+      uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
+      with:
+        role-to-assume: ${{ env.AWS_PROD_GITHUB_OIDC_ROLE_ARN_LIQUIBASE_PRO }}
+        aws-region: us-east-1
 
     - name: Test RC Version with Custom Download URL
       if: steps.check-license.outputs.has_license == 'true'
