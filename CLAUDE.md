@@ -67,6 +67,7 @@ Single GitHub Action that installs Liquibase (Community or Secure editions) and 
 - **Build Output**: TypeScript compiles to single `dist/index.js` with source maps
 - **Path Transformation**: Automatically converts absolute paths in Liquibase environment variables to workspace-relative paths for GitHub Actions compatibility and security
 - **URL Selection Logic**: For Pro/Secure editions, versions > 4.33.0 use Secure download URLs; versions <= 4.33.0 use legacy Pro URLs
+- **Pre-release/RC Versions**: Non-semver version strings (e.g., `5.1.0-RC114`, `5-secure-release-test`) are accepted when `download-url-base` is provided. A safety regex `/^[a-zA-Z0-9][a-zA-Z0-9._\-+]*$/` validates the version string to prevent path traversal and injection.
 
 ### Testing Structure
 
@@ -203,9 +204,12 @@ The installer uses Scarf-tracked download URLs for analytics (DAT-21375). URLs r
 **For 'pro' and 'secure' editions:**
 - Versions > 4.33.0: Use Secure Scarf-tracked URLs
 - Versions <= 4.33.0: Use legacy Pro Scarf-tracked URLs
-- Special handling for test version '5-secure-release-test'
 - Example (Pro): `https://package.liquibase.com/downloads/pro/gha/liquibase-pro-4.32.0.tar.gz`
 - Example (Secure): `https://package.liquibase.com/downloads/secure/gha/liquibase-secure-4.34.0.tar.gz`
+
+**Version Validation**: Conditional based on `download-url-base`:
+- Default URLs: strict semver validation + minimum version 4.32.0
+- Custom URLs: safety regex `/^[a-zA-Z0-9][a-zA-Z0-9._\-+]*$/` only (semver and min-version checks skipped)
 
 ### Code Reference
 See `getDownloadUrl()` function in `src/installer.ts:193` for the complete logic.

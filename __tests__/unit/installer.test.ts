@@ -96,17 +96,6 @@ describe('getDownloadUrl', () => {
     Object.defineProperty(process, 'platform', { value: originalPlatform });
   });
 
-  it('should use Secure URLs for Pro edition with test version', () => {
-    const originalPlatform = process.platform;
-    Object.defineProperty(process, 'platform', { value: 'linux' });
-
-    const version = '5-secure-release-test';
-    const url = getDownloadUrl(version, 'pro');
-    expect(url).toBe(`https://package.liquibase.com/downloads/secure/gha/liquibase-secure-${version}.tar.gz`);
-
-    Object.defineProperty(process, 'platform', { value: originalPlatform });
-  });
-
   it('should use Pro URLs for Secure edition with version <= 4.33.0', () => {
     const originalPlatform = process.platform;
     Object.defineProperty(process, 'platform', { value: 'linux' });
@@ -136,17 +125,6 @@ describe('getDownloadUrl', () => {
     const version = '4.33.0';
     const url = getDownloadUrl(version, 'secure');
     expect(url).toBe(`https://package.liquibase.com/downloads/pro/gha/liquibase-pro-${version}.tar.gz`);
-
-    Object.defineProperty(process, 'platform', { value: originalPlatform });
-  });
-
-  it('should use Secure URLs for Secure edition with test version', () => {
-    const originalPlatform = process.platform;
-    Object.defineProperty(process, 'platform', { value: 'linux' });
-
-    const version = '5-secure-release-test';
-    const url = getDownloadUrl(version, 'secure');
-    expect(url).toBe(`https://package.liquibase.com/downloads/secure/gha/liquibase-secure-${version}.tar.gz`);
 
     Object.defineProperty(process, 'platform', { value: originalPlatform });
   });
@@ -484,7 +462,7 @@ describe('setupLiquibase validation', () => {
     };
 
     await expect(setupLiquibase(options)).rejects.toThrow(
-      'Invalid version format: invalid-version. Must be a valid semantic version (e.g., "4.32.0")'
+      /Invalid version format: invalid-version.*download-url-base/
     );
   });
 
@@ -510,7 +488,7 @@ describe('setupLiquibase validation', () => {
     };
 
     await expect(setupLiquibase(options)).rejects.toThrow(
-      'Invalid version format: latest. Must be a valid semantic version (e.g., "4.32.0")'
+      /Invalid version format: latest.*download-url-base/
     );
   });
 
@@ -521,7 +499,7 @@ describe('setupLiquibase validation', () => {
     };
 
     await expect(setupLiquibase(options)).rejects.toThrow(
-      'Invalid version format: latest. Must be a valid semantic version (e.g., "4.32.0")'
+      /Invalid version format: latest.*download-url-base/
     );
   });
 
@@ -544,6 +522,139 @@ describe('setupLiquibase validation', () => {
     }
   });
 
+});
+
+describe('RC/pre-release version support', () => {
+  it('should accept semver-compatible RC version with custom URL', async () => {
+    const options = {
+      version: '5.1.0-RC114',
+      edition: 'secure' as const,
+      downloadUrlBase: 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-{version}.{extension}'
+    };
+    try {
+      await setupLiquibase(options);
+    } catch (error) {
+      if (error instanceof Error) {
+        expect(error.message).not.toMatch(/Invalid version format/);
+        expect(error.message).not.toMatch(/not supported/);
+      }
+    }
+  }, 15000);
+
+  it('should accept non-semver version with custom URL', async () => {
+    const options = {
+      version: '5-secure-release-test',
+      edition: 'secure' as const,
+      downloadUrlBase: 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-{version}.{extension}'
+    };
+    try {
+      await setupLiquibase(options);
+    } catch (error) {
+      if (error instanceof Error) {
+        expect(error.message).not.toMatch(/Invalid version format/);
+        expect(error.message).not.toMatch(/not supported/);
+      }
+    }
+  }, 15000);
+
+  it('should reject non-semver version without custom URL with helpful message', async () => {
+    const options = {
+      version: '5-secure-release-test',
+      edition: 'secure' as const
+    };
+    await expect(setupLiquibase(options)).rejects.toThrow(/download-url-base/);
+  });
+
+  it('should reject path traversal version even with custom URL', async () => {
+    const options = {
+      version: '../../../etc/passwd',
+      edition: 'secure' as const,
+      downloadUrlBase: 'https://repo.liquibase.com/{version}/liquibase.{extension}'
+    };
+    await expect(setupLiquibase(options)).rejects.toThrow(/Invalid version format/);
+  });
+
+  it('should reject shell injection version even with custom URL', async () => {
+    const options = {
+      version: '; rm -rf /',
+      edition: 'secure' as const,
+      downloadUrlBase: 'https://repo.liquibase.com/{version}/liquibase.{extension}'
+    };
+    await expect(setupLiquibase(options)).rejects.toThrow(/Invalid version format/);
+  });
+
+  it('should reject version with spaces even with custom URL', async () => {
+    const options = {
+      version: '5.0.0 RC1',
+      edition: 'secure' as const,
+      downloadUrlBase: 'https://repo.liquibase.com/{version}/liquibase.{extension}'
+    };
+    await expect(setupLiquibase(options)).rejects.toThrow(/Invalid version format/);
+  });
+
+  it('should reject version starting with dot even with custom URL', async () => {
+    const options = {
+      version: '.hidden',
+      edition: 'secure' as const,
+      downloadUrlBase: 'https://repo.liquibase.com/{version}/liquibase.{extension}'
+    };
+    await expect(setupLiquibase(options)).rejects.toThrow(/Invalid version format/);
+  });
+
+  it('should reject empty version even with custom URL', async () => {
+    const options = {
+      version: '',
+      edition: 'secure' as const,
+      downloadUrlBase: 'https://repo.liquibase.com/{version}/liquibase.{extension}'
+    };
+    await expect(setupLiquibase(options)).rejects.toThrow('Version is required');
+  });
+
+  it('should skip minimum version check when custom URL is provided', async () => {
+    const options = {
+      version: '4.25.0',
+      edition: 'community' as const,
+      downloadUrlBase: 'https://repo.liquibase.com/non-releases/{version}/liquibase-{version}.{extension}'
+    };
+    try {
+      await setupLiquibase(options);
+    } catch (error) {
+      if (error instanceof Error) {
+        expect(error.message).not.toMatch(/not supported/);
+        expect(error.message).not.toMatch(/Minimum supported version/);
+      }
+    }
+  }, 15000);
+
+  it('should construct correct custom URL with non-semver version', () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+
+    const version = '5-secure-release-test';
+    const customUrl = 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-{version}.{extension}';
+    const url = getDownloadUrl(version, 'secure', customUrl);
+
+    expect(url).toBe(
+      'https://repo.liquibase.com/non-releases/secure/5-secure-release-test/liquibase-5-secure-release-test.tar.gz'
+    );
+
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
+  });
+
+  it('should preserve version case in custom URL', () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+
+    const version = '5.1.0-RC114';
+    const customUrl = 'https://repo.liquibase.com/{version}/liquibase-{version}.{extension}';
+    const url = getDownloadUrl(version, 'secure', customUrl);
+
+    expect(url).toBe(
+      'https://repo.liquibase.com/5.1.0-RC114/liquibase-5.1.0-RC114.tar.gz'
+    );
+
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
+  });
 });
 
 // Note: Caching behavior is tested in integration tests (__tests__/integration/real-world.test.ts)

@@ -20,6 +20,16 @@ import { DOWNLOAD_URLS, MIN_SUPPORTED_VERSION, getErrorMessage } from './config'
 import * as semver from 'semver';
 
 /**
+ * Safety regex for version strings when using custom download URLs.
+ * Allows alphanumeric start, then alphanumeric characters, dots, hyphens, underscores, plus signs.
+ * Rejects path traversal (starts with . or /), spaces, and shell metacharacters.
+ *
+ * Accepts: '5.1.0-RC114', '5-secure-release-test', '4.32.0-beta.1', '5.0.0+build.123'
+ * Rejects: '../hack', '; rm -rf /', '', ' spaces', '.dotstart'
+ */
+const VERSION_SAFETY_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9._\-+]*$/;
+
+/**
  * Configuration options for setting up Liquibase
  */
 export interface LiquibaseSetupOptions {
@@ -69,14 +79,30 @@ export async function setupLiquibase(options: LiquibaseSetupOptions): Promise<Li
     throw new Error('Version is required');
   }
 
-  // Validate version format - only specific versions allowed
-  if (!semver.valid(version)) {
-    throw new Error(`Invalid version format: ${version}. Must be a valid semantic version (e.g., "4.32.0")`);
-  }
-
-  // Validate minimum version requirement
-  if (semver.lt(version, MIN_SUPPORTED_VERSION)) {
-    throw new Error(`Version ${version} is not supported. Minimum supported version is ${MIN_SUPPORTED_VERSION}`);
+  if (downloadUrlBase && downloadUrlBase.trim() !== '') {
+    // Custom URL path: relax semver requirement, enforce safety regex only.
+    // The user controls the URL template; version is just a substitution token.
+    // We only need to prevent path traversal and injection in the version string.
+    if (!VERSION_SAFETY_REGEX.test(version)) {
+      throw new Error(
+        `Invalid version format: ${version}. Version must start with an alphanumeric character and contain only alphanumeric characters, dots, hyphens, underscores, or plus signs.`
+      );
+    }
+    core.info(`Using custom download URL — skipping semver and minimum version checks for version '${version}'`);
+  } else {
+    // Default URL path: strict semver required for Scarf-tracked endpoints.
+    if (!semver.valid(version)) {
+      throw new Error(
+        `Invalid version format: ${version}. Must be a valid semantic version (e.g., "4.32.0"). ` +
+        `For pre-release or RC versions, provide a 'download-url-base' input pointing to the repository hosting your builds.`
+      );
+    }
+    // Validate minimum version requirement (only meaningful for default Scarf URLs).
+    if (semver.lt(version, MIN_SUPPORTED_VERSION)) {
+      throw new Error(
+        `Version ${version} is not supported. Minimum supported version is ${MIN_SUPPORTED_VERSION}`
+      );
+    }
   }
 
   // Enhanced edition validation with type guard
@@ -223,7 +249,6 @@ function validateCustomUrl(urlTemplate: string): void {
  *
  * For Pro and Secure editions (default URLs):
  * - Versions > 4.33.0 use Secure download URLs
- * - Special test version '5-secure-release-test' uses Secure download URLs
  * - Versions <= 4.33.0 use legacy Pro download URLs
  *
  * For Community and OSS editions:
@@ -269,7 +294,7 @@ export function getDownloadUrl(
   // Default behavior: use official Liquibase download endpoints
   // For Pro and Secure editions, use Secure URLs if version > 4.33.0
   if (edition === 'pro' || edition === 'secure') {
-    const useSecureUrls = version === '5-secure-release-test' || semver.gt(version, '4.33.0');
+    const useSecureUrls = semver.gt(version, '4.33.0');
 
     if (useSecureUrls) {
       const template = isWindows ? DOWNLOAD_URLS.SECURE_WINDOWS_ZIP : DOWNLOAD_URLS.SECURE_UNIX;

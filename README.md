@@ -231,6 +231,38 @@ download-url-base: 'https://artifactory.company.com/artifactory/libs-release/liq
 download-url-base: 'https://internal-repo.company.com/{platform}/liquibase-{edition}-{version}.{extension}'
 ```
 
+### Testing with RC/Pre-release Builds
+
+RC builds of the Secure edition are published to a private S3 bucket and are only accessible to internal Liquibase teams with AWS credentials. Use `download-url-base` to point the action at an internally accessible endpoint serving the RC artifacts.
+
+```yaml
+- uses: liquibase/setup-liquibase@v2
+  with:
+    version: '5.1.0-RC111'
+    edition: 'secure'
+    download-url-base: 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-secure-{version}.{extension}'
+  env:
+    LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
+```
+
+Semver-compatible RC versions (like `5.1.0-RC111`) pass standard version validation. Non-semver version strings are also supported when `download-url-base` is provided:
+
+```yaml
+- uses: liquibase/setup-liquibase@v2
+  with:
+    version: '5-secure-release-test'
+    edition: 'secure'
+    download-url-base: 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-secure-{version}.{extension}'
+  env:
+    LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
+```
+
+> **Note**: RC builds require `download-url-base` because they are not available through the
+> default Liquibase download endpoints. The S3 bucket hosting RC builds (`repo.liquibase.com/non-releases/`)
+> requires AWS authentication — workflows must configure AWS credentials before the action can
+> download from it. Non-semver version strings additionally require `download-url-base` to
+> bypass strict semantic version validation.
+
 ## Inputs
 
 | Input | Description | Required | Default |
