@@ -646,6 +646,27 @@ jobs:
           echo "⚠️ License key not available — RC installation test will still validate download and extraction"
         fi
 
+    - name: Download RC build from S3
+      if: steps.check-license.outputs.has_license == 'true'
+      run: |
+        RC_VERSION="${{ inputs.rc_version || '5.1.0-RC111' }}"
+        echo "Downloading RC build ${RC_VERSION} from S3..."
+        mkdir -p /tmp/rc-builds/${RC_VERSION}
+        aws s3 cp "s3://repo.liquibase.com/non-releases/secure/${RC_VERSION}/liquibase-secure-${RC_VERSION}.tar.gz" \
+          "/tmp/rc-builds/${RC_VERSION}/liquibase-secure-${RC_VERSION}.tar.gz"
+        aws s3 cp "s3://repo.liquibase.com/non-releases/secure/${RC_VERSION}/liquibase-secure-${RC_VERSION}.zip" \
+          "/tmp/rc-builds/${RC_VERSION}/liquibase-secure-${RC_VERSION}.zip"
+        echo "✅ RC build downloaded successfully"
+        ls -la /tmp/rc-builds/${RC_VERSION}/
+
+    - name: Start local HTTP server for RC build
+      if: steps.check-license.outputs.has_license == 'true'
+      run: |
+        cd /tmp/rc-builds
+        python3 -m http.server 8888 &
+        sleep 1
+        echo "✅ Local HTTP server started on port 8888"
+
     - name: Test RC Version with Custom Download URL
       if: steps.check-license.outputs.has_license == 'true'
       id: rc-install
@@ -653,7 +674,7 @@ jobs:
       with:
         version: ${{ inputs.rc_version || '5.1.0-RC111' }}
         edition: 'secure'
-        download-url-base: 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-secure-{version}.{extension}'
+        download-url-base: 'http://localhost:8888/{version}/liquibase-secure-{version}.{extension}'
       env:
         LIQUIBASE_LICENSE_KEY: ${{ env.LIQUIBASE_LICENSE_KEY }}
 
@@ -687,7 +708,7 @@ jobs:
       continue-on-error: true
       id: rc-no-custom-url
       with:
-        version: '5.1.0-RC111'
+        version: '5-secure-release-test'
         edition: 'secure'
 
     - name: Verify Non-Semver Rejection Without Custom URL
