@@ -240,7 +240,7 @@ RC builds of the Secure edition are published to a private S3 bucket and are onl
   with:
     version: '5.1.0-RC111'
     edition: 'secure'
-    download-url-base: 'https://your-internal-endpoint/{version}/liquibase-secure-{version}.{extension}'
+    download-url-base: 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-secure-{version}.{extension}'
   env:
     LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
 ```
@@ -252,7 +252,7 @@ Semver-compatible RC versions (like `5.1.0-RC111`) pass standard version validat
   with:
     version: '5-secure-release-test'
     edition: 'secure'
-    download-url-base: 'https://your-internal-endpoint/{version}/liquibase-secure-{version}.{extension}'
+    download-url-base: 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-secure-{version}.{extension}'
   env:
     LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
 ```
