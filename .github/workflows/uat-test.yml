@@ -688,6 +688,40 @@ jobs:
         liquibase --version
         echo "✅ RC build installed and validated successfully"
 
+    - name: Test Non-Semver RC Version with Custom Download URL
+      if: steps.check-license.outputs.has_license == 'true'
+      id: rc-nonsemver-install
+      uses: ./
+      with:
+        version: '5-secure-release-test'
+        edition: 'secure'
+        download-url-base: 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-secure-{version}.{extension}'
+      env:
+        LIQUIBASE_LICENSE_KEY: ${{ env.LIQUIBASE_LICENSE_KEY }}
+
+    - name: Verify Non-Semver RC Installation
+      if: steps.check-license.outputs.has_license == 'true'
+      run: |
+        echo "=== Non-Semver RC Version Testing ==="
+
+        VERSION_OUTPUT="${{ steps.rc-nonsemver-install.outputs.liquibase-version }}"
+        PATH_OUTPUT="${{ steps.rc-nonsemver-install.outputs.liquibase-path }}"
+
+        if [ -z "$VERSION_OUTPUT" ]; then
+          echo "❌ Non-semver RC version output not set"
+          exit 1
+        fi
+        echo "✅ Non-semver RC version output: $VERSION_OUTPUT"
+
+        if [ -z "$PATH_OUTPUT" ]; then
+          echo "❌ Non-semver RC path output not set"
+          exit 1
+        fi
+        echo "✅ Non-semver RC path output: $PATH_OUTPUT"
+
+        liquibase --version
+        echo "✅ Non-semver RC build (5-secure-release-test) installed and validated successfully"
+
     - name: Test Non-Semver Version Without Custom URL (Should Fail)
       uses: ./
       continue-on-error: true
