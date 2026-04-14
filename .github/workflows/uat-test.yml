@@ -483,7 +483,7 @@ jobs:
     - name: Check Secure License Availability
       id: check-license
       run: |
-        if [ -n "${{ env.LIQUIBASE_LICENSE_KEY }}" ]; then
+        if [ -n "${{ env.PRO_LICENSE_KEY }}" ]; then
           echo "has_license=true" >> $GITHUB_OUTPUT
           echo "✅ Liquibase license key available for testing"
         else
@@ -509,7 +509,7 @@ jobs:
         version: ${{ inputs.secure_version || '5.0.3' }}
         edition: 'secure'
       env:
-        LIQUIBASE_LICENSE_KEY: ${{ env.LIQUIBASE_LICENSE_KEY }}
+        LIQUIBASE_LICENSE_KEY: ${{ env.PRO_LICENSE_KEY }}
         # Test Secure edition with path transformation using real MySQL driver
         LIQUIBASE_LOG_FILE: /liquibase/secure-logs/liquibase-secure.log
         LIQUIBASE_CLASSPATH: /liquibase/lib/mysql-connector-j-9.0.0.jar
@@ -555,7 +555,7 @@ jobs:
         version: ${{ inputs.secure_version || '5.0.3' }}
         edition: 'pro'
       env:
-        LIQUIBASE_LICENSE_KEY: ${{ env.LIQUIBASE_LICENSE_KEY }}
+        LIQUIBASE_LICENSE_KEY: ${{ env.PRO_LICENSE_KEY }}
         # Test that pro edition (backward compat) works with same environment variables
         LIQUIBASE_LOG_FILE: /liquibase/pro-logs/liquibase-pro.log
         LIQUIBASE_CLASSPATH: /liquibase/lib/mysql-connector-j-9.0.0.jar
@@ -638,7 +638,7 @@ jobs:
     - name: Check Secure License Availability
       id: check-license
       run: |
-        if [ -n "${{ env.LIQUIBASE_LICENSE_KEY }}" ]; then
+        if [ -n "${{ env.PRO_LICENSE_KEY }}" ]; then
           echo "has_license=true" >> $GITHUB_OUTPUT
           echo "✅ Liquibase license key available for RC testing"
         else
@@ -662,7 +662,7 @@ jobs:
         edition: 'secure'
         download-url-base: 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-secure-{version}.{extension}'
       env:
-        LIQUIBASE_LICENSE_KEY: ${{ env.LIQUIBASE_LICENSE_KEY }}
+        LIQUIBASE_LICENSE_KEY: ${{ env.PRO_LICENSE_KEY }}
 
     - name: Verify RC Installation
       if: steps.check-license.outputs.has_license == 'true'
@@ -698,7 +698,7 @@ jobs:
         edition: 'secure'
         download-url-base: 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-secure-{version}.{extension}'
       env:
-        LIQUIBASE_LICENSE_KEY: ${{ env.LIQUIBASE_LICENSE_KEY }}
+        LIQUIBASE_LICENSE_KEY: ${{ env.PRO_LICENSE_KEY }}
 
     - name: Verify Non-Semver RC Installation
       if: steps.check-license.outputs.has_license == 'true'
