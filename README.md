@@ -233,19 +233,19 @@ download-url-base: 'https://internal-repo.company.com/{platform}/liquibase-{edit
 
 ### Testing with RC/Pre-release Builds
 
-To test Release Candidate (RC) or other pre-release builds, use the `download-url-base` input pointing to the repository hosting those builds. This enables non-semver version strings that are not available through the default download URLs.
+RC builds are published to S3 at `repo.liquibase.com/non-releases/secure/` and require a custom `download-url-base` since they are not available through the default download endpoints.
 
 ```yaml
 - uses: liquibase/setup-liquibase@v2
   with:
-    version: '5.1.1.RC114'
+    version: '5.1.0-RC111'
     edition: 'secure'
     download-url-base: 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-secure-{version}.{extension}'
   env:
     LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
 ```
 
-Semver-compatible pre-release versions (e.g., `5.1.0-RC114`) also work and are supported both with and without a custom download URL. Non-semver version strings require `download-url-base`:
+Semver-compatible RC versions (like `5.1.0-RC111`) pass standard version validation. Non-semver version strings are also supported when `download-url-base` is provided:
 
 ```yaml
 - uses: liquibase/setup-liquibase@v2
@@ -257,9 +257,9 @@ Semver-compatible pre-release versions (e.g., `5.1.0-RC114`) also work and are s
     LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
 ```
 
-> **Note**: The `download-url-base` input is required when using non-semver version strings.
-> Without it, the action enforces strict semantic versioning (e.g., `4.32.0`) to ensure
-> compatibility with the default Liquibase download endpoints.
+> **Note**: The `download-url-base` input is required for RC builds because they are hosted
+> separately from the default Liquibase download endpoints. Non-semver version strings
+> additionally require `download-url-base` to bypass strict semantic version validation.
 
 ## Inputs
 

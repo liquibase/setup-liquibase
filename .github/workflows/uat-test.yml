@@ -31,9 +31,9 @@ on:
         default: '5.0.3'
         type: string
       rc_version:
-        description: 'RC/pre-release version to test (non-semver format, e.g., 5.1.1.RC114)'
+        description: 'RC/pre-release version to test (e.g., 5.1.0-RC111)'
         required: false
-        default: '5.1.1.RC114'
+        default: '5.1.0-RC111'
         type: string
   schedule:
     # Run weekly on Sundays at 2 AM UTC for regular health checks
@@ -651,7 +651,7 @@ jobs:
       id: rc-install
       uses: ./
       with:
-        version: ${{ inputs.rc_version || '5.1.1.RC114' }}
+        version: ${{ inputs.rc_version || '5.1.0-RC111' }}
         edition: 'secure'
         download-url-base: 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-secure-{version}.{extension}'
       env:
@@ -687,7 +687,7 @@ jobs:
       continue-on-error: true
       id: rc-no-custom-url
       with:
-        version: '5.1.1.RC114'
+        version: '5.1.0-RC111'
         edition: 'secure'
 
     - name: Verify Non-Semver Rejection Without Custom URL
