@@ -146,11 +146,16 @@ jobs:
           fetch-depth: 0
           token: ${{ steps.get-token.outputs.token }}
 
-      # Draft release notes as PRs are merged
+      # Draft release notes as PRs are merged.
+      # tag/name are pinned to v3.0.0 so release-drafter updates the existing
+      # draft instead of auto-incrementing from v2.1.1 → v2.1.2. Remove these
+      # two inputs once v3.0.0 is published and the next cycle begins.
       - name: Update Release Draft
         uses: release-drafter/release-drafter@5de93583980a40bd78603b6dfdcda5b4df377b32 # v7.2.0
         with:
           config-name: release-drafter.yml
+          tag: v3.0.0
+          name: 'v3.0.0 — Node.js 24 runtime'
         env:
           GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
 
