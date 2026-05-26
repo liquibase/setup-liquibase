@@ -55,7 +55,6 @@ export declare function setupLiquibase(options: LiquibaseSetupOptions): Promise<
  *
  * For Pro and Secure editions (default URLs):
  * - Versions > 4.33.0 use Secure download URLs
- * - Special test version '5-secure-release-test' uses Secure download URLs
  * - Versions <= 4.33.0 use legacy Pro download URLs
  *
  * For Community and OSS editions:

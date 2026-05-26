@@ -37,3 +37,7 @@ export declare const DOWNLOAD_URLS: {
  * Minimum supported version for this action
  */
 export declare const MIN_SUPPORTED_VERSION = "4.32.0";
+/**
+ * Extracts a string message from an unknown caught value.
+ */
+export declare function getErrorMessage(error: unknown): string;
