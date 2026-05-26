@@ -17,10 +17,9 @@
     "noImplicitAny": true,
     
     // Module resolution and compatibility settings
-    // TS6 errors (TS5107) when moduleResolution is unset; ignoreDeprecations
-    // silences it until the ESM migration lands (see #145).
+    // Explicit node10 prevents TS5107 deprecation warning (unset moduleResolution
+    // is deprecated in TS5.x). Full ESM migration tracked in #145.
     "moduleResolution": "node10",
-    "ignoreDeprecations": "6.0",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
@@ -33,7 +32,7 @@
     // Enable isolated modules for ts-jest compatibility
     "isolatedModules": true,
 
-    // TS6 dropped implicit Node.js globals for commonjs; @types/node must be explicit.
+    // @types/node must be explicit for commonjs modules (implicit globals are deprecated).
     "types": ["node"]
   },
   
