@@ -31,9 +31,9 @@ on:
         default: '5.0.3'
         type: string
       rc_version:
-        description: 'RC/pre-release version to test (e.g., 5.1.0-RC111)'
+        description: 'RC/pre-release version to test (e.g., 5.1.0-RC114). Only used when test_scope is rc-prerelease. Must be explicitly provided — no default to prevent stale versions running automatically.'
         required: false
-        default: '5.1.0-RC111'
+        default: ''
         type: string
   schedule:
     # Run weekly on Sundays at 2 AM UTC for regular health checks
@@ -602,7 +602,7 @@ jobs:
   rc-prerelease-tests:
     name: RC/Pre-release Version Tests
     runs-on: ubuntu-latest
-    if: inputs.test_scope == 'full' || inputs.test_scope == 'rc-prerelease' || github.event_name == 'schedule'
+    if: inputs.test_scope == 'rc-prerelease'
 
     steps:
     - name: Checkout Repository
@@ -658,7 +658,7 @@ jobs:
       id: rc-install
       uses: ./
       with:
-        version: ${{ inputs.rc_version || '5.1.0-RC111' }}
+        version: ${{ inputs.rc_version }}
         edition: 'secure'
         download-url-base: 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-secure-{version}.{extension}'
       env:
