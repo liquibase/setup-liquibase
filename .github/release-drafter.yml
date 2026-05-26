@@ -127,29 +127,32 @@ autolabeler:
       - 'dist/**/*'
       - 'lib/**/*'
 
+# v3.0.0 transition template — revert to generic template after v3.0.0 is published.
+# Also remove tag/name overrides from the draft-release job in release-drafter.yml workflow.
 template: |
-  ## 🚀 GitHub Action Release
+  ## ⚠️ Breaking change — Node.js runtime upgraded from Node 20 to Node 24
 
-  This release contains the built distribution files required for the GitHub Action to work.
+  `action.yml` now declares `using: node24` (previously `node20`). GitHub-hosted runners support this automatically. **Self-hosted runners must be on `actions/runner@v2.327.0` or newer** (released 2025-07-22), otherwise the action fails with `Unsupported runtime: node24`. Check with `./run.sh --version` from the runner directory.
+
+  If your runner application can't be upgraded yet, stay on the `v2` line (`liquibase/setup-liquibase@v2`) — it remains on Node.js 20. Node.js 20 reaches end of support on GitHub-hosted runners on **2026-06-16** (default flip to node24) and is removed in **fall 2026**, so plan the migration.
 
   ### What's Changed
+
   $CHANGES
-  
-  ### Usage Example
+
+  ### Migrating from v2
+
+  1. Verify self-hosted runner version (if applicable): `./run.sh --version` must be ≥ 2.327.0.
+  2. Pin to `@v3.0.0` (or `@v3` once the floating major tag is created).
+  3. Validate your workflow end-to-end.
+
+  ### Usage
+
   ```yaml
-  steps:
-    - name: Setup Liquibase
-      uses: liquibase/setup-liquibase@$RESOLVED_VERSION
-      with:
-        version: '5.0.0'
-        edition: 'community'
+  - uses: liquibase/setup-liquibase@$RESOLVED_VERSION
+    with:
+      version: '5.0.3'
+      edition: 'community'
   ```
 
-  ### Build Information
-  - **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_VERSION
-  - **GitHub Actions**: https://github.com/$OWNER/$REPOSITORY/actions
-  - **Marketplace**: https://github.com/marketplace/actions/setup-liquibase
-
-  ---
-
-  *This release was automatically generated and includes all merged pull requests since the previous release.*
+  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_VERSION
