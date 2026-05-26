@@ -17,10 +17,8 @@
     "noImplicitAny": true,
     
     // Module resolution and compatibility settings
-    // Explicitly set node10 (the implicit default for "module": "commonjs").
-    // TypeScript 6.0 deprecated the implicit default and now errors (TS5107)
-    // if moduleResolution is not specified. ignoreDeprecations silences that
-    // error until this project migrates to ESM (see #145).
+    // TS6 errors (TS5107) when moduleResolution is unset; ignoreDeprecations
+    // silences it until the ESM migration lands (see #145).
     "moduleResolution": "node10",
     "ignoreDeprecations": "6.0",
     "esModuleInterop": true,
@@ -35,8 +33,7 @@
     // Enable isolated modules for ts-jest compatibility
     "isolatedModules": true,
 
-    // TypeScript 6.0 no longer auto-includes Node.js globals (path, fs, process,
-    // Buffer, etc.) — must be explicit
+    // TS6 dropped implicit Node.js globals for commonjs; @types/node must be explicit.
     "types": ["node"]
   },
   
