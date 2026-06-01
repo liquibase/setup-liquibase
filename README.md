@@ -21,9 +21,9 @@ This action provides the following functionality for GitHub Actions users:
 ```yaml
 steps:
 - uses: actions/checkout@v4
-- uses: liquibase/setup-liquibase@v2
+- uses: liquibase/setup-liquibase@v3
   with:
-    version: '4.32.0'
+    version: '5.0.3'
     edition: 'community'
 - run: liquibase --version
 ```
@@ -129,9 +129,9 @@ rm -rf $RUNNER_TOOL_CACHE/liquibase
 ```yaml
 steps:
 - uses: actions/checkout@v4
-- uses: liquibase/setup-liquibase@v2
+- uses: liquibase/setup-liquibase@v3
   with:
-    version: '4.32.0'
+    version: '5.0.3'
     edition: 'community'
 - run: liquibase --version
 ```
@@ -141,9 +141,9 @@ steps:
 ```yaml
 steps:
 - uses: actions/checkout@v4
-- uses: liquibase/setup-liquibase@v2
+- uses: liquibase/setup-liquibase@v3
   with:
-    version: '4.32.0'
+    version: '5.0.3'
     edition: 'community'
 - run: liquibase update --changelog-file=changelog.xml --url=jdbc:h2:mem:test
 ```
@@ -153,9 +153,9 @@ steps:
 ```yaml
 steps:
 - uses: actions/checkout@v4
-- uses: liquibase/setup-liquibase@v2
+- uses: liquibase/setup-liquibase@v3
   with:
-    version: '4.32.0'
+    version: '5.1.1'
     edition: 'secure'
 - run: liquibase update --changelog-file=changelog.xml --url=jdbc:h2:mem:test
   env:
@@ -167,9 +167,9 @@ steps:
 ```yaml
 steps:
 - uses: actions/checkout@v4
-- uses: liquibase/setup-liquibase@v2
+- uses: liquibase/setup-liquibase@v3
   with:
-    version: '4.32.0'
+    version: '5.0.3'
 - run: liquibase --version
 ```
 
@@ -182,9 +182,9 @@ If your self-hosted runners are behind a firewall and need to download Liquibase
 ```yaml
 steps:
 - uses: actions/checkout@v4
-- uses: liquibase/setup-liquibase@v2
+- uses: liquibase/setup-liquibase@v3
   with:
-    version: '4.32.0'
+    version: '5.0.3'
     edition: 'oss'
     download-url-base: 'https://nexus.company.com/repository/liquibase/{version}/liquibase-{version}.{extension}'
 - run: liquibase --version
@@ -198,9 +198,9 @@ env:
 
 steps:
 - uses: actions/checkout@v4
-- uses: liquibase/setup-liquibase@v2
+- uses: liquibase/setup-liquibase@v3
   with:
-    version: '4.32.0'
+    version: '5.0.3'
     edition: 'oss'
 - run: liquibase --version
 ```
@@ -236,7 +236,7 @@ download-url-base: 'https://internal-repo.company.com/{platform}/liquibase-{edit
 RC builds of the Secure edition are published to a private S3 bucket and are only accessible to internal Liquibase teams with AWS credentials. Use `download-url-base` to point the action at an internally accessible endpoint serving the RC artifacts.
 
 ```yaml
-- uses: liquibase/setup-liquibase@v2
+- uses: liquibase/setup-liquibase@v3
   with:
     version: '5.1.0-RC111'
     edition: 'secure'
@@ -248,7 +248,7 @@ RC builds of the Secure edition are published to a private S3 bucket and are onl
 Semver-compatible RC versions (like `5.1.0-RC111`) pass standard version validation. Non-semver version strings are also supported when `download-url-base` is provided:
 
 ```yaml
-- uses: liquibase/setup-liquibase@v2
+- uses: liquibase/setup-liquibase@v3
   with:
     version: '5-secure-release-test'
     edition: 'secure'
@@ -306,9 +306,9 @@ When using `edition: 'community'` with Liquibase 5.0 or later:
 
 ```yaml
 steps:
-- uses: liquibase/setup-liquibase@v2
+- uses: liquibase/setup-liquibase@v3
   with:
-    version: '5.0.0'
+    version: '5.0.3'
     edition: 'community'
 
 # Install PostgreSQL driver using LPM
@@ -337,17 +337,17 @@ This action follows [semantic versioning](https://semver.org/):
 ### Version Updates
 
 - **v2.0.x** → Patch releases: Bug fixes only (backward compatible)
-- **v2.x.0** → Minor releases: New features (backward compatible)
-- **v3.0.0** → Major releases: Breaking changes
+- **v3.x.0** → Minor releases: New features (backward compatible)
+- **v4.0.0** → Major releases: Breaking changes
 
 ### Recommended Usage
 
 ```yaml
 # Recommended: Use major version tag for automatic non-breaking updates
-- uses: liquibase/setup-liquibase@v2
+- uses: liquibase/setup-liquibase@v3
 
 # Alternative: Pin to specific version for reproducibility
-- uses: liquibase/setup-liquibase@v2.0.0
+- uses: liquibase/setup-liquibase@v3.0.0
 ```
 
 ## Platform Support
@@ -377,9 +377,9 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
     
-    - uses: liquibase/setup-liquibase@v2
+    - uses: liquibase/setup-liquibase@v3
       with:
-        version: '4.32.0'
+        version: '5.0.3'
         edition: 'community'
     
     - run: liquibase --version
@@ -397,9 +397,9 @@ The Liquibase Package Manager (LPM) is integrated into Liquibase 5.0+ and is ess
 steps:
 - uses: actions/checkout@v4
 
-- uses: liquibase/setup-liquibase@v2
+- uses: liquibase/setup-liquibase@v3
   with:
-    version: '5.0.0'
+    version: '5.0.3'
     edition: 'community'
 
 - name: Install PostgreSQL Driver
@@ -476,9 +476,9 @@ jobs:
     env:
       LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
     steps:
-    - uses: liquibase/setup-liquibase@v2
+    - uses: liquibase/setup-liquibase@v3
       with:
-        version: '4.32.0'
+        version: '5.1.1'
         edition: 'secure'
     - run: liquibase update --changelog-file=changelog.xml
     - run: liquibase checks run --changelog-file=changelog.xml
@@ -498,10 +498,9 @@ jobs:
       with:
         role-to-assume: ${{ secrets.AWS_ROLE }}
         aws-region: us-east-1
-    - uses: liquibase/setup-liquibase@v2
+    - uses: liquibase/setup-liquibase@v3
       with:
-        version: '5.0.0'
-        edition: 'secure'
+        version: '5.1.1'\n        edition: 'secure'
     - run: |
         liquibase \
           --license-key=aws-secrets,my-liquibase-secrets,license-key \
@@ -518,9 +517,9 @@ jobs:
       with:
         role-to-assume: ${{ secrets.AWS_ROLE }}
         aws-region: us-east-1
-    - uses: liquibase/setup-liquibase@v2
+    - uses: liquibase/setup-liquibase@v3
       with:
-        version: '4.32.0'
+        version: '5.1.1'
         edition: 'secure'
     - name: Install AWS Secrets Manager Extension
       run: |
@@ -556,9 +555,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - uses: liquibase/setup-liquibase@v2
+    - uses: liquibase/setup-liquibase@v3
       with:
-        version: '4.32.0'
+        version: '5.0.3'
         edition: 'community'
         
     - name: Run Liquibase Update
@@ -584,9 +583,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - uses: liquibase/setup-liquibase@v2
+    - uses: liquibase/setup-liquibase@v3
       with:
-        version: '4.32.0'
+        version: '5.1.1'
         edition: 'secure'
         
     - name: Validate Changelog
@@ -630,9 +629,9 @@ jobs:
         path: flow-templates
         token: ${{ secrets.GITHUB_TOKEN }}
     
-    - uses: liquibase/setup-liquibase@v2
+    - uses: liquibase/setup-liquibase@v3
       with:
-        version: '4.32.0'
+        version: '5.1.1'
         edition: 'secure'
         
     - name: Execute Flow from Template
@@ -664,10 +663,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: liquibase/setup-liquibase@v2
+    - uses: liquibase/setup-liquibase@v3
       with:
-        version: '5.0.0'
-        edition: 'secure'
+        version: '5.1.1'
 
     - name: Execute Flow from S3
       run: |
@@ -708,9 +706,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: liquibase/setup-liquibase@v2
+    - uses: liquibase/setup-liquibase@v3
       with:
-        version: '4.32.0'
+        version: '5.1.1'
         edition: 'secure'
 
     - name: Download AWS Extension
@@ -753,7 +751,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - uses: liquibase/setup-liquibase@v2
+    - uses: liquibase/setup-liquibase@v3
       with:
         version: ${{ matrix.liquibase-version }}
         edition: 'community'
@@ -845,9 +843,9 @@ If you're migrating from the official Liquibase GitHub Actions, here's how to co
 
 ### After (setup-liquibase)
 ```yaml
-- uses: liquibase/setup-liquibase@v2
+- uses: liquibase/setup-liquibase@v3
   with:
-    version: '4.32.0'
+    version: '5.0.3'
     edition: 'community'
 - run: liquibase update \
     --changelog-file=changelog.xml \
