@@ -63,7 +63,7 @@ steps:
 steps:
 - uses: liquibase/setup-liquibase@v3
   with:
-    version: '5.0.3'
+    version: '5.1.1'
     edition: 'secure'
   env:
     LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
@@ -161,7 +161,7 @@ runs-on: ${{ matrix.os }}
   uses: liquibase/setup-liquibase@v3
   id: secure-install
   with:
-    version: '5.0.3'
+    version: '5.1.1'
     edition: 'secure'
 
 - name: Verify Installation Success

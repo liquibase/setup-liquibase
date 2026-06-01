@@ -666,7 +666,7 @@ jobs:
 
     - uses: liquibase/setup-liquibase@v3
       with:
-        version: '5.1.1'
+        version: '5.1.1'
         edition: 'secure'
 
     - name: Execute Flow from S3
