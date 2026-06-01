@@ -3,9 +3,9 @@
 This document provides comprehensive testing instructions for the setup-liquibase GitHub Action.
 
 ## Current Testing Versions
-- **Production**: `@v1` (latest stable release)
-- **Specific Version**: `@v1.0.0` (for regression testing)
-- **Pre-release**: Use specific tags when testing betas (e.g., `@v2-beta`)
+- **Production**: `@v3` (latest stable release)
+- **Specific Version**: `@v3.0.0` (for regression testing)
+- **Pre-release**: Use specific tags when testing pre-releases (e.g., `@v3.0.0`)
 
 ## Quick Start for Testers
 
@@ -28,11 +28,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Setup Liquibase OSS
-      uses: liquibase/setup-liquibase@v1
+    - name: Setup Liquibase COMMUNITY
+      uses: liquibase/setup-liquibase@v3
       with:
-        version: '4.32.0'
-        edition: 'oss'
+        version: '5.0.3'
+        edition: 'community'
     
     - name: Verify Installation
       run: |
@@ -44,7 +44,7 @@ jobs:
 
 ### 1. Basic Installation Tests
 
-#### OSS Edition Tests
+#### Community Edition Tests
 ```yaml
 strategy:
   matrix:
@@ -52,18 +52,18 @@ strategy:
     os: [ubuntu-latest, windows-latest, macos-latest]
 
 steps:
-- uses: liquibase/setup-liquibase@v1
+- uses: liquibase/setup-liquibase@v3
   with:
     version: ${{ matrix.version }}
-    edition: 'oss'
+    edition: 'community'
 ```
 
 #### Secure Edition Tests
 ```yaml
 steps:
-- uses: liquibase/setup-liquibase@v1
+- uses: liquibase/setup-liquibase@v3
   with:
-    version: '4.32.0'
+    version: '5.0.3'
     edition: 'secure'
   env:
     LIQUIBASE_LICENSE_KEY: ${{ secrets.PRO_LICENSE_KEY }}
@@ -86,10 +86,10 @@ runs-on: ${{ matrix.os }}
 #### Database Operations Test
 ```yaml
 - name: Setup Liquibase
-  uses: liquibase/setup-liquibase@v1
+  uses: liquibase/setup-liquibase@v3
   with:
-    version: '4.32.0'
-    edition: 'oss'
+    version: '5.0.3'
+    edition: 'community'
 
 - name: Create Test Changelog
   run: |
@@ -140,12 +140,12 @@ runs-on: ${{ matrix.os }}
 #### Invalid Version Test
 ```yaml
 - name: Test Invalid Version (Should Fail)
-  uses: liquibase/setup-liquibase@v1
+  uses: liquibase/setup-liquibase@v3
   continue-on-error: true
   id: invalid-version
   with:
     version: 'invalid-version'
-    edition: 'oss'
+    edition: 'community'
 
 - name: Verify Failure
   run: |
@@ -158,10 +158,10 @@ runs-on: ${{ matrix.os }}
 #### Secure Edition Installation Test
 ```yaml
 - name: Test Secure Installation (Should Succeed)
-  uses: liquibase/setup-liquibase@v1
+  uses: liquibase/setup-liquibase@v3
   id: secure-install
   with:
-    version: '4.32.0'
+    version: '5.0.3'
     edition: 'secure'
 
 - name: Verify Installation Success
@@ -178,10 +178,10 @@ runs-on: ${{ matrix.os }}
 #### Path Transformation Test
 ```yaml
 - name: Test Path Transformation (Enhanced Logging)
-  uses: liquibase/setup-liquibase@v1
+  uses: liquibase/setup-liquibase@v3
   with:
-    version: '4.32.0'
-    edition: 'oss'
+    version: '5.0.3'
+    edition: 'community'
   env:
     # These absolute paths will trigger transformation logging
     LIQUIBASE_LOG_FILE: /liquibase/changelog/test.log
@@ -207,12 +207,12 @@ runs-on: ${{ matrix.os }}
 #### Migration Guidance Test
 ```yaml
 - name: Test Enhanced Logging Output
-  uses: liquibase/setup-liquibase@v1
+  uses: liquibase/setup-liquibase@v3
   with:
-    version: '4.32.0'
-    edition: 'oss'
+    version: '5.0.3'
+    edition: 'community'
   # Look for these enhanced logging messages in the action output:
-  # 🚀 Setting up Liquibase OSS 4.32.0
+  # 🚀 Setting up Liquibase COMMUNITY 5.0.3
   # 🎯 Liquibase configuration:
   # 💡 Migration from liquibase-github-actions:
   # 🔄 Path Transformation (Security & Compatibility):
@@ -221,7 +221,7 @@ runs-on: ${{ matrix.os }}
 ## Test Checklist
 
 ### Basic Functionality ✅
-- [ ] OSS edition installs successfully
+- [ ] Community edition installs successfully
 - [ ] Secure edition installs successfully (license validation at runtime)
 - [ ] Action outputs are set correctly (liquibase-version, liquibase-path)
 - [ ] Liquibase binary is added to PATH
@@ -288,7 +288,7 @@ Copy and paste this template when reporting UAT issues:
 ## UAT Issue Report
 
 **Platform**: ubuntu-latest / windows-latest / macos-latest  
-**Liquibase Version**: 4.32.0  
+**Liquibase Version**: 5.0.3  
 **Edition**: oss / secure  
 
 **Expected Behavior**:  
@@ -345,7 +345,7 @@ The repository includes automated UAT testing via GitHub Actions:
 
 For external contributors testing this action:
 
-- ✅ **OSS Edition Tests**: Full access to all OSS functionality testing
+- ✅ **Community Edition Tests**: Full access to all Community edition functionality testing
 - ✅ **Integration Tests**: Database operations with H2 (no license required)
 - ✅ **Error Handling Tests**: Complete validation of error scenarios
 - ✅ **Performance Tests**: Installation performance validation
@@ -382,6 +382,5 @@ For questions or issues during UAT testing:
 
 After successful UAT completion:
 1. Address any found issues
-2. Create v1.0.0 release
-3. Publish to GitHub Marketplace
-4. Update documentation with marketplace availability
+2. Merge fixes and update release notes
+3. Promote pre-release to stable when validated

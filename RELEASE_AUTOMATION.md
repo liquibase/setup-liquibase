@@ -15,7 +15,7 @@ This document explains how the release automation works for the setup-liquibase 
 - **build-and-test**: Multi-platform build matrix (Ubuntu, Windows, macOS)
 - **draft-release**: Updates draft releases from PR merges
 - **create-release**: Creates/publishes releases (manual dispatch only)
-- **update-major-tag**: Updates major version tags (v1 → v1.x.x) after release
+- **update-major-tag**: Updates major version tags (v3 → v3.x.x) after release
 
 **Key Features:**
 - Multi-platform testing for reliability
@@ -50,7 +50,7 @@ This document explains how the release automation works for the setup-liquibase 
    - Generate dynamic changelog
    - Create/update draft release
    - Publish if requested
-   - Update major version tag (v1 → v1.2.3)
+   - Update major version tag (v3 → v3.x.x)
 
 ### Draft Release Management
 
@@ -118,7 +118,7 @@ feature:
    - **Patch (x.x.1)**: Bug fixes only (backward compatible)
    - **Minor (x.1.0)**: New features (backward compatible)
    - **Major (1.0.0)**: Breaking changes
-   - **Tags**: Major tag (v1) auto-updates to latest v1.x.x
+   - **Tags**: Major tag (v3) auto-updates to latest v3.x.x
 
 ## Troubleshooting
 
@@ -154,7 +154,7 @@ feature:
    → Dynamic changelog generated
    → Draft release updated with latest changes
    → Release published (if requested)
-   → Major version tag updated (v1 → v1.2.3)
+   → Major version tag updated (v3 → v3.x.x)
 ```
 
 This simplified system provides enterprise-grade release automation while maintaining simplicity for developers and following GitHub Actions best practices.

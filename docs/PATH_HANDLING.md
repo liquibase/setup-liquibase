@@ -79,7 +79,7 @@ docker run -v $(pwd):/liquibase/changelog liquibase/liquibase:4.32.0 \
   update --changelog-file=/liquibase/changelog/changelog.xml
 
 # GitHub Actions approach  
-- uses: liquibase/setup-liquibase@v1
+- uses: liquibase/setup-liquibase@v3
 - run: liquibase update --changelog-file=changelog.xml
 ```
 
@@ -91,7 +91,7 @@ docker run -v /path/to/driver.jar:/liquibase/lib/driver.jar
 # GitHub Actions approach (download + classpath)
 - name: Download Custom Driver
   run: wget https://example.com/driver.jar -O lib/driver.jar
-- uses: liquibase/setup-liquibase@v1
+- uses: liquibase/setup-liquibase@v3
   env:
     LIQUIBASE_CLASSPATH: lib/driver.jar
 ```
@@ -102,7 +102,7 @@ docker run -v /path/to/driver.jar:/liquibase/lib/driver.jar
 docker run -e LIQUIBASE_LOG_FILE=/liquibase/logs/app.log
 
 # GitHub Actions approach (automatic transformation)
-- uses: liquibase/setup-liquibase@v1
+- uses: liquibase/setup-liquibase@v3
   env:
     LIQUIBASE_LOG_FILE: /liquibase/logs/app.log  # Becomes ./liquibase/logs/app.log
 ```
@@ -123,7 +123,7 @@ env:
 ### 2. Understand Your Working Directory
 ```yaml
 - uses: actions/checkout@v4
-- uses: liquibase/setup-liquibase@v1
+- uses: liquibase/setup-liquibase@v3
 - run: |
     pwd  # Shows: /actions-runner/_work/your-repo/your-repo
     ls   # Shows your repository files
@@ -149,7 +149,7 @@ jobs:
       LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
       LIQUIBASE_LOG_FILE: logs/liquibase.log
     steps:
-      - uses: liquibase/setup-liquibase@v1
+      - uses: liquibase/setup-liquibase@v3
       - run: liquibase update --changelog-file=changelog.xml
 ```
 
