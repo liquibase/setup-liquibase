@@ -289,7 +289,7 @@ Copy and paste this template when reporting UAT issues:
 
 **Platform**: ubuntu-latest / windows-latest / macos-latest  
 **Liquibase Version**: 5.0.3  
-**Edition**: oss / secure  
+**Edition**: community / secure  
 
 **Expected Behavior**:  
 [Describe what should happen]

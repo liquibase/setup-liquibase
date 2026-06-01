@@ -336,7 +336,7 @@ This action follows [semantic versioning](https://semver.org/):
 
 ### Version Updates
 
-- **v2.0.x** → Patch releases: Bug fixes only (backward compatible)
+- **v3.0.x** → Patch releases: Bug fixes only (backward compatible)
 - **v3.x.0** → Minor releases: New features (backward compatible)
 - **v4.0.0** → Major releases: Breaking changes
 
@@ -500,7 +500,8 @@ jobs:
         aws-region: us-east-1
     - uses: liquibase/setup-liquibase@v3
       with:
-        version: '5.1.1'\n        edition: 'secure'
+        version: '5.1.1'
+        edition: 'secure'
     - run: |
         liquibase \
           --license-key=aws-secrets,my-liquibase-secrets,license-key \
@@ -666,6 +667,7 @@ jobs:
     - uses: liquibase/setup-liquibase@v3
       with:
         version: '5.1.1'
+        edition: 'secure'
 
     - name: Execute Flow from S3
       run: |
