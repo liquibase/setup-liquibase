@@ -233,19 +233,20 @@ download-url-base: 'https://internal-repo.company.com/{platform}/liquibase-{edit
 
 ### Testing with RC/Pre-release Builds
 
-RC builds of the Secure edition are published to a private S3 bucket and are only accessible to internal Liquibase teams with AWS credentials. Use `download-url-base` to point the action at an internally accessible endpoint serving the RC artifacts.
+RC builds of the Secure edition are not served by the default download endpoints, so they need
+`download-url-base` to point the action at the RC path on `repo.liquibase.com`.
 
 ```yaml
 - uses: liquibase/setup-liquibase@v3
   with:
-    version: '5.1.0-RC111'
+    version: '6.0.0-RC5'
     edition: 'secure'
     download-url-base: 'https://repo.liquibase.com/non-releases/secure/{version}/liquibase-secure-{version}.{extension}'
   env:
     LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
 ```
 
-Semver-compatible RC versions (like `5.1.0-RC111`) pass standard version validation. Non-semver version strings are also supported when `download-url-base` is provided:
+Semver-compatible RC versions (like `6.0.0-RC5`) pass standard version validation. Non-semver version strings are also supported when `download-url-base` is provided:
 
 ```yaml
 - uses: liquibase/setup-liquibase@v3
@@ -257,11 +258,20 @@ Semver-compatible RC versions (like `5.1.0-RC111`) pass standard version validat
     LIQUIBASE_LICENSE_KEY: ${{ secrets.LIQUIBASE_LICENSE_KEY }}
 ```
 
-> **Note**: RC builds require `download-url-base` because they are not available through the
-> default Liquibase download endpoints. The S3 bucket hosting RC builds (`repo.liquibase.com/non-releases/`)
-> requires AWS authentication — workflows must configure AWS credentials before the action can
-> download from it. Non-semver version strings additionally require `download-url-base` to
-> bypass strict semantic version validation.
+> **Note**: RC builds require `download-url-base` for two independent reasons: they are not
+> available through the default Liquibase download endpoints, and non-semver version strings
+> need it to bypass strict semantic version validation.
+>
+> **No credentials are involved in the download.** An earlier version of this note said
+> workflows must configure AWS credentials first. That was never true: the action performs a
+> plain unsigned HTTP GET (`downloadTool`), so it cannot present AWS credentials even when they
+> are configured, and the artifacts are on Cloudflare R2 rather than S3, which would make AWS
+> credentials the wrong type anyway. The RC path is fetchable without signing. It is simply
+> unlisted, so there is no index and you need the exact version string
+> ([TECHOPS-1127](https://datical.atlassian.net/browse/TECHOPS-1127)).
+>
+> RC artifacts are not retained forever. Substitute the RC you actually want to test rather
+> than reusing the version in the example above.
 
 ## Inputs
 
