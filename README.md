@@ -1,6 +1,6 @@
 # Setup Liquibase
 
-Set up your GitHub Actions workflow with a specific version of Liquibase.
+Set up your GitHub Actions workflow with a specific version of Liquibase, Community or Secure edition.
 
 > [!IMPORTANT]
 > **Liquibase 5.0+ Community Edition Changes**: Starting with Liquibase 5.0, the Community edition (formerly known as OSS) no longer includes database drivers and extensions. You'll need to use the Liquibase Package Manager (LPM) to install required drivers.
