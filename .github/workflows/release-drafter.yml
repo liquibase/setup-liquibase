@@ -44,19 +44,11 @@ jobs:
         node-version: [24]
     steps:
 
-      - name: Configure AWS credentials for vault access
-        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
+      - name: Get the GitHub App credentials from vault
+        uses: liquibase/build-logic/.github/actions/setup-aws-vault@2003fece51886ec69cda3df1cb4520b3ceeb2e0c # main
         with:
-          role-to-assume: ${{ secrets.LIQUIBASE_VAULT_OIDC_ROLE_ARN }}
-          aws-region: us-east-1
-
-      - name: Get secrets from vault
-        id: vault-secrets
-        uses: aws-actions/aws-secretsmanager-get-secrets@2cb1a461cbd4865ac4299648312e4704c646cd53 # v3.0.1
-        with:
-          secret-ids: |
-            ,/vault/liquibase
-          parse-json-secrets: true
+          group: github-app-liquibase
+          role-arn: ${{ secrets.VAULT_GROUPED_GITHUB_APP_LIQUIBASE_ROLE_ARN }}
 
       - name: Get GitHub App token
         id: get-token
@@ -113,19 +105,11 @@ jobs:
     needs: [build-and-test]
     if: github.event_name == 'push' || github.event_name == 'pull_request'
     steps:
-      - name: Configure AWS credentials for vault access
-        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
+      - name: Get the GitHub App credentials from vault
+        uses: liquibase/build-logic/.github/actions/setup-aws-vault@2003fece51886ec69cda3df1cb4520b3ceeb2e0c # main
         with:
-          role-to-assume: ${{ secrets.LIQUIBASE_VAULT_OIDC_ROLE_ARN }}
-          aws-region: us-east-1
-
-      - name: Get secrets from vault
-        id: vault-secrets
-        uses: aws-actions/aws-secretsmanager-get-secrets@2cb1a461cbd4865ac4299648312e4704c646cd53 # v3.0.1
-        with:
-          secret-ids: |
-            ,/vault/liquibase
-          parse-json-secrets: true
+          group: github-app-liquibase
+          role-arn: ${{ secrets.VAULT_GROUPED_GITHUB_APP_LIQUIBASE_ROLE_ARN }}
 
       - name: Get GitHub App token
         id: get-token
@@ -161,19 +145,11 @@ jobs:
     needs: [build-and-test]
     if: github.event_name == 'workflow_dispatch'
     steps:
-      - name: Configure AWS credentials for vault access
-        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
+      - name: Get the GitHub App credentials from vault
+        uses: liquibase/build-logic/.github/actions/setup-aws-vault@2003fece51886ec69cda3df1cb4520b3ceeb2e0c # main
         with:
-          role-to-assume: ${{ secrets.LIQUIBASE_VAULT_OIDC_ROLE_ARN }}
-          aws-region: us-east-1
-
-      - name: Get secrets from vault
-        id: vault-secrets
-        uses: aws-actions/aws-secretsmanager-get-secrets@2cb1a461cbd4865ac4299648312e4704c646cd53 # v3.0.1
-        with:
-          secret-ids: |
-            ,/vault/liquibase
-          parse-json-secrets: true
+          group: github-app-liquibase
+          role-arn: ${{ secrets.VAULT_GROUPED_GITHUB_APP_LIQUIBASE_ROLE_ARN }}
 
       - name: Get GitHub App token
         id: get-token
@@ -601,19 +577,11 @@ jobs:
     needs: [build-and-test, create-release]
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.publish_release == 'true'
     steps:
-      - name: Configure AWS credentials for vault access
-        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
+      - name: Get the GitHub App credentials from vault
+        uses: liquibase/build-logic/.github/actions/setup-aws-vault@2003fece51886ec69cda3df1cb4520b3ceeb2e0c # main
         with:
-          role-to-assume: ${{ secrets.LIQUIBASE_VAULT_OIDC_ROLE_ARN }}
-          aws-region: us-east-1
-
-      - name: Get secrets from vault
-        id: vault-secrets
-        uses: aws-actions/aws-secretsmanager-get-secrets@2cb1a461cbd4865ac4299648312e4704c646cd53 # v3.0.1
-        with:
-          secret-ids: |
-            ,/vault/liquibase
-          parse-json-secrets: true
+          group: github-app-liquibase
+          role-arn: ${{ secrets.VAULT_GROUPED_GITHUB_APP_LIQUIBASE_ROLE_ARN }}
 
       - name: Get GitHub App token
         id: get-token
