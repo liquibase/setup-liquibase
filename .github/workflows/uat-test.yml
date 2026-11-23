@@ -455,19 +455,11 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     
-    - name: Configure AWS credentials for vault access
-      uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
+    - name: Get the Liquibase license key from vault
+      uses: liquibase/build-logic/.github/actions/setup-aws-vault@2003fece51886ec69cda3df1cb4520b3ceeb2e0c # main
       with:
-        role-to-assume: ${{ secrets.LIQUIBASE_VAULT_OIDC_ROLE_ARN }}
-        aws-region: us-east-1
-
-    - name: Get secrets from vault
-      id: vault-secrets
-      uses: aws-actions/aws-secretsmanager-get-secrets@2cb1a461cbd4865ac4299648312e4704c646cd53 # v3.0.1
-      with:
-        secret-ids: |
-          ,/vault/liquibase
-        parse-json-secrets: true
+        group: pro-license
+        role-arn: ${{ secrets.VAULT_GROUPED_PRO_LICENSE_ROLE_ARN }}
 
     - name: Setup Node.js Environment
       uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -621,19 +613,17 @@ jobs:
       env:
         NODE_OPTIONS: --max-old-space-size=4096
 
-    - name: Configure AWS credentials for vault access
-      uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
+    - name: Get the Liquibase license key from vault
+      uses: liquibase/build-logic/.github/actions/setup-aws-vault@2003fece51886ec69cda3df1cb4520b3ceeb2e0c # main
       with:
-        role-to-assume: ${{ secrets.LIQUIBASE_VAULT_OIDC_ROLE_ARN }}
-        aws-region: us-east-1
+        group: pro-license
+        role-arn: ${{ secrets.VAULT_GROUPED_PRO_LICENSE_ROLE_ARN }}
 
-    - name: Get secrets from vault
-      id: vault-secrets
-      uses: aws-actions/aws-secretsmanager-get-secrets@2cb1a461cbd4865ac4299648312e4704c646cd53 # v3.0.1
+    - name: Get the prod S3 role ARN from vault
+      uses: liquibase/build-logic/.github/actions/setup-aws-vault@2003fece51886ec69cda3df1cb4520b3ceeb2e0c # main
       with:
-        secret-ids: |
-          ,/vault/liquibase
-        parse-json-secrets: true
+        group: aws-prod-github-oidc-role-arn-liquibase-pro
+        role-arn: ${{ secrets.VAULT_GROUPED_AWS_PROD_GITHUB_OIDC_ROLE_ARN_LIQUIBASE_PRO_ROLE_ARN }}
 
     - name: Check Secure License Availability
       id: check-license
